@@ -1,0 +1,13 @@
+{
+  "name": "dagviz",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "lit-element": "*",
+    "underscore": "*"
+  },
+  "engines": {
+    "node": "*",
+    "npm": "*"
+  }
+}
