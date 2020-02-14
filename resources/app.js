@@ -28,16 +28,12 @@ class App {
 	}
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
-		this.graph.updateGraph([{
-			id: "node1",
-			type: '',
-			name: "N1"
-		},{
-			id: "node2",
-			type: '',
-			name: "N2",
-			peers:['node1']
-		}])
+		let items = BLOCKDAGCHAIN.map((o, i)=>{
+			o.id = o.blockHash;
+			o.name = `N${++i}`;
+			return o;
+		})
+		this.graph.updateGraph(items)
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
