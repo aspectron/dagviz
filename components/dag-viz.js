@@ -147,7 +147,7 @@ D3x.shape.triangle = function(el, o) {
     if(!o.size)
     	o.size = 100;
 
-//    var h = (Math.sqrt(3)/2);
+	//    var h = (Math.sqrt(3)/2);
 	const size = o.size;// * 1.25;
 	const offsetY = -2;
     var data = (originX, originY)=>{
@@ -319,18 +319,18 @@ class GraphNodeLink{
 		this.holder = holder;
 		this.data = data;
 		this.el = holder.linksEl.append("line");
-		this.source = holder.nodes[data.source];
-		this.target = holder.nodes[data.target];
-		this.target.addParentLink(this);
+		this.source = holder.nodes[data.child];
+		this.target = holder.nodes[data.parent];
+		this.target.addChildLink(this);
 		this.target.attachNode();
 	}
 	remove(){
 		this.el.remove();
-		this.target.removeParentLink(this);
+		this.target.removeChildLink(this);
 	}
 	updateStyle(){
 		if(!this.source){
-			//console.log("this.source", this.data.source)
+			//console.log("this.source", this.data.child)
 			return
 		}
 		this.el
@@ -345,18 +345,13 @@ class GraphNode{
 	constructor(holder, data){
 		this.holder = holder;
 		this.data 	= data;
-		this.peers 	= data.peers;
 		this.id 	= data.id || data.name;
-		this.parentLinks = {};
+		this.childLinks = {};
 		this.attachNode();
 	}
 	setData(data){
 		this.data = data;
-		this.peers 	= data.peers;
-		//this.color = data.color;
-		//this.shape = data.shape;
-		this._peers = null;
-		this.buildLinks();
+		this.buildLink();
 		this.textEl.text(this.data.name);
 		this.updateStyle();
 	}
@@ -446,50 +441,38 @@ class GraphNode{
 	    this.bindElEvents();
 
 	}
-	buildLinks(){
-		let {data, id:source, holder} = this;
+	buildLink(){
+		let {data, holder} = this;
+		//console.log("data", data, holder.nodes[data.parent])
+		if(!data.parent){
+			this.removeLink();
+		}else if(holder.nodes[data.parent]){
+			this.createLink(data.parent)
+		}
 
-		this.links = this.links || {};
-		let links = {};
-		(this.peers || []).filter(target=>{
-			return !!holder.nodes[target]
-		}).map(target=>{
-			links[target] = target;
-		})
-
-		_.each(this.links, (link, target)=>{
-			if(!links[target]){
-				link.remove();
-				delete this.links[target]
-			}
-		})
-		let list = [];
-		_.each(links, target=>{
-			this.createLink(target);
-			list.push({source, target})
-		});
-
-		return list;
+		return this.linkNode;
 	}
-	createLink(target){
-		if(this.links[target])
+	createLink(parent){
+		if(this.linkNode)
 			return
-		this.links[target] = new GraphNodeLink(this.holder, {source:this.id, target})
+		this.linkNode = new GraphNodeLink(this.holder, {child:this.id, parent})
+	}
+	removeLink(){
+		if(this.linkNode){
+			this.linkNode.remove();
+			delete this.linkNode;
+		}
 	}
 	remove(){
 		this.removeElEvents();
 		this.el.remove();
 		this.textEl.remove();
+		this.removeLink();
 
-		_.each(this.links, (link, target)=>{
+		_.each(this.childLinks, (link, child)=>{
 			link.remove();
-			delete this.links[target];
+			delete this.childLinks[child];
 		})
-		_.each(this.parentLinks, (link, source)=>{
-			link.remove();
-			delete this.parentLinks[source];
-		})
-		// console.log("remove:", this.id, this.parentLinks)
 	}
 	updateStyle(){
 
@@ -530,20 +513,15 @@ class GraphNode{
 
 	    }
 
-		// console.log("EL:",this.el)
-
+		//console.log("EL:", Date.now()/1000, this.data.timestamp)
+		this.x = Date.now()/1000 - this.data.timestamp;
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
 				if(this.data.color) {
 					return this.data.color;
 				} else {
-					let hasPeers = ((this.data.peers && this.data.peers.length) 
-						|| (this.data.in && this.data.in.length));
-					if(hasPeers)
-						return host && host.online ? (typeColors[this.data.type] || "#b3e2ff") :  "#ffb3b3";
-					else
-						return host && host.online ? "#b3e2ff" : "#ffb3b3";
+					return host && host.online ? "#b3e2ff" : "#ffb3b3";
 				}
 			})
 		let textBox = this.textEl.node().getBoundingClientRect();
@@ -555,31 +533,18 @@ class GraphNode{
 			.attr("x", this.x-width/2)
 			.attr("y", (this.y+height/3)-0.5)
 
-		_.each(this.links, link=>{
-			link.updateStyle();
-		})
+		if(this.linkNode)
+			this.linkNode.updateStyle();
 	}
-	addParentLink(parentLink){
-		this.parentLinks[parentLink.data.source] = parentLink;
+	addChildLink(childLink){
+		this.childLinks[childLink.data.child] = childLink;
 	}
-	removeParentLink(parentLink){
-		delete this.parentLinks[parentLink.data.source];
-		//if(_.isEmpty(this.parentLinks))
-		//	this.remove();
+	removeChildLink(childLink){
+		delete this.childLinks[childLink.data.child];
 	}
 	onNodeClick(e) {
 		if (d3.event.defaultPrevented)
 			return
-		/*
-		if (this.peers) {
-			this._peers = this.peers;
-			this.peers = null;
-		} else {
-			this.peers = this._peers;
-			this._peers = null;
-		}
-		this.holder.updateGraph();
-		*/
 		this.holder.onNodeClick(this, d3.event);
 	}
 	onNodeHover(){
@@ -835,9 +800,14 @@ export class DAGViz extends BaseElement {
 		return this.nodes[data.id];
 	}
 	buildRoot(data){
+		this._data = data;
 		let map = {};
 		_.each(data, d=>{
-			if(!d.id) d.id = d.name;
+			if(!d.id)
+				d.id = d.blockHash || d.name;
+			if(!d.parent && d.acceptingBlockHash)
+				d.parent = d.acceptingBlockHash;
+
 			map[d.id] = 1;
 			this.createNode(d)
 		})
@@ -852,7 +822,9 @@ export class DAGViz extends BaseElement {
 			links:()=>{
 				let links = [];
 				_.each(this.nodes, n=>{
-					links = links.concat(n.buildLinks());
+					let link = n.buildLink();
+					if(link)
+						links.push(link)
 				});
 				console.log("links", links)
 				return links;
@@ -864,12 +836,14 @@ export class DAGViz extends BaseElement {
 
 		return hierarchyRoot;
 	}
+	addNodeData(nodeData){
+		data = (this._data || []).concat([nodeData])
+		this.updateGraph(data);
+	}
 	updateGraph(data){
 		if(data)
 			this.hierarchyRoot = this.buildRoot(data);
 
-		if(this.simulation)
-			this.simulation.stop()
 		var nodes = this.hierarchyRoot.nodes();
 		this.simulation
 			.stop()
@@ -881,12 +855,14 @@ export class DAGViz extends BaseElement {
 		});
 		this.simulation*/
 			.nodes(nodes)
-			.force("link", d3.forceLink(this.hierarchyRoot.links()).id(d => d.id).distance(0).strength(1))
+			.force("link", d3.forceLink(this.hierarchyRoot.links()).id(d=>d.id).distance(0).strength(1))
 			.force('collision', d3.forceCollide().radius(function(d) {
 				return 5;//d.radius
 			}))
 			.force("charge", d3.forceManyBody().strength(-50))
-			.force("x", d3.forceX())
+			.force("x", (d, a)=>{
+				return 5
+			})
 			.force("y", d3.forceY())
 
 			// .force('charge', d3.forceManyBody().strength(5))

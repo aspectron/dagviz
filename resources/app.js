@@ -8,6 +8,27 @@ class App {
 		this.initGraph();
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
+		this.fetchData();
+	}
+	fetchData(){
+
+		/*
+		$.ajax({
+			url:'http://finland.aspectron.com:8082/blocks?limit=10',
+			type:'json'
+		}, (res)=>{
+			console.log("res", res)
+		})
+		*/
+
+		let items = BLOCKDAGCHAIN.map((o, i)=>{
+			o.name = `N${++i}`;
+			o.timestamp = Date.now()/1000 + i
+			return o;
+		})
+
+		this.graph.updateGraph(items)
+
 	}
 	afterInit(){
 		document.body.classList.remove("initilizing");
@@ -28,12 +49,6 @@ class App {
 	}
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
-		let items = BLOCKDAGCHAIN.map((o, i)=>{
-			o.id = o.blockHash;
-			o.name = `N${++i}`;
-			return o;
-		})
-		this.graph.updateGraph(items)
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
