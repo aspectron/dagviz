@@ -23,10 +23,6 @@
 			window.app = new App();
 
 
-
-
-
-
 		var mqtt;
 		var reconnectTimeout = 2000;
 		var host="finland.aspectron.com"; //change this
@@ -41,7 +37,16 @@
 		function onMessageArrived(msg){
 			out_msg="Message received "+msg.payloadString+"<br>";
 			out_msg=out_msg+"Message received Topic "+msg.destinationName;
-			console.log(out_msg);
+			//console.log(out_msg);
+			let data = null;
+			try{
+				data = JSON.parse(msg.payloadString)
+			}catch(e){
+
+			}
+
+			//if(data)
+			//	app.graph.addNodeData(data)
 		}
 
 		function onConnect() {

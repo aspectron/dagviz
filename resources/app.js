@@ -8,6 +8,13 @@ class App {
 		this.initGraph();
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
+		
+		this.index = 0;
+		this.items = BLOCKDAGCHAIN.map((o, i)=>{
+			o.name = `N${++i}`;
+			o.timestamp = Date.now()/1000 + i
+			return o;
+		})
 		this.fetchData();
 	}
 	fetchData(){
@@ -21,14 +28,17 @@ class App {
 		})
 		*/
 
-		let items = BLOCKDAGCHAIN.map((o, i)=>{
-			o.name = `N${++i}`;
-			o.timestamp = Date.now()/1000 + i
-			return o;
-		})
+		
+		this.index++;
+		if(this.items.length-1 < this.index)
+			this.index = 0;
+		let item = this.items[this.index];
+		if(item)
+			this.graph.addNodeData(item)
 
-		this.graph.updateGraph(items)
-
+		setTimeout(()=>{
+			this.fetchData();
+		}, 5000)
 	}
 	afterInit(){
 		document.body.classList.remove("initilizing");

@@ -211,7 +211,10 @@ D3x.shape.circle = function(el, o) {
         .attr("r", o.size)
 
     node.setPosition = (x, y)=>{
-    	node.attr("cx", x)
+    	node
+    		.transition('o')
+			.duration(2000)
+    		.attr("cx", x)
     		.attr("cy", y)
     	return node;
     }
@@ -413,7 +416,7 @@ class GraphNode{
 			//this.el = this.holder.nodesEl.append("g");
 
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : 5,//self.radius,
+	            size : this.data.size,
 	            rgba : shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
 	        });
@@ -449,7 +452,6 @@ class GraphNode{
 		}else if(holder.nodes[data.parent]){
 			this.createLink(data.parent)
 		}
-
 		return this.linkNode;
 	}
 	createLink(parent){
@@ -494,7 +496,7 @@ class GraphNode{
 			// console.log("DATA CHANGE",this);
 			this.el.remove();
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : 5,//self.radius,
+	            size : this.data.size,
 	            rgba : shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
 	        })
@@ -514,7 +516,7 @@ class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		this.x = Date.now()/1000 - this.data.timestamp;
+		this.x = -(Date.now()/1000 - this.data.timestamp);
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -529,9 +531,13 @@ class GraphNode{
 		let zoom = this.holder.paintEl.transform.k
 		width = width/zoom;
 		height = height/zoom;
+		//console.log("this.textEl", this.textEl)
 		this.textEl
+			.transition('o')
+			.duration(2000)
 			.attr("x", this.x-width/2)
 			.attr("y", (this.y+height/3)-0.5)
+        	.attr("opacity", 1)
 
 		if(this.linkNode)
 			this.linkNode.updateStyle();
@@ -730,12 +736,14 @@ export class DAGViz extends BaseElement {
 			.attr("stroke-width", 1)
 		this.svgNode = this.nodesEl.selectAll("circle")
 		this.simulation = d3.forceSimulation();
+		/*
 		this.simulation.on("tick", () => {
 			let nodes = _.values(this.nodes)
 			for(let i=0, l=nodes.length; i<l; ++i){
 				nodes[i].updateStyle();
 			}
 		});
+		*/
 		this.updateGraph(this.data || []);
 		/*this.tipLine = this.svg.append('line')
             .attr('class','tipline')
@@ -807,6 +815,7 @@ export class DAGViz extends BaseElement {
 				d.id = d.blockHash || d.name;
 			if(!d.parent && d.acceptingBlockHash)
 				d.parent = d.acceptingBlockHash;
+			d.size = d.mass/10;
 
 			map[d.id] = 1;
 			this.createNode(d)
@@ -826,7 +835,7 @@ export class DAGViz extends BaseElement {
 					if(link)
 						links.push(link)
 				});
-				console.log("links", links)
+				//console.log("links", links)
 				return links;
 			},
 			nodes:()=>{
@@ -837,7 +846,7 @@ export class DAGViz extends BaseElement {
 		return hierarchyRoot;
 	}
 	addNodeData(nodeData){
-		data = (this._data || []).concat([nodeData])
+		let data = (this._data || []).concat([nodeData])
 		this.updateGraph(data);
 	}
 	updateGraph(data){
@@ -845,6 +854,12 @@ export class DAGViz extends BaseElement {
 			this.hierarchyRoot = this.buildRoot(data);
 
 		var nodes = this.hierarchyRoot.nodes();
+		this.hierarchyRoot.links();
+		for(let i=0, l=nodes.length; i<l; ++i){
+			nodes[i].y = i*12;
+			nodes[i].updateStyle();
+		}
+		return
 		this.simulation
 			.stop()
 		/*this.simulation = d3.forceSimulation(nodes);
@@ -860,9 +875,7 @@ export class DAGViz extends BaseElement {
 				return 5;//d.radius
 			}))
 			.force("charge", d3.forceManyBody().strength(-50))
-			.force("x", (d, a)=>{
-				return 5
-			})
+			.force("x", d3.forceX())
 			.force("y", d3.forceY())
 
 			// .force('charge', d3.forceManyBody().strength(5))
