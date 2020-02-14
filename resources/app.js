@@ -19,26 +19,30 @@ class App {
 	}
 	fetchData(){
 
-		/*
-		$.ajax({
-			url:'http://finland.aspectron.com:8082/blocks?limit=10',
-			type:'json'
-		}, (res)=>{
-			console.log("res", res)
-		})
-		*/
-
 		
+		$.ajax({
+			url:'http://kaspanet.aspectron.com:8085/blocks?limit=10',
+			// url:'http://finland.aspectron.com:8082/blocks?limit=10',
+			//type:'json'
+			//method:'GET'
+		}, (res)=>{
+			console.log("res", res);
+
+
+			setTimeout(()=>{
+				this.fetchData();
+			}, 5000)
+	
+		});
+
+/*		
 		this.index++;
 		if(this.items.length-1 < this.index)
 			this.index = 0;
 		let item = this.items[this.index];
 		if(item)
 			this.graph.addNodeData(item)
-
-		setTimeout(()=>{
-			this.fetchData();
-		}, 5000)
+*/
 	}
 	afterInit(){
 		document.body.classList.remove("initilizing");
@@ -73,5 +77,14 @@ class App {
 	}
 	centerGraphBy(nodeId){
 		this.graph.centerBy(nodeId)
+	}
+
+	// ---
+
+	onDagSelectedTip(block) {
+		block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
+		this.graph.addNodeData(block);
+
+
 	}
 }

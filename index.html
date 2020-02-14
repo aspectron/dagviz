@@ -10,7 +10,8 @@
 	<script src="/resources/underscore-min.js"></script>
 	<script src="/resources/blockdag.sample.js"></script>
 	<!--script src="https://d3js.org/d3.v5.min.js"></script-->
-	<script src="/resources/mqttws31.js"></script>
+	<!--script src="/resources/mqttws31.js"></script-->
+	<script src="/resources/mqtt.min.js"></script>
 	<style type="text/css">
 		#dagViz{height:100vh;}
 	</style>
@@ -22,61 +23,91 @@
 		$(document).ready(()=>{
 			window.app = new App();
 
+			
+			var client = mqtt.connect('ws://finland.aspectron.com:7351'); // you add a ws:// url here
+  client.subscribe("dag/selected-tip");
+  
+  
 
-		var mqtt;
-		var reconnectTimeout = 2000;
-		var host="finland.aspectron.com"; //change this
-		//var host="iot.eclipse.org"
-		//var port=80
-		var port=7351;
+['connect','disconnect','close','reconnect','error','end','packetreceive'].forEach((op) => {
+	client.on(op, (data) => {
+		console.log(`${op}:`,data);
+	})
+});
 
-		function onFailure(message) {
-			console.log("Connection Attempt to Host "+host+"Failed");
-			setTimeout(MQTTconnect, reconnectTimeout);
+ 
+client.on("message", function (topic, payload) {
+    console.log([topic, payload].join(": "))
+//    client.end()
+
+	if(topic == 'dag/selected-tip') {
+		try {
+			app.onDagSelectedTip(JSON.parse(payload));
+		} catch(ex) {
+			console.log('error parsing dag/selected-tip:', ex);
+			console.log('payload:', payload);
 		}
-		function onMessageArrived(msg){
-			out_msg="Message received "+msg.payloadString+"<br>";
-			out_msg=out_msg+"Message received Topic "+msg.destinationName;
-			//console.log(out_msg);
-			let data = null;
-			try{
-				data = JSON.parse(msg.payloadString)
-			}catch(e){
+	}
+});
+ 
+return;
+/*
+			var mqtt;
+			var reconnectTimeout = 2000;
+			var host="finland.aspectron.com"; //change this
+			//var host="iot.eclipse.org"
+			//var port=80
+			var port=7351;
 
+			function onFailure(message) {
+				console.log("Connection Attempt to Host "+host+"Failed");
+				setTimeout(MQTTconnect, reconnectTimeout);
+			}
+			function onMessageArrived(msg){
+				out_msg="Message received "+msg.payloadString+"<br>";
+				out_msg=out_msg+"Message received Topic "+msg.destinationName;
+				//console.log(out_msg);
+				let data = null;
+				try{
+					data = JSON.parse(msg.payloadString)
+				}catch(e){
+
+				}
+
+				//if(data)
+				//	app.graph.addNodeData(data)
 			}
 
-			//if(data)
-			//	app.graph.addNodeData(data)
-		}
+			function onConnect() {
+				// Once a connection has been made, make a subscription and send a message.
 
-		function onConnect() {
-			// Once a connection has been made, make a subscription and send a message.
+				console.log("Connected to MQTT - subscribing");
+				mqtt.subscribe("dag/selected-tip");
+				// message = new Paho.MQTT.Message("Hello World");
+				// message.destinationName = "sensor1";
+				// mqtt.send(message);
+			}
+			function MQTTconnect() {
+				console.log("connecting to "+ host +" "+ port);
+				mqtt = new Paho.MQTT.Client(host,port,"mosquitto");
+				//document.write("connecting to "+ host);
+				var options = {
+					// useSSL : true,
+					timeout: 3,
+					onSuccess: onConnect,
+					onFailure: onFailure,
+				};
+				mqtt.onMessageArrived = onMessageArrived
 
-			console.log("Connected ");
-			mqtt.subscribe("dag/selected-tip");
-			// message = new Paho.MQTT.Message("Hello World");
-			// message.destinationName = "sensor1";
-			// mqtt.send(message);
-		}
-		function MQTTconnect() {
-			console.log("connecting to "+ host +" "+ port);
-			mqtt = new Paho.MQTT.Client(host,port,"mosquitto");
-			//document.write("connecting to "+ host);
-			var options = {
-				// useSSL : true,
-				timeout: 3,
-				onSuccess: onConnect,
-				onFailure: onFailure,
-			};
-			mqtt.onMessageArrived = onMessageArrived
+				mqtt.connect(options); //connect
+			}
 
-			mqtt.connect(options); //connect
-		}
+			MQTTconnect();
 
-		MQTTconnect();
-
+		*/
 
 		})
+
 	</script>
 </body>
 </html>
