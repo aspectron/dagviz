@@ -19,6 +19,20 @@ class BaseElement extends LitElement {
 		});
 		this.dispatchEvent(event);
 	}
+	debounce(key, fn, time){
+		this.__debounce = this.__debounce || {};
+		if(this.__debounce[key])
+			this.__debounce[key].cancel();
+
+		this.__debounce[key] = {
+			id:setTimeout(fn, time),
+			cancel:function(){
+				if(this.id)
+					clearTimeout(this.id)
+				this.id = null;
+			}
+		}
+	}
 	/*
 	createRenderRoot() {
 		return this;
