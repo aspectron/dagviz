@@ -563,7 +563,7 @@ export class GraphNode{
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
 //		if(!this.initPosDone) {
 			 let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
-//			 this.x = x * 0.1 + this.x * 0.9;
+//			 this.x = x * 0.9 + this.x * 0.1;
 			 this.x = x;
 
 //			 this.y = this.y * 0.5;
