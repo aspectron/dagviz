@@ -19,16 +19,18 @@ export class Block extends GraphNode {
 	constructor(holder,data) {
 
 		data.id = data.blockHash;
+		data.name = data.id.replace(/^\s*0+/,'').substring(0,6);
 		data.parent = data.acceptingBlockHash;
 		data.size = data.mass/10;
 		data.xMargin = 500 + ((Date.now()/1000 - data.timestamp))*50;
+		data.timestmp = data.timestamp / 1000;
 
 		super(holder,data);
 
 
-		this.x = 0;
+		this.x = Math.random();//0;
 
-		this.y = 0;
+		this.y = Math.random();//0;
 		this.el
 			.transition('cc')
 			.duration(1000)
@@ -40,7 +42,10 @@ export class Block extends GraphNode {
 				};
 			});
 
-		this.buildLink();
+		//dpc(1000,()=>{
+
+			this.buildLink();
+		//})
 		this.initPosition()
 	}
 
@@ -86,6 +91,7 @@ export class App {
 			o.timestamp = Date.now()/1000 + i;
 			return o;
 		})
+		this.items = this.items.slice(0,25);
 		this.fetchData();
 	}
 	/*
@@ -122,14 +128,12 @@ export class App {
 	}
 	*/
 
-	fetchData(){
+	createBlock(data){
 
-		let item = this.items.shift();
-		let block = new Block(this.graph, item);
-		//block.register();
+		//let item = this.items.shift();
+		let block = new Block(this.graph, data);
 
 		this.graph.addNode(block);
-
 		this.blocks.push(block);
 
 		while(this.blocks.length > 50) {
@@ -137,10 +141,74 @@ export class App {
 			discarded.purge();
 		}
 
-		if(this.items.length)
+		// if(this.items.length)
+		// 	setTimeout(()=>{
+		// 		this.fetchData();
+		// 	}, 1000)
+
+		/*
+		$.ajax({
+			url:'http://kaspanet.aspectron.com:8085/blocks?limit=10',
+			// url:'http://finland.aspectron.com:8082/blocks?limit=10',
+			//type:'json'
+			//method:'GET'
+		}, (res)=>{
+			console.log("res", res);
+
+
 			setTimeout(()=>{
 				this.fetchData();
-			}, 1000)
+			}, 5000)
+	
+		});
+		*/
+	}
+
+
+	onDagSelectedTip(data) {
+		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
+
+		let block = new Block(this.graph, data);
+
+		this.graph.addNode(block);
+		this.blocks.push(block);
+
+		while(this.blocks.length > 50) {
+			let discarded = this.blocks.shift();
+			discarded.purge();
+		}
+
+		// if(this.items.length)
+		// 	setTimeout(()=>{
+		// 		this.fetchData();
+		// 	}, 1000)
+
+
+		//this.graph.createNode(block);
+	}
+
+	fetchData(){
+
+		let item = this.items.shift();
+		if(item) {
+
+			let block = new Block(this.graph, item);
+			//block.register();
+
+			this.graph.addNode(block);
+			this.blocks.push(block);
+
+			while(this.blocks.length > 50) {
+				let discarded = this.blocks.shift();
+				discarded.purge();
+			}
+		}
+
+		this.graph.updateSimulation();
+
+		setTimeout(()=>{
+			this.fetchData();
+		}, 1000)
 
 		/*
 		$.ajax({
@@ -194,10 +262,4 @@ export class App {
 		this.graph.centerBy(nodeId)
 	}
 
-	onDagSelectedTip(block) {
-		block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
-		this.graph.addNodeData(block);
-
-		//this.graph.createNode(block);
-	}
 }

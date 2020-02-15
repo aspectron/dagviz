@@ -516,8 +516,10 @@ export class GraphNode{
 				.setStaticPosition(x, y)
 	}
 	updateStyle(){
-		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp)
+		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
+			console.log("aborting updateStyle (lack of data) for:",this);
 			return
+		}
 
 		//console.log("this.x", this.x, this.y)
 
@@ -559,7 +561,14 @@ export class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		this.x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
+//		if(!this.initPosDone) {
+			 let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
+//			 this.x = x * 0.1 + this.x * 0.9;
+			 this.x = x;
+
+//			 this.y = this.y * 0.5;
+//			this.initPosDone = true;
+//		}
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -691,6 +700,8 @@ export class DAGViz extends BaseElement {
 		// Must call superconstructor first.
 		super();
 
+		this.tipTS = Date.now();
+
 		//
 	}
 	render() {
@@ -765,21 +776,23 @@ export class DAGViz extends BaseElement {
 		//let firstNode = new GraphNode(this, {x:1000, y:0 });
 		this.simulationNodes = []
 		this.simulation.nodes(this.simulationNodes)
-		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(30).strength(1)
 		this.simulationNodes = this.simulation.nodes();
+
+
+		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(10).strength(1)
 		this.simulationLinks = this.simulationLinkForce.links();
 
 		//console.log("this.simulationNodes", this.simulationNodes)
 
 		this.simulation
 			.force("link", this.simulationLinkForce)
-			/*.force('collision', d3.forceCollide().radius(function(d) {
+			.force('collision', d3.forceCollide().radius(function(d) {
 				//console.log("d.size", d)
-			 	return d.data.size * 2//d.radius
-			}))*/
-			//.force("charge", d3.forceManyBody().strength(1))
-			//.force("x", d3.forceX())
-			//.force("y", d3.forceY())
+			 	return d.data.size * 2;// * 2//d.radius
+			}))
+			.force("charge", d3.forceManyBody().strength(150))
+			.force("x", d3.forceX())
+			.force("y", d3.forceY())
 
 
 		this.simulation.on("tick", () => {
@@ -862,17 +875,26 @@ export class DAGViz extends BaseElement {
 	addNode(node){
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
-		this.simulation.nodes(this.simulationNodes)
-		let link = node.buildLink();
-		//console.log("node", node.data)
-		if(link){
-			this.simulationLinks.push(link);
-			this.simulation.force('link').links(this.simulationLinks)
-			//this.simulationLinkForce.links(this.simulationLinks);
-			//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
-		}
+//		this.simulation.nodes(this.simulationNodes)
 
-		this.simulation.alpha(1);
+//		dpc(3000, () => {
+			let link = node.buildLink();
+			//console.log("node", node.data)
+			if(link){
+				this.simulationLinks.push(link);
+				this.simulation.force('link').links(this.simulationLinks)
+				//this.simulationLinkForce.links(this.simulationLinks);
+				//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
+			}
+//		});
+
+//		this.simulation.alpha(0.01);
+	}
+
+	updateSimulation() {
+		this.simulation.nodes(this.simulationNodes)
+		this.simulation.alpha(0.005);
+
 	}
 
 	UID(){
