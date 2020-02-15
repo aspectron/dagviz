@@ -26,7 +26,7 @@ export class Block extends GraphNode {
 		super(holder,data);
 
 
-		this.x = 1000; // ;
+		this.x = 0;
 
 		this.y = 0;
 		this.el
