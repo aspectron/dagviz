@@ -83,7 +83,7 @@ export class App {
 		this.index = 0;
 		this.items = BLOCKDAGCHAIN.map((o, i)=>{
 			o.name = `N${++i}`;
-			o.timestamp = Date.now()/1000 + i
+			o.timestamp = Date.now()/1000 + i;
 			return o;
 		})
 		this.fetchData();
@@ -140,7 +140,7 @@ export class App {
 		if(this.items.length)
 			setTimeout(()=>{
 				this.fetchData();
-			}, 2000)
+			}, 1000)
 
 		/*
 		$.ajax({

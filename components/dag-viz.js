@@ -773,13 +773,13 @@ export class DAGViz extends BaseElement {
 
 		this.simulation
 			.force("link", this.simulationLinkForce)
-			.force('collision', d3.forceCollide().radius(function(d) {
+			/*.force('collision', d3.forceCollide().radius(function(d) {
 				//console.log("d.size", d)
 			 	return d.data.size * 2//d.radius
-			}))
-			.force("charge", d3.forceManyBody().strength(50))
-			.force("x", d3.forceX())
-			.force("y", d3.forceY())
+			}))*/
+			//.force("charge", d3.forceManyBody().strength(1))
+			//.force("x", d3.forceX())
+			//.force("y", d3.forceY())
 
 
 		this.simulation.on("tick", () => {
