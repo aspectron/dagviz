@@ -212,8 +212,8 @@ D3x.shape.circle = function(el, o) {
 
     node.setPosition = (x, y)=>{
     	node
-    		.transition('o')
-			.duration(2000)
+    		//.transition('o')
+			//.duration(2000)
     		.attr("cx", x)
     		.attr("cy", y)
     	return node;
@@ -343,8 +343,8 @@ export class GraphNodeLink{
 			return
 		}
 		this.el
-			.transition('o')
-			.duration(2000)
+			//.transition('o')
+			//.duration(2000)
 			.attr("x1", this.source.x)
 			.attr("y1", this.source.y)
 			.attr("x2", this.target.x)
@@ -475,8 +475,6 @@ export class GraphNode{
 		}else if(holder.nodes[data.parent]){
 			this.createLink(data.parent)
 		}
-
-		console.log("data.parent", data.parent, this.linkNode)
 		return this.linkNode;
 	}
 	createLink(parent){
@@ -753,16 +751,16 @@ export class DAGViz extends BaseElement {
 	initChart(){
 		this.nodes = {};
 		this.svg = d3.select(this.graphHolder).append("svg");
-		var zoom = d3.zoom()
+		/*var zoom = d3.zoom()
     		.on('zoom', ()=>{
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
     			this.linksEl.attr("stroke-width", w)
     		})
-    	this.svg.call(zoom);
+    	this.svg.call(zoom);*/
     	this.paintEl = this.svg.append("g")
-    	this.paintEl.transform = d3.zoomIdentity.translate(0, 0).scale(1);
+    	this.paintEl.transform = {k:1};//d3.zoomIdentity.translate(0, 0).scale(1);
 
 		this.updateSVGSize();
 		this.linksEl = this.paintEl.append("g")
@@ -775,18 +773,25 @@ export class DAGViz extends BaseElement {
 			.attr("fill", "#fff")
 			.attr("stroke", "#000")
 			.attr("stroke-width", 1)
+			console.log("this.nodesEl", this.nodesEl)
 		this.svgNode = this.nodesEl.selectAll("circle")
-		this.simulation = d3.forceSimulation();
-		//let firstNode = new GraphNode(this, {x:1000, y:0 });
+		//this.simulation = d3.forceSimulation();
+		let firstNode = new GraphNode(this, {x:1000, y:0 });
 		//this.simulationNodes = []
 		//this.simulation.nodes(this.simulationNodes)
-		this.simulationLinkForce = d3.forceLink().id(d=>d.id).distance(30).strength(1)
+		//this.simulationLinkForce = d3.forceLink().id(d=>d.id).distance(30).strength(1)
+		this.simulation = d3.layout.force()
+		    .size([1000, 400])
+		    .nodes([firstNode]) // initialize with a single node
+		    .linkDistance(30)
+		    .charge(-60)
+
 		this.simulationNodes = this.simulation.nodes();
-		this.simulationLinks = this.simulationLinkForce.links();
+		this.simulationLinks = this.simulation.links();
 
 		//console.log("this.simulationNodes", this.simulationNodes)
 
-		this.simulation
+		/*this.simulation
 			.force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius(function(d) {
 				//console.log("d.size", d)
@@ -794,7 +799,7 @@ export class DAGViz extends BaseElement {
 			}))
 			.force("charge", d3.forceManyBody().strength(50))
 			.force("x", d3.forceX())
-			.force("y", d3.forceY())
+			.force("y", d3.forceY())*/
 
 
 		this.simulation.on("tick", () => {
@@ -876,17 +881,17 @@ export class DAGViz extends BaseElement {
 	addNode(node){
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
-		this.simulation.nodes(this.simulationNodes)
+		//this.simulation.nodes(this.simulationNodes)
 		let link = node.buildLink();
 		if(link){
 			console.log("link", link)
 			this.simulationLinks.push(link);
 			//this.simulation.force('link').links(this.simulationLinks)
 			//this.simulationLinkForce.links(this.simulationLinks);
-			this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
+			//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
 		}
 
-		this.simulation.restart();
+		this.simulation.start();
 	}
 
 	UID(){

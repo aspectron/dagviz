@@ -25,27 +25,17 @@ export class Block extends GraphNode {
 		super(holder,data);
 
 
-		this.x = 0; // ((Date.now()/1000 - this.data.timestamp))*50;
+		this.x = 200; // ((Date.now()/1000 - this.data.timestamp))*50;
 
 		this.y = 0;
 
-		// data.x = data.y = 0;
-		// this.x = this.y = 0;
-
-
-		let parent = holder.nodes[data.parent];
-		let child = this;
-		if(parent) {
-			this.link = new GraphNodeLink(holder,{
-				parent : parent.id, child : child.id
-			})
-		}
-
+		this.buildLink();
+		this.initPosition()
 	}
 
 	register() {
-		this.updateStyle();
-		this.attachNode();
+		//this.updateStyle();
+		//this.attachNode();
 		this.holder.nodes[this.data.id] = this;
 	}
 
@@ -86,27 +76,11 @@ export class App {
 			return o;
 		})
 		this.fetchData();
-
-// 		setTimeout(()=>{
-// 			let i = 10;
-// 			while(i--) {
-// 				let item = this.items.shift();
-// 				this.graph.addNodeData(item);
-// //				item.x = 0; item.y = 0;
-			
-// //				this.graph.createNode(item).attachNode();//.updateStyle();
-// 			}
-// 		}, 1000);
-
-		//this.updatePositions();
-
-//		this.updateSimulation();
-
 	}
+	/*
 	updatePositions() {
 		if(!this.pending || !this.pending.length) {
 			this.pending = Object.values(this.graph.nodes);
-			// console.log(this.graph.nodes);
 		}
 		
 		let node = this.pending.shift();
@@ -126,7 +100,7 @@ export class App {
 			})
 		}
 	}
-
+	
 
 	updateSimulation() {
 		this.graph.updateSimulation();
@@ -135,18 +109,15 @@ export class App {
 			this.updateSimulation();
 		})
 	}
+	*/
 
 	fetchData(){
 
 		let item = this.items.shift();
-		//this.graph.addNodeData(item);
-
 		let block = new Block(this.graph, item);
 		block.register();
-		// block.updateStyle();
-		// block.attachNode();
 
-		this.graph.updateSimulation(block);
+		this.graph.addNode(block);
 
 		this.blocks.push(block);
 
@@ -155,19 +126,10 @@ export class App {
 			discarded.purge();
 		}
 
-//		this.centerGraphBy(block.data.id);
-
-/*
-		let node = this.graph.createNode(item);
-		node.updateStyle();
-		node.attachNode();//.updateStyle();
-*/
 		if(this.items.length)
 			setTimeout(()=>{
 				this.fetchData();
-			}, 500)
-
-
+			}, 10000)
 
 		/*
 		$.ajax({
@@ -185,15 +147,6 @@ export class App {
 	
 		});
 		*/
-
-/*		
-		this.index++;
-		if(this.items.length-1 < this.index)
-			this.index = 0;
-		let item = this.items[this.index];
-		if(item)
-			this.graph.addNodeData(item)
-*/
 	}
 	afterInit(){
 		document.body.classList.remove("initilizing");
@@ -230,14 +183,10 @@ export class App {
 		this.graph.centerBy(nodeId)
 	}
 
-	// ---
-
 	onDagSelectedTip(block) {
 		block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
 		this.graph.addNodeData(block);
 
-//		this.graph.createNode(block);
-
-
+		//this.graph.createNode(block);
 	}
 }
