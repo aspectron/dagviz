@@ -516,7 +516,7 @@ class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		this.x = -(Date.now()/1000 - this.data.timestamp);
+		this.x = -((Date.now()/1000 - this.data.timestamp))*50;
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -856,7 +856,8 @@ export class DAGViz extends BaseElement {
 		var nodes = this.hierarchyRoot.nodes();
 		this.hierarchyRoot.links();
 		for(let i=0, l=nodes.length; i<l; ++i){
-			nodes[i].y = i*12;
+			nodes[i].y = 0;
+			nodes[i].x = i*1000;
 			nodes[i].updateStyle();
 		}
 		return

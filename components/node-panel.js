@@ -199,6 +199,8 @@ class NodePanel extends BaseElement{
 			<div class="content" @click="${this.handleClick}">
 				<div class="title-box">
 					<div class="title">NODE ${this.node}<div>
+					<div class="title">BLUE ${this.blueScore}<div>
+					<div class="title">MASS ${this.mass}<div>
 				</div>
 			</div>`;
 
