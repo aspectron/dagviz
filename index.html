@@ -6,12 +6,12 @@
 	<script src="/resources/jquery-3.4.1.js"></script>
 	<script src="/resources/d3.v5.min.js"></script>
 	<script src="/resources/fabric-rpc.js"></script>
-	<script src="/resources/app.js"></script>
 	<script src="/resources/underscore-min.js"></script>
 	<script src="/resources/blockdag.sample.js"></script>
 	<!--script src="https://d3js.org/d3.v5.min.js"></script-->
 	<!--script src="/resources/mqttws31.js"></script-->
 	<script src="/resources/mqtt.min.js"></script>
+	<script type="module" src="./components/app.js"></script>
 	<style type="text/css">
 		#dagViz{height:100vh;}
 	</style>
@@ -19,10 +19,16 @@
 <body>
 	<dag-viz id="dagViz"></dag-viz>
 
-	<script>
-		$(document).ready(()=>{
+	<script type="module">
+
+import { App } from './components/app.js';
+
+$(document).ready(()=>{
 			window.app = new App();
 
+
+			//new GraphNode();
+return;
 			
 			var client = mqtt.connect('ws://finland.aspectron.com:7351'); // you add a ws:// url here
   client.subscribe("dag/selected-tip");

@@ -1,13 +1,65 @@
-import { GraphNode } from '../components/dag-viz';
+import { GraphNode, GraphNodeLink } from './dag-viz';
+
+
+
+const dpc = (t,fn)=>{
+	if(typeof(t) == 'function'){
+		setTimeout(t, fn);
+	}else{
+		setTimeout(fn,t);
+	}
+}
+
+
+
+const tsInit = Date.now();
+
 
 export class Block extends GraphNode {
-	constructor(holderEl,data) {
+	constructor(holder,data) {
 
 		data.id = data.blockHash;
 		data.parent = data.acceptingBlockHash;
 		data.size = data.mass/10;
 
-		super(holderEl,data);
+		super(holder,data);
+
+
+		this.x = 0; // ((Date.now()/1000 - this.data.timestamp))*50;
+
+		this.y = 0;
+
+		// data.x = data.y = 0;
+		// this.x = this.y = 0;
+
+
+		let parent = holder.nodes[data.parent];
+		let child = this;
+		if(parent) {
+			this.link = new GraphNodeLink(holder,{
+				parent : parent.id, child : child.id
+			})
+		}
+
+	}
+
+	register() {
+		this.updateStyle();
+		this.attachNode();
+		this.holder.nodes[this.data.id] = this;
+	}
+
+	purge() {
+
+		if(this.link) {
+			this.link.remove();
+			delete this.link;
+		}
+
+
+		delete this.holderEl.nodes[this.data.id];
+		// TODO - css animate opacity
+		this.remove();
 	}
 
 }
@@ -41,28 +93,69 @@ export class App {
 // 				let item = this.items.shift();
 // 				this.graph.addNodeData(item);
 // //				item.x = 0; item.y = 0;
-				
+			
 // //				this.graph.createNode(item).attachNode();//.updateStyle();
 // 			}
-
 // 		}, 1000);
+
+		//this.updatePositions();
+
+//		this.updateSimulation();
+
 	}
+	updatePositions() {
+		if(!this.pending || !this.pending.length) {
+			this.pending = Object.values(this.graph.nodes);
+			// console.log(this.graph.nodes);
+		}
+		
+		let node = this.pending.shift();
+		if(node) {
+
+			// node.x = -((Date.now()/1000 - node.data.timestamp))*100;
+			node.updateStyle();			
+
+			dpc(() => {
+				this.updatePositions();
+			})
+
+		}
+		else {
+			dpc(1000, () => {
+				this.updatePositions();
+			})
+		}
+	}
+
+
+	updateSimulation() {
+		this.graph.updateSimulation();
+
+		dpc(() => {
+			this.updateSimulation();
+		})
+	}
+
 	fetchData(){
 
 		let item = this.items.shift();
 		//this.graph.addNodeData(item);
 
 		let block = new Block(this.graph, item);
-		block.updateStyle();
-		block.attach();
+		block.register();
+		// block.updateStyle();
+		// block.attachNode();
+
+		this.graph.updateSimulation(block);
 
 		this.blocks.push(block);
 
-		while(this.blocks.length > 5) {
+		while(this.blocks.length > 50) {
 			let discarded = this.blocks.shift();
 			discarded.remove();
 		}
 
+//		this.centerGraphBy(block.data.id);
 
 /*
 		let node = this.graph.createNode(item);

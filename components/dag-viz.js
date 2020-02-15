@@ -317,7 +317,7 @@ D3x.createShape = function(el, type, data) {
 }
 
 
-class GraphNodeLink{
+export class GraphNodeLink{
 	constructor(holder, data){
 		this.holder = holder;
 		this.data = data;
@@ -344,7 +344,7 @@ class GraphNodeLink{
 	}
 }
 
-class GraphNode{
+export class GraphNode{
 	constructor(holder, data){
 		this.holder = holder;
 		this.data 	= data;
@@ -441,7 +441,9 @@ class GraphNode{
 				.text(this.data.name);
 	    }
 
-	    this.bindElEvents();
+		this.bindElEvents();
+		
+		return this;
 
 	}
 	buildLink(){
@@ -516,7 +518,7 @@ class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		this.x = -((Date.now()/1000 - this.data.timestamp))*50;
+		this.x = -((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -736,14 +738,19 @@ export class DAGViz extends BaseElement {
 			.attr("stroke-width", 1)
 		this.svgNode = this.nodesEl.selectAll("circle")
 		this.simulation = d3.forceSimulation();
-		/*
-		this.simulation.on("tick", () => {
-			let nodes = _.values(this.nodes)
-			for(let i=0, l=nodes.length; i<l; ++i){
-				nodes[i].updateStyle();
-			}
-		});
-		*/
+
+
+
+
+		
+		// this.simulation.on("tick", () => {
+		// 	console.log('tick');
+		// 	let nodes = _.values(this.nodes)
+		// 	for(let i=0, l=nodes.length; i<l; ++i){
+		// 		nodes[i].updateStyle();
+		// 	}
+		// });
+		
 		this.updateGraph(this.data || []);
 		/*this.tipLine = this.svg.append('line')
             .attr('class','tipline')
@@ -808,24 +815,24 @@ export class DAGViz extends BaseElement {
 		return this.nodes[data.id];
 	}
 	buildRoot(data){
-		this._data = data;
-		let map = {};
-		_.each(data, d=>{
-			if(!d.id)
-				d.id = d.blockHash || d.name;
-			if(!d.parent && d.acceptingBlockHash)
-				d.parent = d.acceptingBlockHash;
-			d.size = d.mass/10;
+		// this._data = data;
+		// let map = {};
+		// _.each(data, d=>{
+		// 	if(!d.id)
+		// 		d.id = d.blockHash || d.name;
+		// 	if(!d.parent && d.acceptingBlockHash)
+		// 		d.parent = d.acceptingBlockHash;
+		// 	d.size = d.mass/10;
 
-			map[d.id] = 1;
-			this.createNode(d)
-		})
-		_.each(this.nodes, n=>{
-			if(!map[n.id]){
-				n.remove();
-				delete this.nodes[n.id]
-			}
-		});
+		// 	map[d.id] = 1;
+		// 	this.createNode(d)
+		// })
+		// _.each(this.nodes, n=>{
+		// 	if(!map[n.id]){
+		// 		n.remove();
+		// 		delete this.nodes[n.id]
+		// 	}
+		// });
 
 		let hierarchyRoot = {
 			links:()=>{
@@ -846,6 +853,10 @@ export class DAGViz extends BaseElement {
 		return hierarchyRoot;
 	}
 	addNodeData(nodeData){
+
+		// let node = new GraphNode(nodeData);
+
+
 		let data = (this._data || []).concat([nodeData])
 		this.updateGraph(data);
 	}
@@ -856,11 +867,11 @@ export class DAGViz extends BaseElement {
 		var nodes = this.hierarchyRoot.nodes();
 		this.hierarchyRoot.links();
 		for(let i=0, l=nodes.length; i<l; ++i){
-			nodes[i].y = 0;
-			nodes[i].x = i*1000;
+			// nodes[i].x = 1000;
+			// nodes[i].y = 0;//i*1000;
 			nodes[i].updateStyle();
 		}
-		return
+		return;
 		this.simulation
 			.stop()
 		/*this.simulation = d3.forceSimulation(nodes);
@@ -885,6 +896,54 @@ export class DAGViz extends BaseElement {
 			.alpha(1)
 			.restart();
 	}
+
+	updateSimulation() {
+
+		this.hierarchyRoot = this.buildRoot();
+
+
+		var nodes = this.hierarchyRoot.nodes();
+		this.hierarchyRoot.links();
+		for(let i=0, l=nodes.length; i<l; ++i){
+			// nodes[i].x = 1000;
+			// nodes[i].y = 0;//i*1000;
+			nodes[i].updateStyle();
+		}
+
+
+
+
+		//let nodes = Object.values(this.nodes);
+
+		this.simulation
+//			.stop()
+		/*this.simulation = d3.forceSimulation(nodes);
+		this.simulation.on("tick", () => {
+			for(let i=0, l=nodes.length; i<l; ++i){
+				nodes[i].updateStyle();
+			}
+		});
+		this.simulation*/
+			.nodes(nodes)
+			.force("link", d3.forceLink(this.hierarchyRoot.links()).id(d=>d.id).distance(0).strength(1))
+			 .force('collision', d3.forceCollide().radius(function(d) {
+			 	return 20;// d.size//d.radius
+			 }))
+			.force("charge", d3.forceManyBody().strength(50))
+			 .force("x", d3.forceX())
+			 .force("y", d3.forceY())
+
+			// .force('charge', d3.forceManyBody().strength(5))
+			//.force('center', d3.forceCenter(0,0))
+
+			.alpha(1)
+//			.restart();
+
+
+	}
+
+
+
 	UID(){
 		return Math.random()*1e10;
 	}
