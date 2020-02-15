@@ -61,17 +61,18 @@ export class App {
 		this.addSmallScreenCls(document.body);
 		
 		let ts = Date.now();
-		let first = BLOCKDAGCHAIN[0];
+		let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
+		let first = _BLOCKDAGCHAIN[0];
 		let delta = ts/1000 - first.timestamp;
 
 		this.index = 0;
-		this.items = BLOCKDAGCHAIN.map((o, i)=>{
+		this.items = _BLOCKDAGCHAIN.map((o, i)=>{
 			o.name = `N${++i}`;
 			o.timestamp += delta; // Date.now()/1000 + i;
 			return o;
 		})
 		//this.items = this.items.slice(0,25);
-		this.fetchData();
+		//this.fetchData();
 	}
 
 	createBlock(data){

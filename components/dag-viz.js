@@ -878,11 +878,25 @@ export class DAGViz extends BaseElement {
 			let discarded = this.simulationNodes.shift();
 			discarded.purge();
 		}
-
-		let link = node.buildLink();
-		//console.log("node", node.data)
+		let link = node.buildLink(), linksUpdated=false;
 		if(link){
 			this.simulationLinks.push(link);
+			linksUpdated = true;
+		}
+
+		this.simulationNodes.forEach(n=>{
+			if(n.data.parent == node.data.id){
+				link = n.buildLink();
+				if(link){
+					this.simulationLinks.push(link);
+					linksUpdated = true;
+				}
+			}
+		})
+
+		
+		//console.log("node", node.data)
+		if(linksUpdated){
 			this.simulation.force('link').links(this.simulationLinks)
 			//this.simulationLinkForce.links(this.simulationLinks);
 			//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));

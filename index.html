@@ -25,6 +25,7 @@
 		import { App } from './components/app.js';
 		$(document).ready(()=>{
 			window.app = new App();
+			//return;
 			
 			var client = mqtt.connect('ws://finland.aspectron.com:7351');
 		  	client.subscribe("dag/selected-tip");
