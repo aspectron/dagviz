@@ -337,6 +337,8 @@ export class GraphNodeLink{
 			return
 		}
 		this.el
+			.transition('o')
+			.duration(2000)
 			.attr("x1", this.source.x)
 			.attr("y1", this.source.y)
 			.attr("x2", this.target.x)
@@ -742,14 +744,15 @@ export class DAGViz extends BaseElement {
 
 
 
-		
-		// this.simulation.on("tick", () => {
-		// 	console.log('tick');
-		// 	let nodes = _.values(this.nodes)
-		// 	for(let i=0, l=nodes.length; i<l; ++i){
-		// 		nodes[i].updateStyle();
-		// 	}
-		// });
+		/*
+		this.simulation.on("tick", () => {
+			//console.log('tick');
+			let nodes = _.values(this.nodes)
+			for(let i=0, l=nodes.length; i<l; ++i){
+				nodes[i].updateStyle();
+			}
+		});
+		*/
 		
 		this.updateGraph(this.data || []);
 		/*this.tipLine = this.svg.append('line')
@@ -855,8 +858,6 @@ export class DAGViz extends BaseElement {
 	addNodeData(nodeData){
 
 		// let node = new GraphNode(nodeData);
-
-
 		let data = (this._data || []).concat([nodeData])
 		this.updateGraph(data);
 	}
@@ -901,8 +902,9 @@ export class DAGViz extends BaseElement {
 
 		this.hierarchyRoot = this.buildRoot();
 
-
 		var nodes = this.hierarchyRoot.nodes();
+		
+		
 		this.hierarchyRoot.links();
 		for(let i=0, l=nodes.length; i<l; ++i){
 			// nodes[i].x = 1000;
@@ -910,13 +912,10 @@ export class DAGViz extends BaseElement {
 			nodes[i].updateStyle();
 		}
 
-
-
-
 		//let nodes = Object.values(this.nodes);
 
 		this.simulation
-//			.stop()
+		//.stop()
 		/*this.simulation = d3.forceSimulation(nodes);
 		this.simulation.on("tick", () => {
 			for(let i=0, l=nodes.length; i<l; ++i){
@@ -926,20 +925,18 @@ export class DAGViz extends BaseElement {
 		this.simulation*/
 			.nodes(nodes)
 			.force("link", d3.forceLink(this.hierarchyRoot.links()).id(d=>d.id).distance(0).strength(1))
-			 .force('collision', d3.forceCollide().radius(function(d) {
+			.force('collision', d3.forceCollide().radius(function(d) {
 			 	return 20;// d.size//d.radius
-			 }))
+			}))
 			.force("charge", d3.forceManyBody().strength(50))
-			 .force("x", d3.forceX())
-			 .force("y", d3.forceY())
+			.force("x", d3.forceX())
+			.force("y", d3.forceY())
 
 			// .force('charge', d3.forceManyBody().strength(5))
 			//.force('center', d3.forceCenter(0,0))
 
 			.alpha(1)
-//			.restart();
-
-
+			//.restart();
 	}
 
 
