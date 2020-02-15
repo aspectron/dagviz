@@ -57,7 +57,7 @@ export class Block extends GraphNode {
 		}
 
 
-		delete this.holderEl.nodes[this.data.id];
+		delete this.holder.nodes[this.data.id];
 		// TODO - css animate opacity
 		this.remove();
 	}
@@ -152,7 +152,7 @@ export class App {
 
 		while(this.blocks.length > 50) {
 			let discarded = this.blocks.shift();
-			discarded.remove();
+			discarded.purge();
 		}
 
 //		this.centerGraphBy(block.data.id);
@@ -165,7 +165,7 @@ export class App {
 		if(this.items.length)
 			setTimeout(()=>{
 				this.fetchData();
-			}, 1000)
+			}, 500)
 
 
 
