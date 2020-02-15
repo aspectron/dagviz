@@ -373,7 +373,6 @@ export class GraphNode{
 		holder.nodes[this.id] = this;
 		this.childLinks = {};
 		this.attachNode();
-
 	}
 	setData(data){
 		this.data = data;
@@ -561,14 +560,9 @@ export class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-//		if(!this.initPosDone) {
-			 let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
-//			 this.x = x * 0.9 + this.x * 0.1;
-			 this.x = x;
 
-//			 this.y = this.y * 0.5;
-//			this.initPosDone = true;
-//		}
+		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
+		this.x = x;
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -633,6 +627,11 @@ export class GraphNode{
 		if(this.el.getBoundingClientRect)
 			return this.el.getBoundingClientRect();
 		return this.el.node().getBoundingClientRect();
+	}
+	purge(){
+		delete this.holder.nodes[this.data.id];
+		// TODO - css animate opacity
+		this.remove();
 	}
 }
 
@@ -875,6 +874,11 @@ export class DAGViz extends BaseElement {
 	addNode(node){
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
+		while(this.simulationNodes.length > 50) {
+			let discarded = this.simulationNodes.shift();
+			discarded.purge();
+		}
+
 		let link = node.buildLink();
 		//console.log("node", node.data)
 		if(link){

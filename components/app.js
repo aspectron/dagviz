@@ -28,9 +28,8 @@ export class Block extends GraphNode {
 		super(holder,data);
 
 
-		this.x = Math.random();//0;
-
-		this.y = Math.random();//0;
+		this.x = Math.random();
+		this.y = Math.random();
 		this.el
 			.transition('cc')
 			.duration(1000)
@@ -42,30 +41,8 @@ export class Block extends GraphNode {
 				};
 			});
 
-		//dpc(1000,()=>{
-
-			this.buildLink();
-		//})
+		this.buildLink();
 		this.initPosition()
-	}
-
-	register() {
-		//this.updateStyle();
-		//this.attachNode();
-		//this.holder.nodes[this.data.id] = this;
-	}
-
-	purge() {
-
-		if(this.link) {
-			this.link.remove();
-			delete this.link;
-		}
-
-
-		delete this.holder.nodes[this.data.id];
-		// TODO - css animate opacity
-		this.remove();
 	}
 
 }
@@ -74,8 +51,6 @@ export class Block extends GraphNode {
 
 export class App {
 	constructor() {
-
-		this.blocks = [];
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.init();
 	}
@@ -101,14 +76,7 @@ export class App {
 
 	createBlock(data){
 		let block = new Block(this.graph, data);
-
 		this.graph.addNode(block);
-		this.blocks.push(block);
-
-		while(this.blocks.length > 50) {
-			let discarded = this.blocks.shift();
-			discarded.purge();
-		}
 	}
 
 
