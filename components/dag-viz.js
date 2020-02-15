@@ -559,7 +559,7 @@ export class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		this.x = -((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
+		this.x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{

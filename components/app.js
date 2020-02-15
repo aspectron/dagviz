@@ -21,6 +21,7 @@ export class Block extends GraphNode {
 		data.id = data.blockHash;
 		data.parent = data.acceptingBlockHash;
 		data.size = data.mass/10;
+		data.xMargin = 2000;
 
 		super(holder,data);
 
@@ -28,6 +29,16 @@ export class Block extends GraphNode {
 		this.x = 1000; // ((Date.now()/1000 - this.data.timestamp))*50;
 
 		this.y = 0;
+		this.el
+			.transition('cc')
+			.duration(1000)
+			.tween("attr.fill", function() {
+				var i = d3.interpolateNumber(2000, 0);
+				return function(t) {
+					data.xMargin = i(t)
+					//console.log('ssss', i(t));
+				};
+			});
 
 		this.buildLink();
 		this.initPosition()
