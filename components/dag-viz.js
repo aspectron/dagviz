@@ -205,15 +205,15 @@ D3x.shape.circle = function(el, o) {
         //.attr("stroke-width", 1)
 
     node
-        .transition("c")
+        //.transition("c")
         //.ease('in-out')	// d3x
-        .duration(1000)
+        //.duration(1000)
         .attr("r", o.size)
 
     node.setPosition = (x, y)=>{
     	node
-    		.transition('o')
-			.duration(2000)
+    		//.transition('o')
+			//.duration(2000)
     		.attr("cx", x)
     		.attr("cy", y)
     	return node;
@@ -343,8 +343,8 @@ export class GraphNodeLink{
 			return
 		}
 		this.el
-			.transition('o')
-			.duration(2000)
+			//.transition('o')
+			//.duration(2000)
 			.attr("x1", this.source.x)
 			.attr("y1", this.source.y)
 			.attr("x2", this.target.x)
@@ -370,8 +370,10 @@ export class GraphNode{
 		this.holder = holder;
 		this.data 	= data;
 		this.id 	= data.id || data.name;
+		holder.nodes[this.id] = this;
 		this.childLinks = {};
 		this.attachNode();
+
 	}
 	setData(data){
 		this.data = data;
@@ -475,8 +477,8 @@ export class GraphNode{
 		}else if(holder.nodes[data.parent]){
 			this.createLink(data.parent)
 		}
-
-		console.log("data.parent", data.parent, this.linkNode)
+		//if(data.parent)
+		//	console.log("data.parent", data.parent, this.linkNode)
 		return this.linkNode;
 	}
 	createLink(parent){
@@ -514,7 +516,7 @@ export class GraphNode{
 				.setStaticPosition(x, y)
 	}
 	updateStyle(){
-		if(isNaN(this.x) || isNaN(this.y))
+		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp)
 			return
 
 		//console.log("this.x", this.x, this.y)
@@ -557,7 +559,7 @@ export class GraphNode{
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		//this.x = -((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
+		this.x = -((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -574,8 +576,8 @@ export class GraphNode{
 		height = height/zoom;
 		//console.log("this.textEl", this.textEl)
 		this.textEl
-			.transition('o')
-			.duration(2000)
+			//.transition('o')
+			//.duration(2000)
 			.attr("x", this.x-width/2)
 			.attr("y", (this.y+height/3)-0.5)
         	.attr("opacity", 1)
@@ -629,10 +631,6 @@ export class DAGViz extends BaseElement {
 	static get is(){
 		return 'dag-viz';
 	}
-	/**
-	* Define properties. Properties defined here will be automatically 
-	* observed.
-	*/
 	static get properties() {
 		return {
 			data: { type: Array },
@@ -689,31 +687,18 @@ export class DAGViz extends BaseElement {
 
 		`;
 	}
-
-	/**  
-	* In the element constructor, assign default property values.
-	*/
 	constructor() {
 		// Must call superconstructor first.
 		super();
 
 		//
 	}
-
-	/**
-	* Define a template for the new element by implementing LitElement's
-	* `render` function. `render` must return a lit-html TemplateResult.
-	*/
 	render() {
 		return html`
 		<div id="graph"></div>
 		<div id="nodeInfo"></div>
 		`;
 	}
-
-	/**
-	* Implement firstUpdated to perform one-time work on first update:
-	*/
 	firstUpdated() {
 		this.graphHolder = this.renderRoot.getElementById('graph');
 		this.nodeInfoEl = this.renderRoot.getElementById('nodeInfo')
@@ -778,9 +763,9 @@ export class DAGViz extends BaseElement {
 		this.svgNode = this.nodesEl.selectAll("circle")
 		this.simulation = d3.forceSimulation();
 		//let firstNode = new GraphNode(this, {x:1000, y:0 });
-		//this.simulationNodes = []
-		//this.simulation.nodes(this.simulationNodes)
-		this.simulationLinkForce = d3.forceLink().id(d=>d.id).distance(30).strength(1)
+		this.simulationNodes = []
+		this.simulation.nodes(this.simulationNodes)
+		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(30).strength(1)
 		this.simulationNodes = this.simulation.nodes();
 		this.simulationLinks = this.simulationLinkForce.links();
 
@@ -833,7 +818,6 @@ export class DAGViz extends BaseElement {
 
 		window.addEventListener("resize", this.updateSVGSize.bind(this))
 		this.fire("ready", {})
-
 	}
 	centerBy(nodeId){
 		let node  = this.nodes[nodeId];
@@ -868,9 +852,11 @@ export class DAGViz extends BaseElement {
 			}else{
 				this.nodes[data.id] = new GraphNode(this, data);
 			}
-		}
-		else
+		}else{
+			if(data instanceof GraphNode)
+				data = data.data;
 			this.nodes[data.id].setData(data);
+		}
 		return this.nodes[data.id];
 	}
 	addNode(node){
@@ -878,15 +864,15 @@ export class DAGViz extends BaseElement {
 		this.simulationNodes.push(node);
 		this.simulation.nodes(this.simulationNodes)
 		let link = node.buildLink();
+		//console.log("node", node.data)
 		if(link){
-			console.log("link", link)
 			this.simulationLinks.push(link);
-			//this.simulation.force('link').links(this.simulationLinks)
+			this.simulation.force('link').links(this.simulationLinks)
 			//this.simulationLinkForce.links(this.simulationLinks);
-			this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
+			//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
 		}
 
-		this.simulation.restart();
+		this.simulation.alpha(1);
 	}
 
 	UID(){

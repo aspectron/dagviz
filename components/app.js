@@ -25,7 +25,7 @@ export class Block extends GraphNode {
 		super(holder,data);
 
 
-		this.x = 200; // ((Date.now()/1000 - this.data.timestamp))*50;
+		this.x = 1000; // ((Date.now()/1000 - this.data.timestamp))*50;
 
 		this.y = 0;
 
@@ -36,7 +36,7 @@ export class Block extends GraphNode {
 	register() {
 		//this.updateStyle();
 		//this.attachNode();
-		this.holder.nodes[this.data.id] = this;
+		//this.holder.nodes[this.data.id] = this;
 	}
 
 	purge() {
@@ -115,7 +115,7 @@ export class App {
 
 		let item = this.items.shift();
 		let block = new Block(this.graph, item);
-		block.register();
+		//block.register();
 
 		this.graph.addNode(block);
 
@@ -129,7 +129,7 @@ export class App {
 		if(this.items.length)
 			setTimeout(()=>{
 				this.fetchData();
-			}, 10000)
+			}, 2000)
 
 		/*
 		$.ajax({

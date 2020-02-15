@@ -153,7 +153,7 @@ class NodePanel extends BaseElement{
 		super();
 		this.data = { }
 		this.salt = this.UID();
-		console.log("PANEL CONSTRUCTOR CALLED!".bold,this.seed);
+		//console.log("PANEL CONSTRUCTOR CALLED!".bold,this.seed);
 		this.stats = [];
 
 	}
