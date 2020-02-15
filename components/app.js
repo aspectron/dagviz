@@ -94,43 +94,8 @@ export class App {
 		this.items = this.items.slice(0,25);
 		this.fetchData();
 	}
-	/*
-	updatePositions() {
-		if(!this.pending || !this.pending.length) {
-			this.pending = Object.values(this.graph.nodes);
-		}
-		
-		let node = this.pending.shift();
-		if(node) {
-
-			// node.x = -((Date.now()/1000 - node.data.timestamp))*100;
-			node.updateStyle();			
-
-			dpc(() => {
-				this.updatePositions();
-			})
-
-		}
-		else {
-			dpc(1000, () => {
-				this.updatePositions();
-			})
-		}
-	}
-	
-
-	updateSimulation() {
-		this.graph.updateSimulation();
-
-		dpc(() => {
-			this.updateSimulation();
-		})
-	}
-	*/
 
 	createBlock(data){
-
-		//let item = this.items.shift();
 		let block = new Block(this.graph, data);
 
 		this.graph.addNode(block);
@@ -140,92 +105,25 @@ export class App {
 			let discarded = this.blocks.shift();
 			discarded.purge();
 		}
-
-		// if(this.items.length)
-		// 	setTimeout(()=>{
-		// 		this.fetchData();
-		// 	}, 1000)
-
-		/*
-		$.ajax({
-			url:'http://kaspanet.aspectron.com:8085/blocks?limit=10',
-			// url:'http://finland.aspectron.com:8082/blocks?limit=10',
-			//type:'json'
-			//method:'GET'
-		}, (res)=>{
-			console.log("res", res);
-
-
-			setTimeout(()=>{
-				this.fetchData();
-			}, 5000)
-	
-		});
-		*/
 	}
 
 
 	onDagSelectedTip(data) {
 		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
-
-		let block = new Block(this.graph, data);
-
-		this.graph.addNode(block);
-		this.blocks.push(block);
-
-		while(this.blocks.length > 50) {
-			let discarded = this.blocks.shift();
-			discarded.purge();
-		}
-
-		// if(this.items.length)
-		// 	setTimeout(()=>{
-		// 		this.fetchData();
-		// 	}, 1000)
-
-
-		//this.graph.createNode(block);
+		this.createBlock(data);
 	}
 
 	fetchData(){
 
 		let item = this.items.shift();
-		if(item) {
-
-			let block = new Block(this.graph, item);
-			//block.register();
-
-			this.graph.addNode(block);
-			this.blocks.push(block);
-
-			while(this.blocks.length > 50) {
-				let discarded = this.blocks.shift();
-				discarded.purge();
-			}
-		}
+		if(item)
+			this.createBlock(item);
 
 		this.graph.updateSimulation();
 
 		setTimeout(()=>{
 			this.fetchData();
 		}, 1000)
-
-		/*
-		$.ajax({
-			url:'http://kaspanet.aspectron.com:8085/blocks?limit=10',
-			// url:'http://finland.aspectron.com:8082/blocks?limit=10',
-			//type:'json'
-			//method:'GET'
-		}, (res)=>{
-			console.log("res", res);
-
-
-			setTimeout(()=>{
-				this.fetchData();
-			}, 5000)
-	
-		});
-		*/
 	}
 	afterInit(){
 		document.body.classList.remove("initilizing");
