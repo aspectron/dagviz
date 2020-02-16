@@ -7,7 +7,7 @@ cd dagviz
 npm install
 node dagviz
 ```
-then open http://127.0.0.1:8686/components/dagviz/ in your browser (tested with Chrome only)
+then open http://127.0.0.1:8080 in your browser (tested with Chrome only)
 
 
 ### Options
