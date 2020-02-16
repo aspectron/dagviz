@@ -2,7 +2,7 @@
 <html>
 <head>
 	<title>BlockDAG Viz</title>
-	<link href="https://fonts.googleapis.com/css?family=Exo+2:200|Lato|Open+Sans|Roboto&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto&display=swap" rel="stylesheet">
 
 	<script type="module" src="./components/dag-viz.js"></script>
 	<script src="/resources/jquery-3.4.1.js"></script>
@@ -19,20 +19,22 @@
 	<style type="text/css">
 		#dagViz{height:100vh;}
 		#address { 
-			font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 12px;
-			position: absolute; right: 8px; top: 8px; color: #666;
-
+			font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 16px;
+			position: absolute; right: 8px; top: 8px; color: rgb(52, 74, 87);
+			font-weight: 400;
 		}
 		#hud { 
-			font-family: 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 14px;
+			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 16px;
 			position: absolute; left: 8px; top: 8px; color: #222;
+			font-weight: 400;
 		}
+		.trigger { cursor:pointer; padding: 32px; }  .trigger:hover{ border-bottom: 1px dashed groove;}
 	</style>
 </head>
 <body>
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='address'></div>
-	<div id='hud'></div>
+	<div id='hud'><span class='info'></span><span class='ctl'></span></div>
 	<script type="module">
 		import { App } from './components/app.js';
 		$(document).ready(()=>{
