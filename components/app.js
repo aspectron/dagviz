@@ -1,4 +1,4 @@
-import { GraphNode, GraphNodeLink } from './dag-viz';
+import { GraphNode, GraphNodeLink } from './dag-viz.js';
 
 
 

@@ -1,5 +1,5 @@
 // Import BaseElement base class and html helper function
-import { html, BaseElement, css, render } from './base-element';
+import { html, BaseElement, css, render } from './base-element.js';
 import './node-panel.js';
 
 const D3x = { }
