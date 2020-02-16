@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title></title>
+	<title>BlockDAG Viz</title>
+	<link href="https://fonts.googleapis.com/css?family=Exo+2:200|Lato|Open+Sans|Roboto&display=swap" rel="stylesheet">
+
 	<script type="module" src="./components/dag-viz.js"></script>
 	<script src="/resources/jquery-3.4.1.js"></script>
 	<!--script src="/resources/d3.v5.min.js"></script-->
@@ -16,34 +18,51 @@
 	<script type="module" src="./components/app.js"></script>
 	<style type="text/css">
 		#dagViz{height:100vh;}
+		#address { 
+			font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 12px;
+			position: absolute; right: 8px; top: 8px; color: #666;
+
+		}
+		#hud { 
+			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 12px;
+			position: absolute; left: 8px; top: 8px; color: #222;
+		}
 	</style>
 </head>
 <body>
 	<dag-viz id="dagViz"></dag-viz>
-
+	<div id='address'></div>
+	<div id='hud'></div>
 	<script type="module">
 		import { App } from './components/app.js';
 		$(document).ready(()=>{
 			window.app = new App();
 			//return;
 			
-			var client = mqtt.connect('ws://finland.aspectron.com:7351');
+
+			
+			let address = app.argv.get('address') || 'ws://finland.aspectron.com:7351';
+			$('#address').html(address);
+			var client = mqtt.connect(address);
 		  	client.subscribe("dag/selected-tip");
 			[
 				'connect','disconnect','close',
-				'reconnect','error','end','packetreceive'
+				'reconnect','error','end',
+				// 'packetreceive'
 			].forEach((op) => {
 				client.on(op, (data) => {
-					console.log(`${op}:`,data);
+					console.log(`[MQTT] ${op}:`,data);
 				})
 			});
 
 		 
 			client.on("message", function (topic, payload) {
-			    console.log([topic, payload].join(": "))
+			    // console.log([topic, payload].join(": "))
 				if(topic == 'dag/selected-tip') {
 					try {
-						app.onDagSelectedTip(JSON.parse(payload));
+						let data = JSON.parse(payload);
+						console.log('dag/selected-tip:', data);
+						app.onDagSelectedTip(data);
 					} catch(ex) {
 						console.log('error parsing dag/selected-tip:', ex);
 						console.log('payload:', payload);

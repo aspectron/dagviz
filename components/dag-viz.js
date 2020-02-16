@@ -239,17 +239,27 @@ D3x.shape.square = function(el, o) {
         .attr('x',-size)
         .attr('y',-size)
         .attr('width', size*2)
-        .attr('height', 0)// size*2)
-        .attr('opacity',0.65)
-        .attr('fill', o.rgba)//D3x.rgba(o.rgba))
+        .attr('height', size*2)
+        //.attr('height', 0)// size*2)
+        .attr('opacity',0)
+//        .attr('opacity',0.85)
+        //.attr('fill', o.rgba)//D3x.rgba(o.rgba))
+        .attr('fill', o.rgba) // D3x.rgba(o.rgba))
         .attr("stroke", D3x.rgba([0,0,0], 0.5))
         //.attr("stroke-width", 1)
 
-    node
-        .transition("c")
+	// node
+	//  		.transition()
+	// 	    //.ease('in-out')	// d3x
+    // //     //.duration(1000)
+	//  		.duration(1000)
+	// 		 //.attr('opacity',0.85);
+	// 		 .style("opacity", 1);
+
+//        .transition("c")
         //.ease('in-out') // d3x
-        .duration(1000)
-        .attr("height", size * 2)
+//        .duration(1000)
+//        .attr("height", size * 2)
 
     node.setPosition = (x, y)=>{
     	node
@@ -328,40 +338,48 @@ export class GraphNodeLink{
 		this.holder = holder;
 		this.data = data;
 		this.el = holder.linksEl.append("line");
+		this.el.style('opacity',0);
 		this.source = holder.nodes[data.child];
 		this.target = holder.nodes[data.parent];
 		this.target.addChildLink(this);
 		this.target.attachNode();
+		this.el.transition().duration(1000).style('opacity', 1);
 	}
 	remove(){
 		this.el.remove();
 		this.target.removeChildLink(this);
 	}
 	updateStyle(){
-		if(!this.source){
+		if(!this.source || !this.target){
 			//console.log("this.source", this.data.child)
 			return
 		}
-		this.el
-			//.transition('o')
-			//.duration(2000)
-			.attr("x1", this.source.x)
-			.attr("y1", this.source.y)
-			.attr("x2", this.target.x)
-			.attr("y2", this.target.y);
+		if(!isNaN(this.source.x) && !isNaN(this.source.y) && !isNaN(this.target.x) && !isNaN(this.target.y)) {
+			this.el
+				//.transition('o')
+				//.duration(2000)
+				.attr("x1", this.source.x)
+				.attr("y1", this.source.y)
+				.attr("x2", this.target.x)
+				.attr("y2", this.target.y);
+		}
+
+//		this.el.transition().duration(1000).style('opacity', 1);
 	}
 	setStaticPosition(x, y, x2, y2){
-		if(typeof(x2) == 'undefined' && typeof(y2) == 'undefined'){
+		if(typeof(x2) == 'undefined' || typeof(y2) == 'undefined'){
 			if(!this.target)
 				return
 			x2 = this.target.x;
 			y2 = this.target.y;
 		}
-		this.el
-			.attr("x1", x)
-			.attr("y1", y)
-			.attr("x2", x2)
-			.attr("y2", y2);
+		if(!isNaN(x) && !isNaN(y) && !isNaN(x2) && !isNaN(y2)) {
+			this.el
+				.attr("x1", x)
+				.attr("y1", y)
+				.attr("x2", x2)
+				.attr("y2", y2);
+		}
 	}
 }
 
@@ -370,6 +388,7 @@ export class GraphNode{
 		this.holder = holder;
 		this.data 	= data;
 		this.id 	= data.id || data.name;
+		this.tOffset = 0;
 		holder.nodes[this.id] = this;
 		this.childLinks = {};
 		this.attachNode();
@@ -378,6 +397,7 @@ export class GraphNode{
 		this.data = data;
 		this.buildLink();
 		this.textEl.text(this.data.name);
+		this.heightEl.text(this.data.blueScore+'');
 		this.updateStyle();
 	}
 
@@ -393,7 +413,8 @@ export class GraphNode{
 		    "simulator" : { shape : 'hexagonB', rgba : [226,204,216,1] },
 		    "unknown" : { shape : 'circle', rgba : [184,163,136,1] },
 		    "tbd2" : { shape : 'circle', rgba : [1,255,255,1] },
-		    "tbd3" : { shape : 'circle', rgba : [136,170,255,1] }
+		    "tbd3" : { shape : 'circle', rgba : [136,170,255,1] },
+		    "block" : { shape : 'square', rgba : [243,243,0,1] },
 		};
 
 		let c = map[this.data.type] || map['unknown'];
@@ -424,6 +445,9 @@ export class GraphNode{
 			this.holder.nodesEl.append(()=>{
 				return this.textEl.node()
 			});
+			this.holder.nodesEl.append(()=>{
+				return this.heightEl.node()
+			});
 			return this.bindElEvents();
 		}
 
@@ -446,10 +470,10 @@ export class GraphNode{
 	        //this.el.transform = d3.zoomIdentity.translate(0, 0).scale(0.5);
 
 
-			this.textEl = this.holder.nodesEl.append("text")
-				.attr("fill", "#000")
-				.attr("class", ["node-name",this.data.type].join(' '))
-				.text(this.data.name);
+			// this.textEl = this.holder.nodesEl.append("text")
+			// 	.attr("fill", "#000")
+			// 	.attr("class", ["node-name",this.data.type].join(' '))
+			// 	.text(this.data.name);
 
 
 	    } else {
@@ -457,11 +481,28 @@ export class GraphNode{
 
 			this.el = this.holder.nodesEl.append("circle");
 
-			this.textEl = this.holder.nodesEl.append("text")
-				.attr("fill", "#000")
-				.attr("class", ["node-name",this.data.type].join(' '))
-				.text(this.data.name);
-	    }
+			// this.textEl = this.holder.nodesEl.append("text")
+			// 	.attr("fill", "#000")
+			// 	.attr("class", ["node-name",this.data.type].join(' '))
+			// 	.text(this.data.name);
+		}
+		
+		this.el
+			//.style('opacity',0)
+			.transition()
+			.duration(500)
+			.style('opacity',0.75);
+
+		this.textEl = this.holder.nodesEl.append("text")
+			.attr("fill", "#000")
+			.attr("class", ["node-name",this.data.type].join(' '))
+			.text(this.data.name);
+
+		this.heightEl = this.holder.nodesEl.append("text")
+			.attr("fill", "#000")
+			.attr("class", ["node-name",this.data.type].join(' '))
+			.text(this.data.blueScore+'');
+
 
 		this.bindElEvents();
 		
@@ -495,6 +536,7 @@ export class GraphNode{
 		this.removeElEvents();
 		this.el.remove();
 		this.textEl.remove();
+		this.heightEl.remove();
 		this.removeLink();
 
 		_.each(this.childLinks, (link, child)=>{
@@ -504,11 +546,17 @@ export class GraphNode{
 	}
 	initPosition(){
 		let {x, y} = this;
-		this.el.setStaticPosition(x, y);
+		this.el.setPosition(x, y);
+//		this.el.setStaticPosition(x, y);
 		if(this.textEl){
 			this.textEl
 				.attr("x", x)
-				.attr("y", y-0.5)
+				.attr("y", y-0.75)
+		}
+		if(this.heightEl){
+			this.heightEl
+				.attr("x", x)
+				.attr("y", y-0.25)
 		}
 		if(this.linkNode)
 			this.linkNode
@@ -516,7 +564,7 @@ export class GraphNode{
 	}
 	updateStyle(){
 		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
-			console.log("aborting updateStyle (lack of data) for:",this);
+			// console.log("aborting updateStyle (lack of data) for:",this);
 			return
 		}
 
@@ -541,27 +589,91 @@ export class GraphNode{
 			this.el.remove();
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
 	            size : this.data.size,
-	            rgba : shapeConfig.color,//shapeConfig.rgba,
+	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
 	        })
+
+
+
 
 	        this.shape = this.data.shape;
 	        this.color = this.data.color;
 
 	        this.textEl.remove();
 			this.textEl = this.holder.nodesEl.append("text")
+				.style('opacity',0)
 				.attr("fill", "#000")
 				.attr("class", ["node-name",this.data.type].join(' '))
 				//.attr("class", )
 				.text(this.data.name);
 
+			this.heightEl.remove();
+			this.heightEl = this.holder.nodesEl.append("text")
+				.style('opacity',0)
+				.attr("fill", "#000")
+				.attr("class", ["node-name",this.data.type].join(' '))
+				//.attr("class", )
+				.text(this.data.blueScore+'');
+
 			this.bindElEvents();
+
+
+			this.el.transition()
+				.duration(500)
+				.style('opacity', 1);
+
+			this.textEl.transition()
+	 			.duration(500)
+				.style("opacity", 1);
+
+			this.heightEl.transition()
+				.duration(500)
+			   .style("opacity", 1);
+
 
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
 
-		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50;//*Math.random()*100;
+		
+		if(this.holder.maxTS < this.data.timestamp) {
+
+			if(this.holder.maxTS) {
+				if(!this.holder.delta)
+					this.holder.delta = 0;
+				this.holder.delta
+			}
+
+
+			this.holder.maxTS = this.data.timestamp;
+
+
+		}
+
+		const ts = Date.now();
+
+		// if(!this.lastSampleTS) {
+		// 	this.lastSampleTS = ts;
+		// } else {
+		// 	let tDelta = 
+
+
+		// }
+
+
+		// let tDelta = this.holder.maxTS - this.tOffset;
+
+		this.tOffset = this.holder.maxTS;
+
+
+//		let offset = (Date.now()-this.holder.startTS) / 1000;
+//		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
+let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
+//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist + 256;//*Math.random()*100;
+//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
+//let x = -((this.holder.maxTS - this.data.timestamp))*50 - 256;//*Math.random()*100;
+//let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
+//console.log(x);
 		this.x = x;
 		this.el
 			.setPosition(this.x, this.y)
@@ -572,18 +684,37 @@ export class GraphNode{
 					return host && host.online ? "#b3e2ff" : "#ffb3b3";
 				}
 			})
-		let textBox = this.textEl.node().getBoundingClientRect();
-		let {width, height} = textBox;
+			let textBox = this.textEl.node().getBoundingClientRect();
+			let infoBox = this.heightEl.node().getBoundingClientRect();
+			//let {width, height} = textBox;
 		let zoom = this.holder.paintEl.transform.k
-		width = width/zoom;
-		height = height/zoom;
+		// width = width/zoom;
+		// height = height/zoom;
+
+		let textBoxWidth = textBox.width / zoom;
+		let textBoxHeight = textBox.height / zoom;
+
+		let infoBoxWidth = infoBox.width / zoom;
+		let infoBoxHeight = infoBox.height / zoom;
+
 		//console.log("this.textEl", this.textEl)
 		this.textEl
 			//.transition('o')
 			//.duration(2000)
-			.attr("x", this.x-width/2)
-			.attr("y", (this.y+height/3)-0.5)
+			.attr("x", this.x-textBoxWidth/2)
+			.attr("y", (this.y-12)-0.25)
+			//.attr("y", (this.y+height/3)-0.75)
         	.attr("opacity", 1)
+
+		this.heightEl
+			//.transition('o')
+			//.duration(2000)
+			.attr("x", this.x-infoBoxWidth/2)
+			.attr("y", (this.y+20)-0.25)
+			//.attr("y", (this.y+height/3)-0.25)
+        	.attr("opacity", 1)
+
+
 
 		if(this.linkNode)
 			this.linkNode.updateStyle();
@@ -641,6 +772,8 @@ export class DAGViz extends BaseElement {
 	}
 	static get properties() {
 		return {
+			// max : { type: Number, value: 384 },
+			// tdist : { type: Number, value: 50 },
 			data: { type: Array },
 			extra: {type: String },
 			_nodeName:{type:String, value:""}
@@ -660,7 +793,12 @@ export class DAGViz extends BaseElement {
 			:host([hidden]) { display: none;}
 			#graph{flex:1;height:100%;}
 			
-			.node-name{font-size:4px;pointer-events: none;}
+			.node-name{font-size:12px;pointer-events: none;
+			
+				font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
+				
+			
+			}
 			.observer{font-size:1px;pointer-events: none;}
 
 			.diamond-box{transform-orizn:center center;}
@@ -700,6 +838,15 @@ export class DAGViz extends BaseElement {
 		super();
 
 		this.tipTS = Date.now();
+
+		this.maxTS = 0;
+		this.startTS = Date.now();
+
+		this.max = 256;
+		this.tdist = 50;
+
+		this.xMargin = 384;
+
 
 		//
 	}
@@ -753,7 +900,8 @@ export class DAGViz extends BaseElement {
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
-    			this.linksEl.attr("stroke-width", w)
+				this.linksEl.attr("stroke-width", w);
+				this.updatePanInfo(this.paintEl.transform);
     		})
     	this.svg.call(zoom);
     	this.paintEl = this.svg.append("g")
@@ -789,7 +937,9 @@ export class DAGViz extends BaseElement {
 				//console.log("d.size", d)
 			 	return d.data.size * 2;// * 2//d.radius
 			}))
-			.force("charge", d3.forceManyBody().strength(150))
+			.force("charge", d3.forceManyBody().strength(-500))
+//			.force("charge", d3.forceManyBody().strength(350))
+//			.force("charge", d3.forceManyBody().strength(150))
 			.force("x", d3.forceX())
 			.force("y", d3.forceY())
 
@@ -801,6 +951,10 @@ export class DAGViz extends BaseElement {
 			for(let i=0, l=nodes.length; i<l; ++i){
 				nodes[i].updateStyle();
 			}
+
+			this._updateNodeInfoPosition();
+
+
 		});
 
 		//this.simulation.restart();
@@ -827,6 +981,28 @@ export class DAGViz extends BaseElement {
             .attr('class', 'tip-line')
             .attr('marker-end', 'url(#tipArrow)')
             //.attr('d', 'M100 100 L 10 10')
+
+
+		// this.tAxis = this.paintEl.append('path')
+		// 	.attr('stroke', 'rgba(0,0,0,1.0)')
+		// 	.attr('stroke-width', 1)
+		// 	.attr('class', 'tip-line')
+		// 	//.attr('marker-end', 'url(#tipArrow)')
+		// 	.attr('d', `M${this.xMargin} -1000 L ${this.xMargin} 1000`)
+	
+		this.tAxis = [];
+
+		for(let i = 0; i < 10; i++) {
+			this.tAxis60 = this.paintEl.append('path')
+				.attr('stroke', 'rgba(0,0,0,0.1)')
+				.attr('stroke-width', 1)
+				.attr('class', 'tip-line')
+				//.attr('marker-end', 'url(#tipArrow)')
+				.attr('d', `M${this.xMargin-(60*i*this.tdist)} -1000 L ${this.xMargin-(60*i*this.tdist)} 1000`)
+		}
+
+	
+
 
 		window.addEventListener("resize", this.updateSVGSize.bind(this))
 		this.fire("ready", {})
@@ -874,7 +1050,8 @@ export class DAGViz extends BaseElement {
 	addNode(node){
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
-		while(this.simulationNodes.length > 50) {
+//		console.log("max:",this.max);
+		while(this.simulationNodes.length > this.max) {
 			let discarded = this.simulationNodes.shift();
 			discarded.purge();
 		}
@@ -906,6 +1083,11 @@ export class DAGViz extends BaseElement {
 	updateSimulation() {
 		this.simulation.nodes(this.simulationNodes)
 		this.simulation.alpha(0.005);
+		this.simulation.alphaTarget(0.005);
+		this.simulation.alphaDecay(0.005);
+//		this.simulation.alpha(0.005);
+
+//		this.updateNodeInfoPosition();
 	}
 
 	UID(){
@@ -914,8 +1096,9 @@ export class DAGViz extends BaseElement {
 
 	renderInfo(){ 
 		let nodeName = this._node ? this._node.data.name : '';
+		let data = JSON.stringify(this._node ? this._node.data : {});
 		let tpl = html`
-		<node-panel node="${nodeName}" salt="${this.UID()}"></node-panel>
+		<node-panel node="${nodeName}" data="${data}" salt="${this.UID()}"></node-panel>
 		`;
 		render(tpl, this.nodeInfoEl)
 	}
@@ -965,6 +1148,9 @@ export class DAGViz extends BaseElement {
 		//console.log("iW", iW, iH)
 		if(!iW)
 			return
+
+		iH *= 1.1;
+		iW *= 1.1;
 		//let tipOffset = 4 * this.paintEl.transform.k;
 
 		let x1 = nodeBox.left + nodeBox.width/2;
@@ -1069,11 +1255,13 @@ export class DAGViz extends BaseElement {
 				simulation.alphaTarget(0.3).restart();
 			d.fx = d.x;
 			d.fy = d.y;
+			//this.updateDragInfo(d);
 		}
 
 		let dragged = d=>{
 			d.fx = d3.event.x;
 			d.fy = d3.event.y;
+			//this.updateDragInfo(d);
 		}
 
 		let dragended = d=>{
@@ -1081,6 +1269,7 @@ export class DAGViz extends BaseElement {
 				simulation.alphaTarget(0);
 			d.fx = null;
 			d.fy = null;
+			//this.updateDragInfo(d);
 		}
 
 		return d3.drag()
@@ -1099,6 +1288,19 @@ export class DAGViz extends BaseElement {
 			this._width,
 			this._height
 		]);
+	}
+
+	updatePanInfo(transform) {
+		console.log('transform:',transform);
+
+		let t = transform.x / transform.k / this.tdist;
+
+		t = t > 0 ? '+'+t.toFixed() : t.toFixed();
+		t = t+' sec';
+
+		if(!this.$hud)
+			this.$hud = $("#hud");
+		this.$hud.html(`T: ${t}`);
 	}
 
 }

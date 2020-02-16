@@ -41,6 +41,9 @@ class NodePanel extends BaseElement{
 				padding: 4px 5px;
 				max-height: inherit;
     			box-sizing: border-box;
+
+				font-family:Consolas, 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
+				font-size: 12px;
 			}
 			.content-body{
 				flex:1;
@@ -198,9 +201,23 @@ class NodePanel extends BaseElement{
 		return html`
 			<div class="content" @click="${this.handleClick}">
 				<div class="title-box">
-					<div class="title">NODE ${this.node}<div>
-					<div class="title">BLUE ${this.blueScore}<div>
-					<div class="title">MASS ${this.mass}<div>
+
+					<table>
+						<tr><td>blockHash</td><td>${this.data.blockHash}</td></tr>
+						<tr><td>version</td><td>${this.data.version}</td></tr>
+						<tr><td>hashMerkleRoot</td><td>${this.data.hashMerkleRoot}</td></tr>
+						<tr><td>acceptedIDMerkleRoot</td><td>${this.data.acceptedIDMerkleRoot}</td></tr>
+						<tr><td>utxoCommitment</td><td>${this.data.utxoCommitment}</td></tr>
+						<tr><td>timestamp</td><td>${this.data.timestamp} - ${this.getTS(new Date(this.data.timestamp*1000))}</td></tr>
+						<tr><td>bits</td><td>${this.data.bits}</td></tr>
+						<tr><td>nonce</td><td>${this.data.nonce}</td></tr>
+						<tr><td>acceptingBlockHash</td><td>${this.data.acceptingBlockHash}</td></tr>
+						<tr><td>blueScore</td><td>${this.data.blueScore}</td></tr>
+						<tr><td>isChainBlock</td><td>${this.data.isChainBlock}</td></tr>
+						<tr><td>mass</td><td>${this.data.mass}</td></tr>
+					</table>
+
+
 				</div>
 			</div>`;
 
@@ -607,6 +624,21 @@ class NodePanel extends BaseElement{
 	onUpdate(){
 		console.log("sss")
 	}	
+
+
+
+	getTS(src_date) {
+		var a = src_date || (new Date());
+		var year = a.getFullYear();
+		var month = a.getMonth()+1; month = month < 10 ? '0' + month : month;
+		var date = a.getDate(); date = date < 10 ? '0' + date : date;
+		var hour = a.getHours(); hour = hour < 10 ? '0' + hour : hour;
+		var min = a.getMinutes(); min = min < 10 ? '0' + min : min;
+		var sec = a.getSeconds(); sec = sec < 10 ? '0' + sec : sec;
+		//var time = year + '-' + month + '-' + date + ' ' + hour + ':' + min + ':' + sec;
+		return `${year}-${month}-${date} ${hour}:${min}:${sec}`;
+	}
+	
 
 }
 

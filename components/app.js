@@ -19,12 +19,13 @@ export class Block extends GraphNode {
 	constructor(holder,data) {
 
 		data.id = data.blockHash;
-		data.name = data.id.replace(/^\s*0+/,'').substring(0,6);
+		data.name = data.id.replace(/^\s*0+/,'').substring(0,6);//+'\n\n'+(data.blueScore||'####');
 		data.parent = data.acceptingBlockHash;
-		data.size = data.mass/10;
-		data.xMargin = 500 + ((Date.now()/1000 - data.timestamp))*50;
+		data.size = data.mass/20*Math.exp(data.mass/20/10);
+		data.xMargin = /*500 +*/ ((Date.now()/1000 - data.timestamp))*50;
 		data.timestmp = data.timestamp / 1000;
-
+		data.shape = 'square';
+		data.color = `rgba(194,244,255,0.99)`;
 		super(holder,data);
 
 
@@ -52,6 +53,8 @@ export class Block extends GraphNode {
 export class App {
 	constructor() {
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
+		this.argv = new URLSearchParams(location.search);
+
 		this.init();
 	}
 
@@ -72,7 +75,12 @@ export class App {
 			return o;
 		})
 		//this.items = this.items.slice(0,25);
-		//this.fetchData();
+		if(/simulate/.test(location.search))
+		 	this.simulateData();
+
+		setInterval(()=>{
+			this.graph.updateSimulation();
+		}, 1000);
 	}
 
 	createBlock(data){
@@ -83,20 +91,36 @@ export class App {
 
 	onDagSelectedTip(data) {
 		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
+
+		if(this.argv.get('connect') !== null && !data.acceptingBlockHash && this.lastBlock) {
+			data.acceptingBlockHash = this.lastBlock.blockHash;
+		}
+		this.lastBlock = data;
 		this.createBlock(data);
 	}
 
-	fetchData(){
+	simulateData(){
 
+		let wait = 1000;
 		let item = this.items.shift();
-		if(item)
+		if(item) {
+
+			if(this.prevItem_) {
+				let tdelta = item.timestamp - this.prevItem_.timestamp;
+				if(tdelta)
+					wait = tdelta * 1000;
+			}
+//console.log('wait:',wait);
+
 			this.createBlock(item);
+			this.prevItem_ = item;
+		}
 
 		this.graph.updateSimulation();
 
 		setTimeout(()=>{
-			this.fetchData();
-		}, 1000)
+			this.simulateData();
+		}, wait)
 	}
 	afterInit(){
 		document.body.classList.remove("initilizing");
@@ -117,6 +141,7 @@ export class App {
 	}
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
+		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	

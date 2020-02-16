@@ -1271,7 +1271,7 @@ const BLOCKDAGCHAIN = [{
     "acceptingBlockHash": "00002039a19d558f8a6d27c19930fc5d00a9a1a1d07197975d9753f93d83837f",
     "blueScore": 4603,
     "isChainBlock": true,
-    "mass": 192
+    "mass": 269
 }, {
     "blockHash": "00002a20aec781849310eb04fbe234428029cfab14b1b25ab745f45f5994bdc6",
     "version": 268435456,
