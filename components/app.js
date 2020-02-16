@@ -1,7 +1,5 @@
 import { GraphNode, GraphNodeLink } from './dag-viz';
 
-
-
 const dpc = (t,fn)=>{
 	if(typeof(t) == 'function'){
 		setTimeout(t, fn);
@@ -10,10 +8,7 @@ const dpc = (t,fn)=>{
 	}
 }
 
-
-
 const tsInit = Date.now();
-
 
 export class Block extends GraphNode {
 	constructor(holder,data) {
@@ -29,7 +24,6 @@ export class Block extends GraphNode {
 		if(!data.color)
 			data.color = `rgba(194,244,255,0.99)`;
 		super(holder,data);
-
 
 		this.x = Math.random();
 		this.y = Math.random();
@@ -47,17 +41,13 @@ export class Block extends GraphNode {
 		this.buildLink();
 		this.initPosition()
 	}
-
 }
-
-
 
 export class App {
 	constructor() {
 		this.scores = [];
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
-
 		this.connect = this.argv.get('connect') !== null;
 		this.init();
 	}
@@ -91,7 +81,6 @@ export class App {
 	}
 
 	createBlock(data){
-
 		let blueScore = data.blueScore;
 		if(this.scores.includes(blueScore)) {
 			data.shape = "hexagonA";
@@ -114,10 +103,8 @@ export class App {
 		this.graph.addNode(block);
 	}
 
-
 	onDagSelectedTip(data) {
 		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
-
 		if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
 			data.acceptingBlockHash = this.lastBlock.blockHash;
 		}
@@ -137,17 +124,13 @@ export class App {
 				if(tdelta)
 					wait = tdelta * 1000;
 			}
-//console.log('wait:',wait);
-
 		}
-
 		
 		setTimeout(()=>{
 			
 			if(item) {
 				this.createBlock(item);
 				this.prevItem_ = item;
-				
 			}
 			
 			this.graph.updateSimulation();
@@ -192,9 +175,7 @@ export class App {
 	centerGraphBy(nodeId){
 		this.graph.centerBy(nodeId)
 	}
-
 }
-
 
 class Trigger {
 	constructor(target, ident, caption) {

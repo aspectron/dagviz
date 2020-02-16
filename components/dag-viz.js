@@ -461,7 +461,6 @@ export class GraphNode{
 
 			let shapeConfig = this.getShapeConfig();
 			// console.log("shapeConfig",this.data.type,shapeConfig);
-
 			//this.el = this.holder.nodesEl.append("circle");
 			//this.el = this.holder.nodesEl.append("g");
 
@@ -472,19 +471,12 @@ export class GraphNode{
 	        });
 
 	        //this.el.transform = d3.zoomIdentity.translate(0, 0).scale(0.5);
-
-
 			// this.textEl = this.holder.nodesEl.append("text")
 			// 	.attr("fill", "#000")
 			// 	.attr("class", ["node-name",this.data.type].join(' '))
 			// 	.text(this.data.name);
-
-
 	    } else {
-
-
 			this.el = this.holder.nodesEl.append("circle");
-
 			// this.textEl = this.holder.nodesEl.append("text")
 			// 	.attr("fill", "#000")
 			// 	.attr("class", ["node-name",this.data.type].join(' '))
@@ -573,7 +565,6 @@ export class GraphNode{
 		}
 
 		//console.log("this.x", this.x, this.y)
-
 		let host = null//app.identToHost(this.data.host);
 		//console.log("GraphNode: host", this.data.name,  host)
 
@@ -596,9 +587,6 @@ export class GraphNode{
 	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
 	        })
-
-
-
 
 	        this.shape = this.data.shape;
 			this.color = this.data.color;
@@ -623,7 +611,6 @@ export class GraphNode{
 
 			this.bindElEvents();
 
-
 			this.el.transition()
 				.duration(500)
 				.style('opacity', 1);
@@ -636,42 +623,22 @@ export class GraphNode{
 				.duration(500)
 			   .style("opacity", 1);
 
-
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-
-		
 		if(this.holder.maxTS < this.data.timestamp) {
-
 			if(this.holder.maxTS) {
 				if(!this.holder.delta)
 					this.holder.delta = 0;
 				this.holder.delta
 			}
-
-
 			this.holder.maxTS = this.data.timestamp;
-
-
 		}
 
 		const ts = Date.now();
 
-		// if(!this.lastSampleTS) {
-		// 	this.lastSampleTS = ts;
-		// } else {
-		// 	let tDelta = 
-
-
-		// }
-
-
 		// let tDelta = this.holder.maxTS - this.tOffset;
-
 		this.tOffset = this.holder.maxTS;
-
-
 //		let offset = (Date.now()-this.holder.startTS) / 1000;
 //		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
 let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
@@ -1356,7 +1323,7 @@ export class DAGViz extends BaseElement {
 			this.centerBy(this.lastNodeAdded.id, { filter : (t,v) => {
 				t.x += v.cX * 0.1;// * delta;
 				t.y += v.cY * 0.1;// * delta;
-			}, offsetX : 0.4 * delta } );
+			}, offsetX : 0.4 } );
 		}
 	}
 }
