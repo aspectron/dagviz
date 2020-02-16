@@ -42,17 +42,19 @@ D3x.shape.hexagonA = function(el, o) {
     if(!o.size)
     	o.size = 50;
 
+	let size = o.size * 1.7;
     //o.originX = o.originY = 0;
 
     var h = (Math.sqrt(3)/2);
     var data = (originX, originY)=>{
     	return [
-	        { "x": o.size+originX,      "y": originY}, 
-	        { "x": o.size/2+originX,    "y": o.size*h+originY},
-	        { "x": -o.size/2+originX,   "y": o.size*h+originY},
-	        { "x": -o.size+originX,     "y": originY},
-	        { "x": -o.size/2+originX,   "y": -o.size*h+originY},
-	        { "x": o.size/2+originX,    "y": -o.size*h+originY}
+	        { "x": size+originX,      "y": originY}, 
+	        { "x": size/2+originX,    "y": size*h+originY},
+	        { "x": -size/2+originX,   "y": size*h+originY},
+	        { "x": -size+originX,     "y": originY},
+	        { "x": -size/2+originX,   "y": -size*h+originY},
+	        { "x": size/2+originX,    "y": -size*h+originY},
+	        { "x": size+originX,      "y": originY}, 
 	    ];
 	}
 
@@ -68,7 +70,9 @@ D3x.shape.hexagonA = function(el, o) {
 
     var path = node.append("path")
         .attr("d", hexagon(data(0, 0)))
-        .attr("stroke", D3x.rgba(o.rgba, 0.9))
+//        .attr("stroke", D3x.rgba(o.rgba, 0.9))
+.attr("stroke", D3x.rgba([0,0,0], 0.5))
+//.attr("stroke", D3x.rgba(o.rgba, 0.9))
         // .attr("stroke-dasharray","20,5")
         
         .attr("fill", D3x.rgba(o.rgba)) //"rgba(255,0,0,0.4)");
@@ -597,12 +601,14 @@ export class GraphNode{
 
 
 	        this.shape = this.data.shape;
-	        this.color = this.data.color;
+			this.color = this.data.color;
+			
+			const textColor = this.data.textColor || '#000';
 
 	        this.textEl.remove();
 			this.textEl = this.holder.nodesEl.append("text")
 				.style('opacity',0)
-				.attr("fill", "#000")
+				.attr("fill", textColor)
 				.attr("class", ["node-name",this.data.type].join(' '))
 				//.attr("class", )
 				.text(this.data.name);
@@ -610,7 +616,7 @@ export class GraphNode{
 			this.heightEl.remove();
 			this.heightEl = this.holder.nodesEl.append("text")
 				.style('opacity',0)
-				.attr("fill", "#000")
+				.attr("fill", textColor)
 				.attr("class", ["node-name",this.data.type].join(' '))
 				//.attr("class", )
 				.text(this.data.blueScore+'');
@@ -1345,12 +1351,12 @@ export class DAGViz extends BaseElement {
 			let delta = (ts - this.lastNodeAddedTS) / 15000;
 			if(delta > 1.0)
 				delta = 1.0;
-			//delta = 1.0 - delta;
-			delta = 1.0;
+			delta = 1.0 - delta;
+			//delta = 1.0;
 			this.centerBy(this.lastNodeAdded.id, { filter : (t,v) => {
-				t.x += v.cX * 0.01 * delta;
-				t.y += v.cY * 0.01 * delta;
-			}, offsetX : 0.4 } );
+				t.x += v.cX * 0.1;// * delta;
+				t.y += v.cY * 0.1;// * delta;
+			}, offsetX : 0.4 * delta } );
 		}
 	}
 }

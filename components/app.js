@@ -24,8 +24,10 @@ export class Block extends GraphNode {
 		data.size = data.mass/20*Math.exp(data.mass/20/10);
 		data.xMargin = /*500 +*/ ((Date.now()/1000 - data.timestamp))*50;
 		data.timestmp = data.timestamp / 1000;
-		data.shape = 'square';
-		data.color = `rgba(194,244,255,0.99)`;
+		if(!data.shape)
+			data.shape = 'square';
+		if(!data.color)
+			data.color = `rgba(194,244,255,0.99)`;
 		super(holder,data);
 
 
@@ -52,6 +54,7 @@ export class Block extends GraphNode {
 
 export class App {
 	constructor() {
+		this.scores = [];
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 
@@ -88,6 +91,25 @@ export class App {
 	}
 
 	createBlock(data){
+
+		let blueScore = data.blueScore;
+		if(this.scores.includes(blueScore)) {
+			data.shape = "hexagonA";
+			data.color = `rgba(255,248,196,0.99)`;
+			data.textColor = '#800';
+			data.multi = true;
+			let targets = this.graph.simulationNodes.filter((node) => { return node.data.blueScore == blueScore; });
+			targets.forEach((target) => {
+				target.data.shape = data.shape;
+				target.data.color = data.color;
+				target.data.textColor = '#800';
+				target.data.multi = true;
+			})
+		}
+		this.scores.push(blueScore);
+		while(this.scores.length > 128)
+			this.scores.shift();
+
 		let block = new Block(this.graph, data);
 		this.graph.addNode(block);
 	}
