@@ -1,15 +1,13 @@
 # BlockDAG Vizualization library
 
 ### Running DAGVIZ
-
-(please note, the project currntly relies on polymer-cli which is very heavy, it will be removed shortly)
 ```
 git clone git@github.com:kaspanet/dagviz
 cd dagviz
 npm install
 node dagviz
 ```
-then open http://127.0.0.1:8686/components/dagviz/ in your browser (tested with Chrome only)
+then open http://127.0.0.1:8080 in your browser (tested with Chrome only)
 
 
 ### Options

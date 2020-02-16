@@ -1,4 +1,4 @@
-import { GraphNode, GraphNodeLink } from './dag-viz';
+import { GraphNode, GraphNodeLink } from './dag-viz.js';
 
 const dpc = (t,fn)=>{
 	if(typeof(t) == 'function'){

@@ -1,4 +1,4 @@
-import { html, BaseElement, css } from './base-element';
+import { html, BaseElement, css } from './base-element.js';
 
 class NodePanel extends BaseElement{
 
