@@ -796,7 +796,7 @@ export class DAGViz extends BaseElement {
 			.node-name{font-size:12px;pointer-events: none;
 			
 				font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
-				
+				font-weight: 200;
 			
 			}
 			.observer{font-size:1px;pointer-events: none;}
@@ -847,6 +847,7 @@ export class DAGViz extends BaseElement {
 
 		this.xMargin = 384;
 
+		this.track = false;
 
 		//
 	}
@@ -954,6 +955,7 @@ export class DAGViz extends BaseElement {
 
 			this._updateNodeInfoPosition();
 
+			this.updateTracking();
 
 		});
 
@@ -1007,13 +1009,15 @@ export class DAGViz extends BaseElement {
 		window.addEventListener("resize", this.updateSVGSize.bind(this))
 		this.fire("ready", {})
 	}
-	centerBy(nodeId){
+	centerBy(nodeId, options){
 		let node  = this.nodes[nodeId];
 		if(!node)
 			return false;
 
 		let pBox = this.getBoundingClientRect();
 		let centerX = pBox.left + pBox.width/2;
+		if(options && options.offsetX)
+			centerX += options.offsetX * pBox.width;
 		let centerY = pBox.top + pBox.height/2;
 		let box = node.getBoundingClientRect();
 		//console.log("box", pBox, box)
@@ -1022,12 +1026,19 @@ export class DAGViz extends BaseElement {
 		cX = centerX-cX;
 		cY = centerY-cY;
 		let t = this.paintEl.transform;
-		t.x += cX;
-		t.y += cY;
+		if(options && options.filter) {
+			options.filter(t,{ cX, cY });
+		} else {
+			t.x += cX;// * 0.01;
+			t.y += cY;// * 0.01;
+		}
 		this.setChartTransform(this.paintEl.transform);
 	}
 	setChartTransform(transform){
 		this.paintEl.transform = transform;
+		//this.paintEl.
+		// transition().duration(1000)
+		// .attr('transform', transform);
 		this.paintEl.attr('transform', transform);
 		if(this._node){//if node info window is active
 			this.updateNodeInfoPosition();
@@ -1050,6 +1061,9 @@ export class DAGViz extends BaseElement {
 	addNode(node){
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
+
+		this.lastNodeAdded = node;
+		this.lastNodeAddedTS = Date.now();
 //		console.log("max:",this.max);
 		while(this.simulationNodes.length > this.max) {
 			let discarded = this.simulationNodes.shift();
@@ -1316,10 +1330,29 @@ export class DAGViz extends BaseElement {
 		t = `${sign}${t} ${suffix}`;
 
 		if(!this.$hud)
-			this.$hud = $("#hud");
+			this.$hud = $("#hud .info");
 		this.$hud.html(`T: ${t}`);
 	}
 
+	filterCenterByTransform(t, v) {
+		t.x += v.cX * 0.01;
+		t.y += v.cY * 0.01;
+	}
+
+	updateTracking() {
+		if(this.lastNodeAdded && this.track) {
+			const ts = Date.now();
+			let delta = (ts - this.lastNodeAddedTS) / 15000;
+			if(delta > 1.0)
+				delta = 1.0;
+			//delta = 1.0 - delta;
+			delta = 1.0;
+			this.centerBy(this.lastNodeAdded.id, { filter : (t,v) => {
+				t.x += v.cX * 0.01 * delta;
+				t.y += v.cY * 0.01 * delta;
+			}, offsetX : 0.4 } );
+		}
+	}
 }
 
 // Register the element with the browser
