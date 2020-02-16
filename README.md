@@ -18,7 +18,8 @@ For example `?simulate` will run a 100 block dataset simulation.  The command sh
 
 Following options are available:
 
-- `?simulate` - run simulation
+- `?simulate` - run simulation (do not stop live MQTT feed)
+- `?simulate-only` - run simulation and stop MQTT feed (no interference)
 - `?connect` - interconnect blocks incoming via MQTT with dag/selected-tip notifications
 - `?address=ws://<mqtt over websocket address>` - use this option to supply an alternate MQTT over websocket address. 
 

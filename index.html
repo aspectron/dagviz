@@ -41,7 +41,8 @@
 			window.app = new App();
 			//return;
 			
-
+			if(app.argv.get('simulate-only') !== null)
+				return;
 			
 			let address = app.argv.get('address') || 'ws://finland.aspectron.com:7351';
 			$('#address').html(address);
