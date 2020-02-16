@@ -5,7 +5,8 @@
   "dependencies": {
     "lit-element": "*",
     "underscore": "*",
-    "mqtt": "*"
+    "mqtt": "*",
+    "polymer-cli": "*"
   },
   "engines": {
     "node": "*",
