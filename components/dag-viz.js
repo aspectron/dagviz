@@ -1293,10 +1293,27 @@ export class DAGViz extends BaseElement {
 	updatePanInfo(transform) {
 		console.log('transform:',transform);
 
-		let t = transform.x / transform.k / this.tdist;
+		let t = -(transform.x / transform.k / this.tdist);
 
-		t = t > 0 ? '+'+t.toFixed() : t.toFixed();
-		t = t+' sec';
+		let suffix = '';
+		let sign = t > 0 ? '+' : t < 0 ? '' : '';
+		if(t > 60 * 60) {
+			t = t / 60 / 60;
+			t = t.toFixed(2);
+			suffix = 'hrs';
+		}
+		else
+		if(t > 60) {
+			t = t / 60;
+			t = t.toFixed(2);
+			suffix = 'min';
+		}
+		else {
+			t = t.toFixed();
+			suffix = 'sec';
+		}
+
+		t = `${sign}${t} ${suffix}`;
 
 		if(!this.$hud)
 			this.$hud = $("#hud");
