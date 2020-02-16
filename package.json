@@ -6,7 +6,10 @@
     "underscore": "*",
     "mqtt": "*",
     "serve-static": "*",
-    "finalhandler": "*"
+    "finalhandler": "*",
+    "request": "*",
+    "request-promise": "*",
+    "micro-fabric": "*"
   },
   "engines": {
     "node": "*",
