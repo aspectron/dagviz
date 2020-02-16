@@ -108,6 +108,12 @@ export class App {
 		if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
 			data.acceptingBlockHash = this.lastBlock.blockHash;
 		}
+
+		// let parent = this.graph.nodes[data.acceptingBlockHash];
+		// // console.log("parent:",parent);
+		// if(parent && parent.timestamp == data.timestamp)
+		// 	data.timestamp += 0.1;
+
 		this.lastBlock = data;
 		this.createBlock(data);
 		this.graph.updateSimulation();
@@ -129,6 +135,12 @@ export class App {
 		setTimeout(()=>{
 			
 			if(item) {
+
+				// let parent = this.graph.nodes[item.acceptingBlockHash];
+				// // console.log("parent:",parent);
+				// if(parent && parent.timestamp == data.timestamp)
+				// 	item.timestamp++;// += 0.1;
+
 				this.createBlock(item);
 				this.prevItem_ = item;
 			}
