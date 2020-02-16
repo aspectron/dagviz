@@ -8,4 +8,4 @@ var serve = serveStatic('./', { 'index': ['index.html', 'index.htm'] })
 // Create server
 var server = http.createServer((req, res)=>{
   serve(req, res, finalhandler(req, res))
-}).listen(8080);
+}).listen(8686);
