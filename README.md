@@ -2,18 +2,14 @@
 
 ### Running DAGVIZ
 
-
+(please note, the project currntly relies on polymer-cli which is very heavy, it will be removed shortly)
 ```
 git clone git@github.com:kaspanet/dagviz
 cd dagviz
 npm install
-npm install -g polymer-cli
-
-...
-
-polymer serve
+node dagviz
 ```
-then open http://127.0.0.1:8081/components/dagviz/ in your browser (tested with Chrome only)
+then open http://127.0.0.1:8686/components/dagviz/ in your browser (tested with Chrome only)
 
 
 ### Options
@@ -44,3 +40,5 @@ Native docker:
 ```
 sudo docker build -t dagviz 
 ```
+
+HTTP user interface is exposed on port `8686`
