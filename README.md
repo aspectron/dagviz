@@ -1,8 +1,6 @@
 # BlockDAG Vizualization library
 
 ### Running DAGVIZ
-
-(please note, the project currntly relies on polymer-cli which is very heavy, it will be removed shortly)
 ```
 git clone git@github.com:kaspanet/dagviz
 cd dagviz
