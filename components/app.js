@@ -55,6 +55,7 @@ export class App {
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 
+		this.connect = this.argv.get('connect') !== null;
 		this.init();
 	}
 
@@ -63,6 +64,9 @@ export class App {
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
+		new Trigger(this.graph,'track','TRACKING');
+		new Trigger(this,'connect','LINK SEQUENTIAL');
+
 		let ts = Date.now();
 		let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
 		let first = _BLOCKDAGCHAIN[0];
@@ -92,11 +96,12 @@ export class App {
 	onDagSelectedTip(data) {
 		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
 
-		if(this.argv.get('connect') !== null && !data.acceptingBlockHash && this.lastBlock) {
+		if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
 			data.acceptingBlockHash = this.lastBlock.blockHash;
 		}
 		this.lastBlock = data;
 		this.createBlock(data);
+		this.graph.updateSimulation();
 	}
 
 	simulateData(){
@@ -112,13 +117,19 @@ export class App {
 			}
 //console.log('wait:',wait);
 
-			this.createBlock(item);
-			this.prevItem_ = item;
 		}
 
-		this.graph.updateSimulation();
-
+		
 		setTimeout(()=>{
+			
+			if(item) {
+				this.createBlock(item);
+				this.prevItem_ = item;
+				
+			}
+			
+			this.graph.updateSimulation();
+
 			this.simulateData();
 		}, wait)
 	}
@@ -142,6 +153,8 @@ export class App {
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
 		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
+
+		this.graph.track = this.argv.get('track') !== null;
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
@@ -158,4 +171,26 @@ export class App {
 		this.graph.centerBy(nodeId)
 	}
 
+}
+
+
+class Trigger {
+	constructor(target, ident, caption) {
+		this.target = target;
+		this.ident = ident;
+		this.caption = caption;
+		this.el = $(`<span id="${ident}" class='trigger'></span>`);
+		$("#hud .ctl").append(this.el);
+
+		$(this.el).on('click', () => {
+			this.target[this.ident] = !(!!this.target[this.ident]);
+			this.update();
+		})
+
+		this.update();
+	}
+
+	update() {
+		this.el.html(`${this.caption}: ${this.target[this.ident] ? 'ON' : 'OFF' }`);
+	}
 }
