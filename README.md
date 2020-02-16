@@ -31,3 +31,16 @@ Following options are available:
 At the top of the UI you will find following options:
 - TRACKING - will cause DAGViz to track the viewport always focusing on the last added block
 - LINK SEQUENTIAL - (FAKE, Temporary) - Links blocks in the order received.
+
+
+### Building Docker Image
+
+Using emanator:
+```
+emanate --docker
+```
+
+Native docker:
+```
+sudo docker build -t dagviz 
+```
