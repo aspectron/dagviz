@@ -40,6 +40,7 @@ emanate --docker
 Native docker:
 ```
 sudo docker build -t dagviz 
+sudo docker run -p 8686:8686 dagviz
 ```
 
 HTTP user interface is exposed on port `8686`
