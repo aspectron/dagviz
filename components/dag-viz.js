@@ -42,17 +42,19 @@ D3x.shape.hexagonA = function(el, o) {
     if(!o.size)
     	o.size = 50;
 
+	let size = o.size * 1.7;
     //o.originX = o.originY = 0;
 
     var h = (Math.sqrt(3)/2);
     var data = (originX, originY)=>{
     	return [
-	        { "x": o.size+originX,      "y": originY}, 
-	        { "x": o.size/2+originX,    "y": o.size*h+originY},
-	        { "x": -o.size/2+originX,   "y": o.size*h+originY},
-	        { "x": -o.size+originX,     "y": originY},
-	        { "x": -o.size/2+originX,   "y": -o.size*h+originY},
-	        { "x": o.size/2+originX,    "y": -o.size*h+originY}
+	        { "x": size+originX,      "y": originY}, 
+	        { "x": size/2+originX,    "y": size*h+originY},
+	        { "x": -size/2+originX,   "y": size*h+originY},
+	        { "x": -size+originX,     "y": originY},
+	        { "x": -size/2+originX,   "y": -size*h+originY},
+	        { "x": size/2+originX,    "y": -size*h+originY},
+	        { "x": size+originX,      "y": originY}, 
 	    ];
 	}
 
@@ -68,7 +70,9 @@ D3x.shape.hexagonA = function(el, o) {
 
     var path = node.append("path")
         .attr("d", hexagon(data(0, 0)))
-        .attr("stroke", D3x.rgba(o.rgba, 0.9))
+//        .attr("stroke", D3x.rgba(o.rgba, 0.9))
+.attr("stroke", D3x.rgba([0,0,0], 0.5))
+//.attr("stroke", D3x.rgba(o.rgba, 0.9))
         // .attr("stroke-dasharray","20,5")
         
         .attr("fill", D3x.rgba(o.rgba)) //"rgba(255,0,0,0.4)");
@@ -457,7 +461,6 @@ export class GraphNode{
 
 			let shapeConfig = this.getShapeConfig();
 			// console.log("shapeConfig",this.data.type,shapeConfig);
-
 			//this.el = this.holder.nodesEl.append("circle");
 			//this.el = this.holder.nodesEl.append("g");
 
@@ -468,19 +471,12 @@ export class GraphNode{
 	        });
 
 	        //this.el.transform = d3.zoomIdentity.translate(0, 0).scale(0.5);
-
-
 			// this.textEl = this.holder.nodesEl.append("text")
 			// 	.attr("fill", "#000")
 			// 	.attr("class", ["node-name",this.data.type].join(' '))
 			// 	.text(this.data.name);
-
-
 	    } else {
-
-
 			this.el = this.holder.nodesEl.append("circle");
-
 			// this.textEl = this.holder.nodesEl.append("text")
 			// 	.attr("fill", "#000")
 			// 	.attr("class", ["node-name",this.data.type].join(' '))
@@ -569,7 +565,6 @@ export class GraphNode{
 		}
 
 		//console.log("this.x", this.x, this.y)
-
 		let host = null//app.identToHost(this.data.host);
 		//console.log("GraphNode: host", this.data.name,  host)
 
@@ -593,16 +588,15 @@ export class GraphNode{
 	            opacity : 0.5
 	        })
 
-
-
-
 	        this.shape = this.data.shape;
-	        this.color = this.data.color;
+			this.color = this.data.color;
+			
+			const textColor = this.data.textColor || '#000';
 
 	        this.textEl.remove();
 			this.textEl = this.holder.nodesEl.append("text")
 				.style('opacity',0)
-				.attr("fill", "#000")
+				.attr("fill", textColor)
 				.attr("class", ["node-name",this.data.type].join(' '))
 				//.attr("class", )
 				.text(this.data.name);
@@ -610,13 +604,12 @@ export class GraphNode{
 			this.heightEl.remove();
 			this.heightEl = this.holder.nodesEl.append("text")
 				.style('opacity',0)
-				.attr("fill", "#000")
+				.attr("fill", textColor)
 				.attr("class", ["node-name",this.data.type].join(' '))
 				//.attr("class", )
 				.text(this.data.blueScore+'');
 
 			this.bindElEvents();
-
 
 			this.el.transition()
 				.duration(500)
@@ -630,42 +623,22 @@ export class GraphNode{
 				.duration(500)
 			   .style("opacity", 1);
 
-
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-
-		
 		if(this.holder.maxTS < this.data.timestamp) {
-
 			if(this.holder.maxTS) {
 				if(!this.holder.delta)
 					this.holder.delta = 0;
 				this.holder.delta
 			}
-
-
 			this.holder.maxTS = this.data.timestamp;
-
-
 		}
 
 		const ts = Date.now();
 
-		// if(!this.lastSampleTS) {
-		// 	this.lastSampleTS = ts;
-		// } else {
-		// 	let tDelta = 
-
-
-		// }
-
-
 		// let tDelta = this.holder.maxTS - this.tOffset;
-
 		this.tOffset = this.holder.maxTS;
-
-
 //		let offset = (Date.now()-this.holder.startTS) / 1000;
 //		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
 let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
@@ -796,7 +769,7 @@ export class DAGViz extends BaseElement {
 			.node-name{font-size:12px;pointer-events: none;
 			
 				font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
-				
+				font-weight: 200;
 			
 			}
 			.observer{font-size:1px;pointer-events: none;}
@@ -847,6 +820,7 @@ export class DAGViz extends BaseElement {
 
 		this.xMargin = 384;
 
+		this.track = false;
 
 		//
 	}
@@ -954,6 +928,7 @@ export class DAGViz extends BaseElement {
 
 			this._updateNodeInfoPosition();
 
+			this.updateTracking();
 
 		});
 
@@ -1007,13 +982,15 @@ export class DAGViz extends BaseElement {
 		window.addEventListener("resize", this.updateSVGSize.bind(this))
 		this.fire("ready", {})
 	}
-	centerBy(nodeId){
+	centerBy(nodeId, options){
 		let node  = this.nodes[nodeId];
 		if(!node)
 			return false;
 
 		let pBox = this.getBoundingClientRect();
 		let centerX = pBox.left + pBox.width/2;
+		if(options && options.offsetX)
+			centerX += options.offsetX * pBox.width;
 		let centerY = pBox.top + pBox.height/2;
 		let box = node.getBoundingClientRect();
 		//console.log("box", pBox, box)
@@ -1022,12 +999,19 @@ export class DAGViz extends BaseElement {
 		cX = centerX-cX;
 		cY = centerY-cY;
 		let t = this.paintEl.transform;
-		t.x += cX;
-		t.y += cY;
+		if(options && options.filter) {
+			options.filter(t,{ cX, cY });
+		} else {
+			t.x += cX;// * 0.01;
+			t.y += cY;// * 0.01;
+		}
 		this.setChartTransform(this.paintEl.transform);
 	}
 	setChartTransform(transform){
 		this.paintEl.transform = transform;
+		//this.paintEl.
+		// transition().duration(1000)
+		// .attr('transform', transform);
 		this.paintEl.attr('transform', transform);
 		if(this._node){//if node info window is active
 			this.updateNodeInfoPosition();
@@ -1050,6 +1034,9 @@ export class DAGViz extends BaseElement {
 	addNode(node){
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
+
+		this.lastNodeAdded = node;
+		this.lastNodeAddedTS = Date.now();
 //		console.log("max:",this.max);
 		while(this.simulationNodes.length > this.max) {
 			let discarded = this.simulationNodes.shift();
@@ -1316,10 +1303,29 @@ export class DAGViz extends BaseElement {
 		t = `${sign}${t} ${suffix}`;
 
 		if(!this.$hud)
-			this.$hud = $("#hud");
+			this.$hud = $("#hud .info");
 		this.$hud.html(`T: ${t}`);
 	}
 
+	filterCenterByTransform(t, v) {
+		t.x += v.cX * 0.01;
+		t.y += v.cY * 0.01;
+	}
+
+	updateTracking() {
+		if(this.lastNodeAdded && this.track) {
+			const ts = Date.now();
+			let delta = (ts - this.lastNodeAddedTS) / 15000;
+			if(delta > 1.0)
+				delta = 1.0;
+			delta = 1.0 - delta;
+			//delta = 1.0;
+			this.centerBy(this.lastNodeAdded.id, { filter : (t,v) => {
+				t.x += v.cX * 0.1;// * delta;
+				t.y += v.cY * 0.1;// * delta;
+			}, offsetX : 0.4 } );
+		}
+	}
 }
 
 // Register the element with the browser

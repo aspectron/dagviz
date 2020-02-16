@@ -1,7 +1,5 @@
 import { GraphNode, GraphNodeLink } from './dag-viz.js';
 
-
-
 const dpc = (t,fn)=>{
 	if(typeof(t) == 'function'){
 		setTimeout(t, fn);
@@ -10,10 +8,7 @@ const dpc = (t,fn)=>{
 	}
 }
 
-
-
 const tsInit = Date.now();
-
 
 export class Block extends GraphNode {
 	constructor(holder,data) {
@@ -24,10 +19,11 @@ export class Block extends GraphNode {
 		data.size = data.mass/20*Math.exp(data.mass/20/10);
 		data.xMargin = /*500 +*/ ((Date.now()/1000 - data.timestamp))*50;
 		data.timestmp = data.timestamp / 1000;
-		data.shape = 'square';
-		data.color = `rgba(194,244,255,0.99)`;
+		if(!data.shape)
+			data.shape = 'square';
+		if(!data.color)
+			data.color = `rgba(194,244,255,0.99)`;
 		super(holder,data);
-
 
 		this.x = Math.random();
 		this.y = Math.random();
@@ -45,16 +41,14 @@ export class Block extends GraphNode {
 		this.buildLink();
 		this.initPosition()
 	}
-
 }
-
-
 
 export class App {
 	constructor() {
+		this.scores = [];
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
-
+		this.connect = this.argv.get('connect') !== null;
 		this.init();
 	}
 
@@ -63,6 +57,9 @@ export class App {
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
+		new Trigger(this.graph,'track','TRACKING');
+		new Trigger(this,'connect','LINK SEQUENTIAL');
+
 		let ts = Date.now();
 		let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
 		let first = _BLOCKDAGCHAIN[0];
@@ -84,19 +81,36 @@ export class App {
 	}
 
 	createBlock(data){
+		let blueScore = data.blueScore;
+		if(this.scores.includes(blueScore)) {
+			data.shape = "hexagonA";
+			data.color = `rgba(255,248,196,0.99)`;
+			data.textColor = '#800';
+			data.multi = true;
+			let targets = this.graph.simulationNodes.filter((node) => { return node.data.blueScore == blueScore; });
+			targets.forEach((target) => {
+				target.data.shape = data.shape;
+				target.data.color = data.color;
+				target.data.textColor = '#800';
+				target.data.multi = true;
+			})
+		}
+		this.scores.push(blueScore);
+		while(this.scores.length > 128)
+			this.scores.shift();
+
 		let block = new Block(this.graph, data);
 		this.graph.addNode(block);
 	}
 
-
 	onDagSelectedTip(data) {
 		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
-
-		if(this.argv.get('connect') !== null && !data.acceptingBlockHash && this.lastBlock) {
+		if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
 			data.acceptingBlockHash = this.lastBlock.blockHash;
 		}
 		this.lastBlock = data;
 		this.createBlock(data);
+		this.graph.updateSimulation();
 	}
 
 	simulateData(){
@@ -110,15 +124,17 @@ export class App {
 				if(tdelta)
 					wait = tdelta * 1000;
 			}
-//console.log('wait:',wait);
-
-			this.createBlock(item);
-			this.prevItem_ = item;
 		}
-
-		this.graph.updateSimulation();
-
+		
 		setTimeout(()=>{
+			
+			if(item) {
+				this.createBlock(item);
+				this.prevItem_ = item;
+			}
+			
+			this.graph.updateSimulation();
+
 			this.simulateData();
 		}, wait)
 	}
@@ -142,6 +158,8 @@ export class App {
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
 		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
+
+		this.graph.track = this.argv.get('track') !== null;
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
@@ -157,5 +175,25 @@ export class App {
 	centerGraphBy(nodeId){
 		this.graph.centerBy(nodeId)
 	}
+}
 
+class Trigger {
+	constructor(target, ident, caption) {
+		this.target = target;
+		this.ident = ident;
+		this.caption = caption;
+		this.el = $(`<span id="${ident}" class='trigger'></span>`);
+		$("#hud .ctl").append(this.el);
+
+		$(this.el).on('click', () => {
+			this.target[this.ident] = !(!!this.target[this.ident]);
+			this.update();
+		})
+
+		this.update();
+	}
+
+	update() {
+		this.el.html(`${this.caption}: ${this.target[this.ident] ? 'ON' : 'OFF' }`);
+	}
 }

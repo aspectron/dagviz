@@ -1,0 +1,53 @@
+"use strict";
+
+const E = new Emanator(__dirname, {
+    type : 'NODE',
+    guid : '41072047-6d92-44d8-92a5-d9b16c79bd01',
+    group : 'DAGlabs',
+    ident : 'dagviz',
+    title : 'DAGViz',
+    banner : 'DAGVIZ',
+    git : 'git@github.com:kaspanet/dagviz',
+    nonpm : false,
+    author : "DAGlabs",
+    url : "http://daglabs.com",
+    archive : true,
+    folder : true,
+    standalone : true,
+})
+
+
+E.task('files', ['origin'], async (callback) => {
+
+    let files = E.manifest.files.map((f) => {
+        return E.copy(path.join(E.REPO,f),path.join(E.BUILD,f));
+    })
+    E.log(`copying ${files.length} items...`);
+    await Promise.all(files);
+    E.log(`done...`);
+})
+
+E.task('done', ['files'], async () => {
+})
+
+E.task('docker',null, async () => {
+
+    E.manifest_read();
+
+    const relay = ['no-cache'];
+    const args = ['-s','docker','build'].concat(relay.map(k=>E.flags[k]?`--${k}`:null)).filter(v=>v);
+    args.push('-t',`dagviz:latest`,'.');
+    const ts0 = Date.now();
+    await E.utils.spawn('sudo', args, { cwd : __dirname, stdio: 'inherit' });
+    await E.utils.spawn('sudo',['docker','tag','dagviz:latest',`dagviz:${E.manifest.version}`], { cwd : __dirname, stdio: 'inherit' });
+    console.log('Docker build complete at',new Date());
+    const ts1 = Date.now();
+    console.log('Docker build took'.brightBlue,`${((ts1-ts0)/1000/60).toFixed(1)}`.brightWhite,'minutes'.brightBlue)
+});
+
+if(E.flags.docker) {
+    E.run(['docker']);
+}
+else
+if(!E.flags['local-binaries'])
+    E.run();

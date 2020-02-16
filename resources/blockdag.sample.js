@@ -788,7 +788,7 @@ const BLOCKDAGCHAIN = [{
     "bits": 511705087,
     "nonce": 12399481462659554070,
     "acceptingBlockHash": "00006e918db389e8f51afef1d3aad446b8d61339323e90ef64e4a04f572b34fc",
-    "blueScore": 4640,
+    "blueScore": 4638,
     "isChainBlock": true,
     "mass": 192
 }, {
@@ -801,7 +801,7 @@ const BLOCKDAGCHAIN = [{
     "bits": 511705087,
     "nonce": 6254894266188655718,
     "acceptingBlockHash": "000051bd2b265093450854b6af630db4555b765e96252f36c0fdc9d637dc64cf",
-    "blueScore": 4639,
+    "blueScore": 4638,
     "isChainBlock": true,
     "mass": 192
 }, {
@@ -1230,7 +1230,7 @@ const BLOCKDAGCHAIN = [{
     "bits": 511705087,
     "nonce": 11382793029813880546,
     "acceptingBlockHash": "000002323120588ee9c3a2c0bfe84c80f362e79316ba4a9cad57f3d57c18a78e",
-    "blueScore": 4606,
+    "blueScore": 4605,
     "isChainBlock": true,
     "mass": 192
 }, {
