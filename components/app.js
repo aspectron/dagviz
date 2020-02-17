@@ -46,6 +46,7 @@ export class Block extends GraphNode {
 export class App {
 	constructor() {
 		this.scores = [];
+		this.position = 0;
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 		this.connect = this.argv.get('connect') !== null;
@@ -78,26 +79,101 @@ export class App {
 		setInterval(()=>{
 			this.graph.updateSimulation();
 		}, 1000);
+
+
+		// $(this.graph).on('click', async () => {
+		// 	let blocks = await this.fetch();
+		// 	this.createBlocks(blocks);
+		// });
+
+		$(window).on('keydown', (e) => {
+			switch(e.key) {
+				case 'ArrowRight': {
+					console.log('ArrowRight');
+					this.position += 50;
+
+					console.log('pos:',this.position);
+					this.updatePosition();
+				} break;
+
+				case 'ArrowLeft': {
+					console.log('ArrowLeft');
+					this.position -= 50;
+					if(this.position < 0)
+						this.position = 0;
+					console.log('pos:',this.position);
+					this.updatePosition();
+				} break;
+			}
+		})
+	}
+
+	createBlocks(blocks) {
+		blocks.forEach((block) => {
+			if(this.graph.nodes[block.blockHash])
+				return;
+			this.createBlock(block);
+		});
+	}
+
+	async updatePosition() {
+
+		let limit = 100;
+		let skip = this.position - limit / 2;
+		if(skip < 0)
+			skip = 0;
+		const order = 'asc';
+
+		let blocks = await this.fetch({ skip, limit, order });
+		this.createBlocks(blocks);
+//		blocks.forEach(block=>this.createBlock(block));
+		this.graph.updateSimulation();
+	}
+
+	fetch(args) {
+		return new Promise((resolve,reject) => {
+			let query = '';
+			if(args)
+				query = '?'+Object.entries(args).map(([k,v])=>`${k}=${typeof v == 'string' ? v : Math.round(v)}`).join('&');
+			console.log(query);
+			$.ajax('/api/blocks'+query, 
+			{
+				dataType: 'json', // type of response data
+				// timeout: 500,     // timeout milliseconds
+				success: function (data,status,xhr) {   // success callback function
+					// $('p').append(data.firstName + ' ' + data.middleName + ' ' + data.lastName);
+
+					console.log(data);
+					resolve(data);
+				},
+				error: function (jqXhr, textStatus, errorMessage) { // error callback 
+					console.log(textStatus,errorMessage,jqXhr);
+					// $('p').append('Error: ' + errorMessage);
+					reject(errorMessage);
+				}
+			});
+		})
+
 	}
 
 	createBlock(data){
-		let blueScore = data.blueScore;
-		if(this.scores.includes(blueScore)) {
-			data.shape = "hexagonA";
-			data.color = `rgba(255,248,196,0.99)`;
-			data.textColor = '#800';
-			data.multi = true;
-			let targets = this.graph.simulationNodes.filter((node) => { return node.data.blueScore == blueScore; });
-			targets.forEach((target) => {
-				target.data.shape = data.shape;
-				target.data.color = data.color;
-				target.data.textColor = '#800';
-				target.data.multi = true;
-			})
-		}
-		this.scores.push(blueScore);
-		while(this.scores.length > 128)
-			this.scores.shift();
+		// let blueScore = data.blueScore;
+		// if(this.scores.includes(blueScore)) {
+		// 	data.shape = "hexagonA";
+		// 	data.color = `rgba(255,248,196,0.99)`;
+		// 	data.textColor = '#800';
+		// 	data.multi = true;
+		// 	let targets = this.graph.simulationNodes.filter((node) => { return node.data.blueScore == blueScore; });
+		// 	targets.forEach((target) => {
+		// 		target.data.shape = data.shape;
+		// 		target.data.color = data.color;
+		// 		target.data.textColor = '#800';
+		// 		target.data.multi = true;
+		// 	})
+		// }
+		// this.scores.push(blueScore);
+		// while(this.scores.length > 128)
+		// 	this.scores.shift();
 
 		let block = new Block(this.graph, data);
 		this.graph.addNode(block);
@@ -169,9 +245,10 @@ export class App {
 	}
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
+		this.graph.registerRegionUpdateSink(this.updateRegion.bind(this));
 		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
 
-		this.graph.track = this.argv.get('track') !== null;
+		this.graph.track = false; // this.argv.get('track') !== null;
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
@@ -186,6 +263,36 @@ export class App {
 	}
 	centerGraphBy(nodeId){
 		this.graph.centerBy(nodeId)
+	}
+
+	async updateRegion(o) {
+		const { t, range } = o;
+		let limit = range * 1.6;
+
+		if(limit > 100)
+			limit = 100;
+
+
+		//let limit = 100;
+		let skip = t - limit / 2;
+		if(skip < 0)
+			skip = 0;
+
+		const first = skip - limit;
+		const last = skip + limit;
+		Object.values(this.graph.nodes).forEach((node) => {
+			if(node.data.blueScore < first || node.data.blueScore > last) {
+				console.log('deleting:',node.data.blueScore);
+				node.purge();
+			}
+		})
+		
+		const order = 'asc';
+		let blocks = await this.fetch({ skip, limit, order });
+		this.createBlocks(blocks);
+//		blocks.forEach(block=>this.createBlock(block));
+		this.graph.updateSimulation();
+
 	}
 }
 

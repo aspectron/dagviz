@@ -511,7 +511,10 @@ export class GraphNode{
 		if(!data.parent){
 			this.removeLink();
 		}else if(holder.nodes[data.parent]){
-			this.createLink(data.parent)
+			this.createLink(data.parent);
+			// if(holder.nodes[data.parent].data.timestamp == data.timestamp)
+			// 	data.timestamp -= 0.5;
+				//holder.nodes[data.parent].data.timestamp;
 		}
 		//if(data.parent)
 		//	console.log("data.parent", data.parent, this.linkNode)
@@ -647,6 +650,10 @@ let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holde
 //let x = -((this.holder.maxTS - this.data.timestamp))*50 - 256;//*Math.random()*100;
 //let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
 //console.log(x);
+
+x = this.data.blueScore * this.holder.scoreDist;
+
+
 		this.x = x;
 		this.el
 			.setPosition(this.x, this.y)
@@ -820,7 +827,9 @@ export class DAGViz extends BaseElement {
 
 		this.xMargin = 384;
 
-		this.track = false;
+		this.track = true;
+
+		this.scoreDist = 100;
 
 		//
 	}
@@ -876,6 +885,7 @@ export class DAGViz extends BaseElement {
     			this.nodesEl.attr("stroke-width", w);
 				this.linksEl.attr("stroke-width", w);
 				this.updatePanInfo(this.paintEl.transform);
+				this.updateRegion(this.paintEl.transform);
     		})
     	this.svg.call(zoom);
     	this.paintEl = this.svg.append("g")
@@ -1038,10 +1048,10 @@ export class DAGViz extends BaseElement {
 		this.lastNodeAdded = node;
 		this.lastNodeAddedTS = Date.now();
 //		console.log("max:",this.max);
-		while(this.simulationNodes.length > this.max) {
-			let discarded = this.simulationNodes.shift();
-			discarded.purge();
-		}
+		// while(this.simulationNodes.length > this.max) {
+		// 	let discarded = this.simulationNodes.shift();
+		// 	discarded.purge();
+		// }
 		let link = node.buildLink(), linksUpdated=false;
 		if(link){
 			this.simulationLinks.push(link);
@@ -1278,7 +1288,7 @@ export class DAGViz extends BaseElement {
 	}
 
 	updatePanInfo(transform) {
-		console.log('transform:',transform);
+//		console.log('transform:',transform);
 
 		let t = -(transform.x / transform.k / this.tdist);
 
@@ -1307,6 +1317,24 @@ export class DAGViz extends BaseElement {
 		this.$hud.html(`T: ${t}`);
 	}
 
+	registerRegionUpdateSink(fn) {
+		this.regionUpdateSink_ = fn;
+	}
+
+	updateRegion(transform) {
+		if(!this.regionUpdateSink_)
+			return;
+		let t = -(transform.x / transform.k / this.tdist);
+		var box = this.graphHolder.getBoundingClientRect();
+		let range = Math.ceil(box.width / transform.k / this.scoreDist);
+
+		if(Math.round(this._last_t / 10) != Math.round(t/10) || this._last_range != range) {
+			this._last_t = t;
+			this._last_range = range;
+			this.regionUpdateSink_({t,range,transform,box});
+		}
+	}
+
 	filterCenterByTransform(t, v) {
 		t.x += v.cX * 0.01;
 		t.y += v.cY * 0.01;
@@ -1323,7 +1351,7 @@ export class DAGViz extends BaseElement {
 			this.centerBy(this.lastNodeAdded.id, { filter : (t,v) => {
 				t.x += v.cX * 0.1;// * delta;
 				t.y += v.cY * 0.1;// * delta;
-			}, offsetX : 0.4 } );
+			}, offsetX : 0 } );
 		}
 	}
 }
