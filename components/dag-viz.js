@@ -510,8 +510,10 @@ export class GraphNode{
 		//console.log("data", data, holder.nodes[data.parent])
 		if(!data.parent){
 			this.removeLink();
-		}else if(holder.nodes[data.parent]){
-			this.createLink(data.parent);
+		}else if(holder.nodes[data.acceptingBlockHash]){
+				this.createLink(data.acceptingBlockHash);
+			// else
+			// 	console.warning(`Block not present during linkage: ${data.parent}`);
 			// if(holder.nodes[data.parent].data.timestamp == data.timestamp)
 			// 	data.timestamp -= 0.5;
 				//holder.nodes[data.parent].data.timestamp;
@@ -651,8 +653,8 @@ let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holde
 //let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
 //console.log(x);
 
-x = this.data.blueScore * this.holder.scoreDist;
-
+x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
+//console.log(x);
 
 		this.x = x;
 		this.el
@@ -829,7 +831,7 @@ export class DAGViz extends BaseElement {
 
 		this.track = true;
 
-		this.scoreDist = 100;
+		this.unitDist = 100;
 
 		//
 	}
@@ -1324,11 +1326,11 @@ export class DAGViz extends BaseElement {
 	updateRegion(transform) {
 		if(!this.regionUpdateSink_)
 			return;
-		let t = -(transform.x / transform.k / this.tdist);
+		let t = -(transform.x / transform.k / this.unitDist);
 		var box = this.graphHolder.getBoundingClientRect();
-		let range = Math.ceil(box.width / transform.k / this.scoreDist);
+		let range = Math.ceil(box.width / transform.k / this.unitDist);
 
-		if(Math.round(this._last_t / 10) != Math.round(t/10) || this._last_range != range) {
+		if(Math.round(this._last_t / 3) != Math.round(t/3) || this._last_range != range) {
 			this._last_t = t;
 			this._last_range = range;
 			this.regionUpdateSink_({t,range,transform,box});

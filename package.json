@@ -9,7 +9,10 @@
     "finalhandler": "*",
     "request": "*",
     "request-promise": "*",
-    "micro-fabric": "*"
+    "micro-fabric": "*",
+    "mysql": "*",
+    "mkdirp": "*",
+    "is-docker": "*"
   },
   "engines": {
     "node": "*",

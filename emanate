@@ -14,7 +14,8 @@ const E = new Emanator(__dirname, {
     archive : true,
     folder : true,
     standalone : true,
-})
+});
+
 
 
 E.task('files', ['origin'], async (callback) => {
@@ -45,6 +46,65 @@ E.task('docker',null, async () => {
     console.log('Docker build took'.brightBlue,`${((ts1-ts0)/1000/60).toFixed(1)}`.brightWhite,'minutes'.brightBlue)
 });
 
+E.task('mysql', ['origin'], async (callback) => {
+
+    // disabling MySQL for now
+    // return Promise.resolve();
+    E.BIN = path.join(E.appFolder,'bin',E.PLATFORM_ARCH);
+    mkdirp.sync(E.BIN);
+    
+    // ---
+
+    if(E.PLATFORM == 'linux')
+        return Promise.resolve();
+
+    let version = '8.0.18';
+    let macos = 'macos10.14';
+    const mysql = {
+        windows : `mysql-${version}-winx64.zip`,
+        linux : `mysql-${version}-linux-x86_64-minimal.tar.xz`,
+        darwin : `mysql-${version}-${macos}-x86_64.tar.gz`
+    }[E.PLATFORM];
+
+    if(E.flags.nodb || E.flags.nosql || E.flags.nomysql)
+        return Promise.resolve();
+
+    E.utils.resetTTY();
+
+    let file = path.join(E.DEPS,mysql);
+    await E.download(`https://dev.mysql.com/get/Downloads/MySQL-8.0/${mysql}`,file);
+    await E.unzip(file, E.DEPS);//, callback);
+    let basename = path.basename(mysql).replace(/\.(zip|tar|tar.gz|tar.xz)$/,'');
+
+    const targetBinFolder = path.join(E.BIN,basename);
+    if(fs.existsSync(targetBinFolder)) {
+        E.log(`WARNING: previous MySQL deployment found...`.brightRed,);
+        E.log(`         cleaning up existing ${targetBinFolder}...`);
+        await fs.remove(targetBinFolder);
+    }
+    mkdirp.sync(targetBinFolder);
+
+    E.log(`copying ${basename}...`);
+    let folders = ['bin','lib','share'];
+
+    let jobs = folders.map((f) => {
+        if(E.PLATFORM == 'windows')
+            return E.copy(path.join(E.DEPS,basename,f), path.join(targetBinFolder,f));
+        else
+            return E.spawn('cp', ['-r',path.join(E.DEPS,basename,f),path.join(targetBinFolder,f)], { cwd : E.DEPS, stdio: 'inherit' });
+    })
+    await Promise.all(jobs);
+    E.log('done...');
+
+})
+
+
+
+
+if(E.flags.mysql) {
+    E.run(['mysql']);
+}
+else
 if(E.flags.docker) {
     E.run(['docker']);
 }

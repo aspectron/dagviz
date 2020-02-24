@@ -46,7 +46,7 @@ export class Block extends GraphNode {
 export class App {
 	constructor() {
 		this.scores = [];
-		this.position = 0;
+		this.position = 0;//1582398574- 1578493784; //Date.now() / 1000 - 60 * 60 * 8000;
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 		this.connect = this.argv.get('connect') !== null;
@@ -90,7 +90,7 @@ export class App {
 			switch(e.key) {
 				case 'ArrowRight': {
 					console.log('ArrowRight');
-					this.position += 50;
+					this.position += 60;
 
 					console.log('pos:',this.position);
 					this.updatePosition();
@@ -98,7 +98,7 @@ export class App {
 
 				case 'ArrowLeft': {
 					console.log('ArrowLeft');
-					this.position -= 50;
+					this.position -= 60;
 					if(this.position < 0)
 						this.position = 0;
 					console.log('pos:',this.position);
@@ -118,13 +118,19 @@ export class App {
 
 	async updatePosition() {
 
-		let limit = 100;
-		let skip = this.position - limit / 2;
-		if(skip < 0)
-			skip = 0;
-		const order = 'asc';
+		// let limit = 100;
+		// let skip = this.position - limit / 2;
+		// if(skip < 0)
+		// 	skip = 0;
+		// const order = 'asc';
 
-		let blocks = await this.fetch({ skip, limit, order });
+		// let to = Date.now();
+		// let from = to - 1000 * 60 * 60;
+
+		let from = this.position;
+		let to = from + 60 * 60;
+
+		let blocks = await this.fetch({ from, to });
 		this.createBlocks(blocks);
 //		blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
@@ -136,13 +142,16 @@ export class App {
 			if(args)
 				query = '?'+Object.entries(args).map(([k,v])=>`${k}=${typeof v == 'string' ? v : Math.round(v)}`).join('&');
 			console.log(query);
-			$.ajax('/api/blocks'+query, 
+			//$.ajax('http://finland.aspectron.com:8082/blocks'+query, 
+			$.ajax('/time-slice'+query, 
 			{
 				dataType: 'json', // type of response data
 				// timeout: 500,     // timeout milliseconds
 				success: function (data,status,xhr) {   // success callback function
 					// $('p').append(data.firstName + ' ' + data.middleName + ' ' + data.lastName);
-
+					//let seq = args.skip;
+					// if(!args.order || args.order == 'asc')
+					// 	data.forEach((v) => v.seq = seq++);
 					console.log(data);
 					resolve(data);
 				},
@@ -249,6 +258,12 @@ export class App {
 		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
 
 		this.graph.track = false; // this.argv.get('track') !== null;
+						//158239858000
+		this.position = 0; // 1582398574;
+
+		// const t = this.graph.paintEl.transform;
+		// t.x = -this.position * this.graph.unitDist;
+		// this.graph.setChartTransform(t);
 	}
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
@@ -262,33 +277,34 @@ export class App {
 		return list;
 	}
 	centerGraphBy(nodeId){
-		this.graph.centerBy(nodeId)
+		this.graph.centerBy(nodeId);
 	}
 
 	async updateRegion(o) {
-		const { t, range } = o;
+		let { t, range } = o;
+		
 		let limit = range * 1.6;
 
-		if(limit > 100)
-			limit = 100;
-
+		// if(limit > 100)
+		// 	limit = 100;
+		t += 1000;
+		limit *= 1000;
 
 		//let limit = 100;
-		let skip = t - limit / 2;
-		if(skip < 0)
-			skip = 0;
+		let from = t - limit / 2;
+		let to = t + limit / 2;
 
-		const first = skip - limit;
-		const last = skip + limit;
+		// const first = skip - limit;
+		// const last = skip + limit;
+		console.log("range:",from,to,t,range,this.position);
 		Object.values(this.graph.nodes).forEach((node) => {
-			if(node.data.blueScore < first || node.data.blueScore > last) {
-				console.log('deleting:',node.data.blueScore);
+			if(node.data.timestamp < from || node.data.timestamp > to) {
+				console.log('deleting:',node.data.timestamp);
 				node.purge();
 			}
 		})
 		
-		const order = 'asc';
-		let blocks = await this.fetch({ skip, limit, order });
+		let blocks = await this.fetch({ from, to });
 		this.createBlocks(blocks);
 //		blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
