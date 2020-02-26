@@ -108,25 +108,26 @@ class DAGViz {
                 insecureAuth : true
             }));
             
-                this.db = {
-                    query : async (sql, args) => {
-                        return new Promise((resolve,reject) => {
-                            this.dbPool.getConnection((err, connection) => {
-                                //console.log("CONNECTION:",connection);
+            this.db = {
+                query : async (sql, args) => {
+                    //console.log("sql:", sql, args)
+                    return new Promise((resolve,reject) => {
+                        this.dbPool.getConnection((err, connection) => {
+                            //console.log("CONNECTION:",connection);
+                            if(err)
+                                return reject(err);
+
+                            connection.query(sql, args, (err, rows) => {
+                                connection.release();
                                 if(err)
                                     return reject(err);
-
-                                connection.query(sql, args, (err, rows) => {
-                                    connection.release();
-                                    if(err)
-                                        return reject(err);
-                                        // console.log("SELECT GOT ROWS:",rows);
-                                    resolve(rows);
-                                });
+                                    // console.log("SELECT GOT ROWS:",rows);
+                                resolve(rows);
                             });
                         });
-                    }                
-                }
+                    });
+                }                
+            }
             // this.db_.connect(async (err) => {
             //     if(err) {
             //         this.log(err);
@@ -148,8 +149,6 @@ class DAGViz {
     async sql(...args) { return this.db.query(...args); }
 
     async main() {
-
-        
 
         await this.sql(`CREATE DATABASE IF NOT EXISTS ${this.uid} DEFAULT CHARACTER SET utf8;`);
         await this.sql(`USE ${this.uid}`);
@@ -532,7 +531,10 @@ class DAGViz {
                 //     block.childBlockHashes.push(child);
                 // });
 
-
+                if(!blocks.length){
+                    resolve({ blocks, total, max:null });
+                    return
+                }
                 let tail = blocks.length-1;
                 let last = blocks[tail][unit];
                 if(last != blocks[0][unit]) {
