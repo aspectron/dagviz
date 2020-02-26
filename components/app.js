@@ -22,7 +22,7 @@ export class Block extends GraphNode {
 		if(!data.shape)
 			data.shape = 'square';
 		if(!data.color) {
-				if(data.isChainBlock)
+				if(data.isChainBlock && ctx.isChainBlock)
 					data.color = `rgba(255,194,194,0.99)`;
 				else
 					data.color = `rgba(194,244,255,0.99)`;
@@ -125,6 +125,14 @@ class GraphContext {
 //		console.log(node.x);
 	}
 
+	reposition(x) {
+		if(!this.max)
+			return;
+
+		this.position = x * this.max * this.unitDist;
+		console.log('position:',this.position,'x:',x,'max:',this.max);
+		this.app.updatePosition();
+	}
 
 	getTips(block) {
 		let parents = block.data.parentBlockHashes || [];
@@ -232,13 +240,15 @@ export class App {
 
 	init() {
 		this.initGraph();
+		this.initNavigator();
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
 //		new Trigger(this.graph,'track','TRACKING');
 //		new Trigger(this,'connect','LINK SEQUENTIAL');
 
-		new Trigger(this.ctx,'trackSize','SIZE');
+		new Trigger(this.ctx,'trackSize','MASS');
+		new Trigger(this.ctx,'isChainBlock','CHAIN BLOCKS');
 
 		let ts = Date.now();
 		// let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
@@ -308,13 +318,24 @@ export class App {
 		// let to = Date.now();
 		// let from = to - 1000 * 60 * 60;
 
-		let from = this.ctx.position;
-		let to = from + 60 * 60;
 
-		let { blocks } = await this.fetch({ from, to });
-		this.createBlocks(blocks);
-//		blocks.forEach(block=>this.createBlock(block));
-		this.graph.updateSimulation();
+
+		this.fullFetch = true;
+		const t = this.graph.paintEl.transform;
+		t.x = -this.ctx.position; // * this.ctx.unitDist;
+		this.graph.setChartTransform(t);
+
+
+
+
+
+// 		let from = this.ctx.position;
+// 		let to = from + 60 * 60;
+
+// 		let { blocks } = await this.fetch({ from, to });
+// 		this.createBlocks(blocks);
+// //		blocks.forEach(block=>this.createBlock(block));
+// 		this.graph.updateSimulation();
 	}
 
 	fetch(args) {
@@ -482,6 +503,12 @@ export class App {
 		// t.x = -this.position * this.ctx.unitDist;
 		// this.graph.setChartTransform(t);
 	}
+
+	initNavigator() {
+		this.navigator = document.getElementById("timenav");
+		this.navigator.app = this;
+	}
+
 	updateGraph() {
 		this.graph.updateGraph(this.graph.data);	
 	}
@@ -518,6 +545,9 @@ export class App {
 		let to = pos + range / 2;
 
 
+		//this.navigator.update(pos / this.ctx.max);
+		this.navigator.redraw();
+
 		// const first = skip - limit;
 		// const last = skip + limit;
 		let max, min, init = true;
@@ -540,11 +570,15 @@ export class App {
 			}
 		})
 
-		if(right && max) {
-			from = max;
-		} else if(left && min) {
-			to = min;
+		if(!this.fullFetch) {
+			if(right && max) {
+				from = max;
+			} else if(left && min) {
+				to = min;
+			}
 		}
+		else
+			this.fullFetch = false;
 		
 		let { blocks, max : max_ } = await this.fetch({ from, to });
 		this.ctx.updateMax(max_);

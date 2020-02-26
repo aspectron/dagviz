@@ -667,6 +667,8 @@ export class GraphNode{
 				.duration(500)
 			   .style("opacity", 1);
 
+			// this.rebuildLinks();
+
 	    }
 
 		//console.log("EL:", Date.now()/1000, this.data.timestamp)
@@ -975,7 +977,7 @@ export class DAGViz extends BaseElement {
 		this.simulationNodes = this.simulation.nodes();
 
 
-		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(10).strength(1)
+		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(200).strength(1)
 		this.simulationLinks = this.simulationLinkForce.links();
 
 		//console.log("this.simulationNodes", this.simulationNodes)
@@ -986,7 +988,7 @@ export class DAGViz extends BaseElement {
 				//console.log("d.size", d)
 			 	return d.data.size * 3;// * 2//d.radius
 			}))
-			.force("charge", d3.forceManyBody().strength(-500))
+			.force("charge", d3.forceManyBody().strength(-200))
 //			.force("charge", d3.forceManyBody().strength(350))
 //			.force("charge", d3.forceManyBody().strength(150))
 			.force("x", d3.forceX())
@@ -1091,6 +1093,8 @@ export class DAGViz extends BaseElement {
 		if(this._node){//if node info window is active
 			this.updateNodeInfoPosition();
 		}
+
+		this.updateRegion(this.paintEl.transform);		
 	}
 	createNode(data){
 		if(!this.nodes[data.id]){
