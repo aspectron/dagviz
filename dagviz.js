@@ -13,12 +13,12 @@ const MySQL = require('./lib/mysql');
 class DAGViz {
 
     constructor() {
-        const args = MF.utils.args();
+        this.args = MF.utils.args();
 
         this.kasparov = `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
         // this.kasparov = `http://finland.aspectron.com:8082`;
-        if(args['kasparov']) {
-            this.kasparov = args['kasparov'];
+        if(this.args['kasparov']) {
+            this.kasparov = this.args['kasparov'];
         }
         console.log(`kasparov api server at ${this.kasparov}`);
         this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
@@ -92,14 +92,21 @@ class DAGViz {
         const mySQL = new MySQL({ port, database : this.uid });
         await mySQL.start()
 
+        let defaults = {
+            host : 'localhost',
+            port,
+            user : 'root',
+            password : 'dagviz',
+        };
+
         return new Promise((resolve,reject) => {
-            this.dbPool = mysql.createPool({
-                host : 'localhost', port,
-                user : 'root',
-                password: 'dagviz',
+            this.dbPool = mysql.createPool(Object.assign({ }, defaults, {
+                // host : 'localhost', port,
+                // user : 'root',
+                // password: 'dagviz',
                 database: this.uid, //'mysql',
                 insecureAuth : true
-            });
+            }));
             
                 this.db = {
                     query : async (sql, args) => {
@@ -536,8 +543,13 @@ class DAGViz {
                     }            
                 }
 
-                console.log(`blocks: ${blocks.length} last: ${last} total: ${total}`);
-                resolve({ blocks, last, total });
+                let max = null;
+                if(this.lastBlock) {
+                    max = this.lastBlock[unit];
+                }
+
+                console.log(`blocks: ${blocks.length} last: ${last} total: ${total} max: ${max}`);
+                resolve({ blocks, last, total, max });
             } catch(ex) {
                 console.log(ex);
                 reject(ex);
