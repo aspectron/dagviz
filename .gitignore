@@ -2,3 +2,4 @@ node_modules
 package-lock.json
 !build/node_modules
 bin
+__notes.txt

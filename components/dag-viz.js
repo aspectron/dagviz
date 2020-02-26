@@ -70,9 +70,9 @@ D3x.shape.hexagonA = function(el, o) {
 
     var path = node.append("path")
         .attr("d", hexagon(data(0, 0)))
-//        .attr("stroke", D3x.rgba(o.rgba, 0.9))
-.attr("stroke", D3x.rgba([0,0,0], 0.5))
-//.attr("stroke", D3x.rgba(o.rgba, 0.9))
+		//        .attr("stroke", D3x.rgba(o.rgba, 0.9))
+		.attr("stroke", D3x.rgba([0,0,0], 0.5))
+		//.attr("stroke", D3x.rgba(o.rgba, 0.9))
         // .attr("stroke-dasharray","20,5")
         
         .attr("fill", D3x.rgba(o.rgba)) //"rgba(255,0,0,0.4)");
@@ -246,7 +246,7 @@ D3x.shape.square = function(el, o) {
         .attr('height', size*2)
         //.attr('height', 0)// size*2)
         .attr('opacity',0)
-//        .attr('opacity',0.85)
+	//        .attr('opacity',0.85)
         //.attr('fill', o.rgba)//D3x.rgba(o.rgba))
         .attr('fill', o.rgba) // D3x.rgba(o.rgba))
         .attr("stroke", D3x.rgba([0,0,0], 0.5))
@@ -260,10 +260,10 @@ D3x.shape.square = function(el, o) {
 	// 		 //.attr('opacity',0.85);
 	// 		 .style("opacity", 1);
 
-//        .transition("c")
-        //.ease('in-out') // d3x
-//        .duration(1000)
-//        .attr("height", size * 2)
+	//        .transition("c")
+	        //.ease('in-out') // d3x
+	//        .duration(1000)
+	//        .attr("height", size * 2)
 
     node.setPosition = (x, y)=>{
     	node
@@ -341,8 +341,8 @@ export class GraphNodeLink{
 	constructor(holder, data){
 		this.holder = holder;
 		this.data = data;
-		this.el = holder.linksEl.append("line");
-		this.el.style('opacity',0);
+		this.el = holder.linksEl.append("path");
+		this.el.style('opacity',0).style('fill', 'none');
 		this.source = holder.nodes[data.child];
 		this.target = holder.nodes[data.parent];
 		this.target.addParentLink(this);
@@ -364,13 +364,20 @@ export class GraphNodeLink{
 			this.el
 				//.transition('o')
 				//.duration(2000)
-				.attr("x1", this.source.x)
-				.attr("y1", this.source.y)
-				.attr("x2", this.target.x)
-				.attr("y2", this.target.y);
+				.attr("d", this.buildD(
+					this.source.x,
+					this.source.y,
+					this.target.x,
+					this.target.y
+				));
 		}
 
-//		this.el.transition().duration(1000).style('opacity', 1);
+		//this.el.transition().duration(1000).style('opacity', 1);
+	}
+	buildD(x1, y1, x2, y2) {
+	  return "M" + x1 + "," + y1
+	       +(this.curves?  "S" + (x1*1.1) + "," + (y1*1.3):'')
+	       + " " + x2 + "," + y2;
 	}
 	setStaticPosition(x, y, x2, y2){
 		if(typeof(x2) == 'undefined' || typeof(y2) == 'undefined'){
@@ -381,10 +388,7 @@ export class GraphNodeLink{
 		}
 		if(!isNaN(x) && !isNaN(y) && !isNaN(x2) && !isNaN(y2)) {
 			this.el
-				.attr("x1", x)
-				.attr("y1", y)
-				.attr("x2", x2)
-				.attr("y2", y2);
+				.attr("d", this.buildD(x, y, x2, y2));
 		}
 	}
 
@@ -586,7 +590,7 @@ export class GraphNode{
 	initPosition(){
 		let {x, y} = this;
 		this.el.setPosition(x, y);
-//		this.el.setStaticPosition(x, y);
+		//this.el.setStaticPosition(x, y);
 		if(this.textEl){
 			this.textEl
 				.attr("x", x)
@@ -679,25 +683,25 @@ export class GraphNode{
 			this.holder.maxTS = this.data.timestamp;
 		}
 
-//		const ts = Date.now();
+		//		const ts = Date.now();
 
-		// let tDelta = this.holder.maxTS - this.tOffset;
-//		this.tOffset = this.holder.maxTS;
-//		let offset = (Date.now()-this.holder.startTS) / 1000;
-//		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
-//let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
-//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist + 256;//*Math.random()*100;
-//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
-//let x = -((this.holder.maxTS - this.data.timestamp))*50 - 256;//*Math.random()*100;
-//let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
-//console.log(x);
+				// let tDelta = this.holder.maxTS - this.tOffset;
+		//		this.tOffset = this.holder.maxTS;
+		//		let offset = (Date.now()-this.holder.startTS) / 1000;
+		//		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
+		//let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
+		//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist + 256;//*Math.random()*100;
+		//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
+		//let x = -((this.holder.maxTS - this.data.timestamp))*50 - 256;//*Math.random()*100;
+		//let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
+		//console.log(x);
 
-// x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
-//console.log(x);
+		// x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
+		//console.log(x);
 
-//		this.x = x;
-if(this.holder.ctx)
-	this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
+		//		this.x = x;
+		if(this.holder.ctx)
+			this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
 
 
 		this.el

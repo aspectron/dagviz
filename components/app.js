@@ -208,6 +208,15 @@ class GraphContext {
 					node.updateSize();
 				});
 			} break;
+			case 'curves':
+				let curves = this.curves;
+				Object.values(this.graph.nodes).forEach((node) => {
+					node.linkNodes && node.linkNodes.map(link=>{
+						link.curves = curves;
+						link.updateStyle()
+					})
+				});
+			break;
 		}
 	}
 
@@ -239,6 +248,7 @@ export class App {
 //		new Trigger(this,'connect','LINK SEQUENTIAL');
 
 		new Trigger(this.ctx,'trackSize','SIZE');
+		new Trigger(this.ctx,'curves','CURVES');
 
 		let ts = Date.now();
 		// let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
