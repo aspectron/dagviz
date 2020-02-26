@@ -16,6 +16,7 @@
 	<!--script src="/resources/mqttws31.js"></script-->
 	<script src="/resources/mqtt.min.js"></script>
 	<script type="module" src="./components/app.js"></script>
+	<script type="module" src="./components/navigator.js"></script>
 	<style type="text/css">
 		#dagViz{height:100vh;}
 		#address { 
@@ -29,12 +30,17 @@
 			font-weight: 400;
 		}
 		.trigger { cursor:pointer; padding: 32px; }  .trigger:hover{ border-bottom: 1px dashed groove;}
+
+		#timenav {
+			position: absolute; bottom: 0px; left: 0px; right: 0px; height: 48px; width: 100%; border: 1px solid green;
+		}
 	</style>
 </head>
 <body>
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='address'></div>
 	<div id='hud'><span class='info'></span><span class='ctl'></span></div>
+	<axis-navigator id="timenav"></axis-navigator>
 	<script type="module">
 		import { App } from './components/app.js';
 		$(document).ready(()=>{
