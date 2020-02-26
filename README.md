@@ -39,7 +39,7 @@ You can run this with simulation enabled:
 http://finland.aspectron.com:8686/?simulate
 
 Or you can point it to your MQTT feed as described above, using the address query parameter:
-http://finland.aspectron.com:8686/?address=<websocket mqtt server>
+```http://finland.aspectron.com:8686/?address=<websocket mqtt server>```
 
 ### Building Docker Image
 
