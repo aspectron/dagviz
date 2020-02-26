@@ -627,6 +627,13 @@ export class GraphNode{
 
 		let shapeConfig = this.getShapeConfig();
 
+
+		if(this.data.isChainBlock && this.holder.ctx.isChainBlock)
+			this.data.color = `rgba(110,210,216,0.99)`;
+		else
+			this.data.color = `rgba(194,244,255,0.99)`;
+
+
 		if(this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size) {
 			this.removeElEvents();
 			// console.log("DATA CHANGE",this);

@@ -23,7 +23,7 @@ export class Block extends GraphNode {
 			data.shape = 'square';
 		if(!data.color) {
 				if(data.isChainBlock && ctx.isChainBlock)
-					data.color = `rgba(255,194,194,0.99)`;
+					data.color = `rgba(110,210,216,0.99)`;
 				else
 					data.color = `rgba(194,244,255,0.99)`;
 			}
@@ -79,6 +79,8 @@ class GraphContext {
 		// 	this.init = Date.now() / 1000; 
 		this.trackSize = true;
 		this.max = 0;
+
+		// this.curves = true;
 	}
 
 	init(app,graph) {
@@ -214,6 +216,11 @@ class GraphContext {
 			case 'trackSize': {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateSize();
+				});
+			} break;
+			case 'isChainBlock': {
+				Object.values(this.graph.nodes).forEach((node) => {
+					node.updateStyle();
 				});
 			} break;
 			case 'curves':
