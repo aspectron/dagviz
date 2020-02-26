@@ -60,7 +60,7 @@ export class Block extends GraphNode {
 	updateSize() {
 		this.data.size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
 		this.updateStyle();
-		this.holder.simulation.alpha(0.2);
+		// this.holder.simulation.alpha(0.2);
 
 	}
 }
@@ -77,7 +77,8 @@ class GraphContext {
 		// this.init = 0;
 		// if(this.unit == 'timestamp')
 		// 	this.init = Date.now() / 1000; 
-		this.trackSize = false;
+		this.trackSize = true;
+		this.max = 0;
 	}
 
 	init(app,graph) {
@@ -210,6 +211,12 @@ class GraphContext {
 		}
 	}
 
+	updateMax(max) {
+		this.max = max;
+
+		console.log('new max:',max);
+	}
+
 }
 
 export class App {
@@ -324,7 +331,7 @@ export class App {
 				blocks = blocks.concat(data.blocks);
 				let remains = data.total - data.blocks.length;
 				if(!remains) {
-					return resolve({ blocks });
+					return resolve({ blocks, max : data.max });
 				} else {
 					from = data.last;
 					console.log(`multi-fetch: from: ${from} to: ${to}`);
@@ -539,7 +546,8 @@ export class App {
 			to = min;
 		}
 		
-		let { blocks } = await this.fetch({ from, to });
+		let { blocks, max : max_ } = await this.fetch({ from, to });
+		this.ctx.updateMax(max_);
 		this.createBlocks(blocks);
 //		blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
