@@ -1400,7 +1400,7 @@ export class DAGViz extends BaseElement {
 
 		if(!this.$hud)
 			this.$hud = $("#hud .info");
-		this.$hud.html(`T: ${pos}`);
+		this.$hud.html(`Pos: ${pos.toFixed(4)}`);
 	}
 
 	registerRegionUpdateSink(fn) {
