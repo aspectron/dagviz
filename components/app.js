@@ -11,42 +11,212 @@ const dpc = (t,fn)=>{
 const tsInit = Date.now();
 
 export class Block extends GraphNode {
-	constructor(holder,data) {
+	constructor(holder,data, ctx) {
 
 		data.id = data.blockHash;
 		data.name = data.id.replace(/^\s*0+/,'').substring(0,6);//+'\n\n'+(data.blueScore||'####');
-		data.parent = data.acceptingBlockHash;
-		data.size = data.mass/20*Math.exp(data.mass/20/10);
-		data.xMargin = /*500 +*/ ((Date.now()/1000 - data.timestamp))*50;
-		data.timestmp = data.timestamp / 1000;
+		// data.parent = data.acceptingBlockHash;
+		data.size = ctx.trackSize ? Math.max(25, data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
+		data.xMargin = 0; // 500 + ((Date.now()/1000 - data.timestamp))*50;
+		data.timestmp = data.timestamp;// / 1000;
 		if(!data.shape)
 			data.shape = 'square';
-		if(!data.color)
-			data.color = `rgba(194,244,255,0.99)`;
+		if(!data.color) {
+				if(data.isChainBlock)
+					data.color = `rgba(255,194,194,0.99)`;
+				else
+					data.color = `rgba(194,244,255,0.99)`;
+			}
 		super(holder,data);
 
-		this.x = Math.random();
+
 		this.y = Math.random();
-		this.el
-			.transition('cc')
-			.duration(1000)
-			.tween("attr.fill", function() {
-				var i = d3.interpolateNumber(data.xMargin, 0);
-				return function(t) {
-					data.xMargin = i(t)
-					//console.log('ssss', i(t));
-				};
+		// this.x = 
+		ctx.nodePosition(this,holder,holder.nodes); //node.data[this.unit] * this.unitScale * this.unitDist
+
+		// this.x = Math.random();
+		// this.y = Math.random();
+		// this.el
+		// 	.transition('cc')
+		// 	.duration(1000)
+		// 	.tween("attr.fill", function() {
+		// 		var i = d3.interpolateNumber(data.xMargin, 0);
+		// 		return function(t) {
+		// 			data.xMargin = i(t)
+		// 			//console.log('ssss', i(t));
+		// 		};
+		// 	});
+
+		this.buildLinks();
+		this.initPosition();
+
+		(this.data.childBlockHashes || []).forEach((hash) => {
+			let child = this.holder.nodes[hash];
+			if(child)
+				child.rebuildLinks();
+		})
+	}
+
+	updateSize() {
+		this.data.size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
+		this.updateStyle();
+		this.holder.simulation.alpha(0.2);
+
+	}
+}
+
+
+class GraphContext {
+	constructor(options) {
+		this.unit = options.unit; // timestamp
+
+		this.unitScale = 1.0;
+
+		this.unitDist = 100;
+
+		// this.init = 0;
+		// if(this.unit == 'timestamp')
+		// 	this.init = Date.now() / 1000; 
+		this.trackSize = false;
+	}
+
+	init(app,graph) {
+		this.app = app;
+		this.graph = graph;
+		this.position = 0;
+		
+		if(this.unit == 'timestamp')
+			this.position = Date.now() / 1000; // 1582398574;
+
+		// const t = graph.paintEl.transform;
+		// t.x = -this.position * this.unitDist;
+		// graph.setChartTransform(t);
+	}
+
+	nodePosition(node, graph, nodes) {
+
+
+
+		// if(!node.init_) {
+		// 	node.init_ = true;
+		// 	node.x = node.data[this.unit] * this.unitScale * this.unitDist;
+		// }
+
+//		node.x = node.data[this.unit] * this.unitScale * this.unitDist;
+
+		// node.x = node.lscore;
+		// return;
+
+
+
+		if(node.data.parentBlockHashes) {
+			let max = node.data[this.unit] * this.unitScale * this.unitDist;
+			node.data.parentBlockHashes.forEach((hash) => {
+				let parent = graph.nodes[hash];
+				if(parent && parent.x && parent.x > max)
+					max = parent.x;
 			});
 
-		this.buildLink();
-		this.initPosition()
+			node.x = max + this.unitDist;
+		} else {
+			node.x = node.data[this.unit] * this.unitScale * this.unitDist;
+		}
+//		console.log(node.x);
 	}
+
+
+	getTips(block) {
+		let parents = block.data.parentBlockHashes || [];
+		return parents.map((parentHash) => {
+			let parent = this.graph.nodes[parentHash];
+			if(!parent)
+				return block;
+			// console.log(`${block.data.lseq}:${block.data.blockHash} -> ${parent.data.lseq}:${parent.data.blockHash}`)
+			return this.getTips(parent);
+		}).flat();
+	}
+
+	generateScore(block, score) {
+		if(!score)
+			block.lscore = block.data[this.ctx.unit];
+		else {
+			if(!lscore || block.lscore < score)
+				block.lscore = score;
+		}
+
+		block.data.childBlockHashes.forEach((childHash) => {
+			const child = this.graph.nodes[childHash];
+			if(child) {
+				this.generateScore(child, score + this.ctx.unitDist);
+			}
+		})
+	}
+
+	generateNodeLayout() {
+		return;
+
+		let tips = { };
+		let nodes = Object.values(this.graph.nodes);
+
+		nodes.forEach((node) => {
+			// node.idx = 0; 
+			// delete node.children;
+			let tips_ = this.getTips(node);
+			tips_.forEach((node) => {
+				if(!tips[node.data.blockHash])
+					tips[node.data.blockHash] = node;
+			});
+		});
+
+		Object.values(tips).forEach((node) => {
+			this.generateScore(node, 0);
+		})
+
+		// nodes.forEach((node) => {
+
+		// 	if(node.data.parentBlockHashes) {
+
+		// 		node.data.parentBlockHashes.forEach((hash) => {
+		// 			let parent = graph.nodes[hash];
+		// 			if(!parent.children)
+		// 				parent.children = { };
+		// 			parent.children[node.blockHash];
+		// 		});
+	
+		// 		// node.x = max + this.unitDist;
+
+		// 	} else {
+
+		// 		// node.x = node.data[this.unit] * this.unitScale * this.unitDist;
+
+		// 	}
+	
+		// })
+
+		// nodes.forEach((node) => {
+
+		// })
+	}
+
+	onTrigger(e) {
+
+		switch(e) {
+
+			case 'trackSize': {
+				Object.values(this.graph.nodes).forEach((node) => {
+					node.updateSize();
+				});
+			} break;
+		}
+	}
+
 }
 
 export class App {
 	constructor() {
 		this.scores = [];
-		this.position = 0;//1582398574- 1578493784; //Date.now() / 1000 - 60 * 60 * 8000;
+		//this.position = 0;//1582398574- 1578493784; //Date.now() / 1000 - 60 * 60 * 8000;
+		this.ctx = new GraphContext({ unit : 'blueScore' });
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 		this.connect = this.argv.get('connect') !== null;
@@ -58,23 +228,25 @@ export class App {
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
-		new Trigger(this.graph,'track','TRACKING');
-		new Trigger(this,'connect','LINK SEQUENTIAL');
+//		new Trigger(this.graph,'track','TRACKING');
+//		new Trigger(this,'connect','LINK SEQUENTIAL');
+
+		new Trigger(this.ctx,'trackSize','SIZE');
 
 		let ts = Date.now();
-		let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
-		let first = _BLOCKDAGCHAIN[0];
-		let delta = ts/1000 - first.timestamp;
+		// let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
+		// let first = _BLOCKDAGCHAIN[0];
+		// let delta = ts/1000 - first.timestamp;
 
-		this.index = 0;
-		this.items = _BLOCKDAGCHAIN.map((o, i)=>{
-			o.name = `N${++i}`;
-			o.timestamp += delta; // Date.now()/1000 + i;
-			return o;
-		})
+		// this.index = 0;
+		// this.items = _BLOCKDAGCHAIN.map((o, i)=>{
+		// 	o.name = `N${++i}`;
+		// 	o.timestamp += delta; // Date.now()/1000 + i;
+		// 	return o;
+		// })
 		//this.items = this.items.slice(0,25);
-		if(/simulate/.test(location.search))
-		 	this.simulateData();
+		// if(/simulate/.test(location.search))
+		//  	this.simulateData();
 
 		setInterval(()=>{
 			this.graph.updateSimulation();
@@ -90,18 +262,18 @@ export class App {
 			switch(e.key) {
 				case 'ArrowRight': {
 					console.log('ArrowRight');
-					this.position += 60;
+					this.ctx.position += 60;
 
-					console.log('pos:',this.position);
+					console.log('pos:',this.ctx.position);
 					this.updatePosition();
 				} break;
 
 				case 'ArrowLeft': {
 					console.log('ArrowLeft');
-					this.position -= 60;
-					if(this.position < 0)
-						this.position = 0;
-					console.log('pos:',this.position);
+					this.ctx.position -= 60;
+					if(this.ctx.position < 0)
+						this.ctx.position = 0;
+					console.log('pos:',this.ctx.position);
 					this.updatePosition();
 				} break;
 			}
@@ -114,6 +286,8 @@ export class App {
 				return;
 			this.createBlock(block);
 		});
+
+		this.ctx.generateNodeLayout();
 	}
 
 	async updatePosition() {
@@ -127,23 +301,51 @@ export class App {
 		// let to = Date.now();
 		// let from = to - 1000 * 60 * 60;
 
-		let from = this.position;
+		let from = this.ctx.position;
 		let to = from + 60 * 60;
 
-		let blocks = await this.fetch({ from, to });
+		let { blocks } = await this.fetch({ from, to });
 		this.createBlocks(blocks);
 //		blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
 	}
 
 	fetch(args) {
+		return new Promise(async (resolve,reject) => {
+
+			let blocks = [];
+
+			let { from, to, unit } = args;
+			let done = false;
+			while(!done) {
+				// NOTE this produces multiple blocks!
+				console.log(`fetching: from: ${from} to: ${to}`);
+				let data = await this.fetch_impl({ from, to, unit });
+				blocks = blocks.concat(data.blocks);
+				let remains = data.total - data.blocks.length;
+				if(!remains) {
+					return resolve({ blocks });
+				} else {
+					from = data.last;
+					console.log(`multi-fetch: from: ${from} to: ${to}`);
+				}
+			}
+		});
+	}
+
+	fetch_impl(args) {
 		return new Promise((resolve,reject) => {
 			let query = '';
-			if(args)
-				query = '?'+Object.entries(args).map(([k,v])=>`${k}=${typeof v == 'string' ? v : Math.round(v)}`).join('&');
+
+			if(!args.from || !args.to)
+				throw new Error('missing from or to in fetch() args...');
+
+			args.unit = this.ctx.unit;
+			
+			query = '?'+Object.entries(args).map(([k,v])=>`${k}=${typeof v == 'string' ? v : Math.round(v)}`).join('&');
 			console.log(query);
 			//$.ajax('http://finland.aspectron.com:8082/blocks'+query, 
-			$.ajax('/time-slice'+query, 
+			$.ajax('/data-slice'+query, 
 			{
 				dataType: 'json', // type of response data
 				// timeout: 500,     // timeout milliseconds
@@ -152,6 +354,10 @@ export class App {
 					//let seq = args.skip;
 					// if(!args.order || args.order == 'asc')
 					// 	data.forEach((v) => v.seq = seq++);
+					if(data.blocks && data.blocks.length)
+						data.blocks.forEach(block => block.seq = block.id);
+
+
 					console.log(data);
 					resolve(data);
 				},
@@ -184,7 +390,7 @@ export class App {
 		// while(this.scores.length > 128)
 		// 	this.scores.shift();
 
-		let block = new Block(this.graph, data);
+		let block = new Block(this.graph, data, this.ctx);
 		this.graph.addNode(block);
 	}
 
@@ -204,37 +410,37 @@ export class App {
 		this.graph.updateSimulation();
 	}
 
-	simulateData(){
+	// simulateData(){
 
-		let wait = 1000;
-		let item = this.items.shift();
-		if(item) {
+	// 	let wait = 1000;
+	// 	let item = this.items.shift();
+	// 	if(item) {
 
-			if(this.prevItem_) {
-				let tdelta = item.timestamp - this.prevItem_.timestamp;
-				if(tdelta)
-					wait = tdelta * 1000;
-			}
-		}
+	// 		if(this.prevItem_) {
+	// 			let tdelta = item.timestamp - this.prevItem_.timestamp;
+	// 			if(tdelta)
+	// 				wait = tdelta * 1000;
+	// 		}
+	// 	}
 		
-		setTimeout(()=>{
+	// 	setTimeout(()=>{
 			
-			if(item) {
+	// 		if(item) {
 
-				// let parent = this.graph.nodes[item.acceptingBlockHash];
-				// // console.log("parent:",parent);
-				// if(parent && parent.timestamp == data.timestamp)
-				// 	item.timestamp++;// += 0.1;
+	// 			// let parent = this.graph.nodes[item.acceptingBlockHash];
+	// 			// // console.log("parent:",parent);
+	// 			// if(parent && parent.timestamp == data.timestamp)
+	// 			// 	item.timestamp++;// += 0.1;
 
-				this.createBlock(item);
-				this.prevItem_ = item;
-			}
+	// 			this.createBlock(item);
+	// 			this.prevItem_ = item;
+	// 		}
 			
-			this.graph.updateSimulation();
+	// 		this.graph.updateSimulation();
 
-			this.simulateData();
-		}, wait)
-	}
+	// 		this.simulateData();
+	// 	}, wait)
+	// }
 	afterInit(){
 		document.body.classList.remove("initilizing");
 	}
@@ -254,15 +460,19 @@ export class App {
 	}
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
+		this.graph.ctx = this.ctx;
 		this.graph.registerRegionUpdateSink(this.updateRegion.bind(this));
 		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
 
 		this.graph.track = false; // this.argv.get('track') !== null;
 						//158239858000
-		this.position = 0; // 1582398574;
+
+
+		this.ctx.init(this, this.graph);
+		// this.position = Date.now() / 1000; // 1582398574;
 
 		// const t = this.graph.paintEl.transform;
-		// t.x = -this.position * this.graph.unitDist;
+		// t.x = -this.position * this.ctx.unitDist;
 		// this.graph.setChartTransform(t);
 	}
 	updateGraph() {
@@ -281,30 +491,55 @@ export class App {
 	}
 
 	async updateRegion(o) {
-		let { t, range } = o;
-		
-		let limit = range * 1.6;
+		let { pos, range } = o;
+
+		let left = false, right = false;
+		if(pos > this.ctx.position)
+			right = true;
+		else
+			left = true;
+		this.ctx.position = pos;
+		range *= 2.2; //1.6;
 
 		// if(limit > 100)
 		// 	limit = 100;
-		t += 1000;
-		limit *= 1000;
+		// t += 1000;
+		// limit *= 1000;
 
 		//let limit = 100;
-		let from = t - limit / 2;
-		let to = t + limit / 2;
+		let from = pos - range / 2;
+		let to = pos + range / 2;
+
 
 		// const first = skip - limit;
 		// const last = skip + limit;
-		console.log("range:",from,to,t,range,this.position);
+		let max, min, init = true;
+		console.log("range:",from,to,pos,range);
 		Object.values(this.graph.nodes).forEach((node) => {
-			if(node.data.timestamp < from || node.data.timestamp > to) {
-				console.log('deleting:',node.data.timestamp);
+			if(node.data[this.ctx.unit] < from || node.data[this.ctx.unit] > to) {
+				console.log('deleting:',node.data[this.ctx.unit]);
+				// TODO - ensure links TO this node also get removed
 				node.purge();
+			} else {
+				if(init) {
+					max = min = node.data[this.ctx.unit];
+				} else {
+					let v = node.data[this.ctx.unit];
+					if(v < min)
+						min = v;
+					if(v > max)
+						max = v;
+				}
 			}
 		})
+
+		if(right && max) {
+			from = max;
+		} else if(left && min) {
+			to = min;
+		}
 		
-		let blocks = await this.fetch({ from, to });
+		let { blocks } = await this.fetch({ from, to });
 		this.createBlocks(blocks);
 //		blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
@@ -322,6 +557,8 @@ class Trigger {
 
 		$(this.el).on('click', () => {
 			this.target[this.ident] = !(!!this.target[this.ident]);
+			if(this.target.onTrigger)
+				this.target.onTrigger(ident, this.target[this.ident]);
 			this.update();
 		})
 

@@ -145,6 +145,11 @@ class NodePanel extends BaseElement{
 			.pin-btn:hover .pop{
 				display:block;
 			}
+
+			td { 
+				vertical-align: top;
+				white-space: pre;
+			}
 		`;
 	}
 
@@ -212,6 +217,7 @@ class NodePanel extends BaseElement{
 						<tr><td>bits</td><td>${this.data.bits}</td></tr>
 						<tr><td>nonce</td><td>${this.data.nonce}</td></tr>
 						<tr><td>acceptingBlockHash</td><td>${this.data.acceptingBlockHash}</td></tr>
+						<tr><td>parentBlockHashes</td><td>${(this.data.parentBlockHashes || []).join('\n')}</td></tr>
 						<tr><td>blueScore</td><td>${this.data.blueScore}</td></tr>
 						<tr><td>isChainBlock</td><td>${this.data.isChainBlock}</td></tr>
 						<tr><td>mass</td><td>${this.data.mass}</td></tr>

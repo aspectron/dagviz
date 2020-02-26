@@ -345,13 +345,15 @@ export class GraphNodeLink{
 		this.el.style('opacity',0);
 		this.source = holder.nodes[data.child];
 		this.target = holder.nodes[data.parent];
-		this.target.addChildLink(this);
+		this.target.addParentLink(this);
 		this.target.attachNode();
 		this.el.transition().duration(1000).style('opacity', 1);
 	}
 	remove(){
 		this.el.remove();
-		this.target.removeChildLink(this);
+		//delete this.holder.links.parent[this.data.parent];
+		this.target.removeParentLinks(this);
+		// TODO - should we check/remove children?
 	}
 	updateStyle(){
 		if(!this.source || !this.target){
@@ -385,6 +387,10 @@ export class GraphNodeLink{
 				.attr("y2", y2);
 		}
 	}
+
+	highlight(color) {
+		this.el.transition().duration(200).attr('stroke', color || 'black').attr('stroke-width', color ? 5 : 1);
+	}
 }
 
 export class GraphNode{
@@ -394,12 +400,12 @@ export class GraphNode{
 		this.id 	= data.id || data.name;
 		this.tOffset = 0;
 		holder.nodes[this.id] = this;
-		this.childLinks = {};
+		this.parentLinks = {};
 		this.attachNode();
 	}
 	setData(data){
 		this.data = data;
-		this.buildLink();
+		this.buildLinks();
 		this.textEl.text(this.data.name);
 		this.heightEl.text(this.data.blueScore+'');
 		this.updateStyle();
@@ -505,13 +511,19 @@ export class GraphNode{
 		return this;
 
 	}
-	buildLink(){
+	rebuildLinks() {
+		this.removeLinks();
+		this.buildLinks();
+	}
+	buildLinks(){
 		let {data, holder} = this;
 		//console.log("data", data, holder.nodes[data.parent])
-		if(!data.parent){
-			this.removeLink();
-		}else if(holder.nodes[data.acceptingBlockHash]){
-				this.createLink(data.acceptingBlockHash);
+		if(!data.parentBlockHashes || !data.parentBlockHashes.length){
+			this.removeLinks();
+		}else 
+		// if(holder.nodes[data.acceptingBlockHash])
+		{
+				this.createLinks(data.parentBlockHashes);
 			// else
 			// 	console.warning(`Block not present during linkage: ${data.parent}`);
 			// if(holder.nodes[data.parent].data.timestamp == data.timestamp)
@@ -520,17 +532,43 @@ export class GraphNode{
 		}
 		//if(data.parent)
 		//	console.log("data.parent", data.parent, this.linkNode)
-		return this.linkNode;
+		return this.linkNodes;
 	}
-	createLink(parent){
-		if(this.linkNode)
-			return
-		this.linkNode = new GraphNodeLink(this.holder, {child:this.id, parent})
+	createLinks(parents){
+		if(this.partialLinks) {
+			this.removeLinks();
+		}
+		else
+		if(this.linkNodes)
+			return;
+
+		this.partialLinks = false; 
+		this.linkNodes = parents.map((parent) => {
+
+			if(!this.holder.nodes[parent]) {
+				// console.log('no parent is present, ignoring links...');
+				this.partialLinks = true;
+				return null;
+			}
+
+			return new GraphNodeLink(this.holder, {child:this.id, parent});
+			//return this.createLink(this.id, parent);
+		}).filter(nl=>nl);
 	}
-	removeLink(){
-		if(this.linkNode){
-			this.linkNode.remove();
-			delete this.linkNode;
+	removeLinks(filter){
+		if(this.linkNodes){
+			this.linkNodes = this.linkNodes.map((link)=>{
+				if(filter) {
+					if(link.data.parent != filter && link.data.child != filter)
+						return link;
+				}
+				link.remove();
+				return null;
+			}).filter(v=>v); // .remove();
+
+			if(!this.linkNodes.length)
+				delete this.linkNodes;
+			//delete this.linkNodes;
 		}
 	}
 	remove(){
@@ -538,11 +576,11 @@ export class GraphNode{
 		this.el.remove();
 		this.textEl.remove();
 		this.heightEl.remove();
-		this.removeLink();
+		this.removeLinks();
 
-		_.each(this.childLinks, (link, child)=>{
+		_.each(this.parentLinks, (link, parent)=>{
 			link.remove();
-			delete this.childLinks[child];
+			delete this.parentLinks[parent];
 		})
 	}
 	initPosition(){
@@ -559,9 +597,9 @@ export class GraphNode{
 				.attr("x", x)
 				.attr("y", y-0.25)
 		}
-		if(this.linkNode)
-			this.linkNode
-				.setStaticPosition(x, y)
+		if(this.linkNodes)
+			this.linkNodes.forEach(node => node.setStaticPosition(x, y));
+				
 	}
 	updateStyle(){
 		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
@@ -583,7 +621,7 @@ export class GraphNode{
 
 		let shapeConfig = this.getShapeConfig();
 
-		if(this.data.shape != this.shape || this.data.color != this.color) {
+		if(this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size) {
 			this.removeElEvents();
 			// console.log("DATA CHANGE",this);
 			this.el.remove();
@@ -591,10 +629,11 @@ export class GraphNode{
 	            size : this.data.size,
 	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
-	        })
+	        });
 
 	        this.shape = this.data.shape;
 			this.color = this.data.color;
+			this.size = this.data.size;
 			
 			const textColor = this.data.textColor || '#000';
 
@@ -640,23 +679,27 @@ export class GraphNode{
 			this.holder.maxTS = this.data.timestamp;
 		}
 
-		const ts = Date.now();
+//		const ts = Date.now();
 
 		// let tDelta = this.holder.maxTS - this.tOffset;
-		this.tOffset = this.holder.maxTS;
+//		this.tOffset = this.holder.maxTS;
 //		let offset = (Date.now()-this.holder.startTS) / 1000;
 //		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
-let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
+//let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
 //let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist + 256;//*Math.random()*100;
 //let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
 //let x = -((this.holder.maxTS - this.data.timestamp))*50 - 256;//*Math.random()*100;
 //let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
 //console.log(x);
 
-x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
+// x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
 //console.log(x);
 
-		this.x = x;
+//		this.x = x;
+if(this.holder.ctx)
+	this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
+
+
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
@@ -698,25 +741,40 @@ x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
 
 
 
-		if(this.linkNode)
-			this.linkNode.updateStyle();
+		if(this.linkNodes)
+			this.linkNodes.forEach(node=>node.updateStyle());
 	}
-	addChildLink(childLink){
-		this.childLinks[childLink.data.child] = childLink;
+	addParentLink(parentLink){
+		this.parentLinks[parentLink.data.child] = parentLink;
 	}
-	removeChildLink(childLink){
-		delete this.childLinks[childLink.data.child];
+	removeParentLinks(parentLink){
+		delete this.parentLinks[parentLink.data.child];
 	}
+
+	getLinks() {
+		return (this.linkNodes || []).concat(Object.values(this.parentLinks));
+	}
+
 	onNodeClick(e) {
 		if (d3.event.defaultPrevented)
 			return
 		this.holder.onNodeClick(this, d3.event);
 	}
 	onNodeHover(){
-		this.holder.showNodeInfo(this.data, this);
+		// this.holder.showNodeInfo(this.data, this);
+
+
+		this.holder.highlightLinks(this.linkNodes || [], 'green');
+		this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
+
+
 	}
 	onNodeOut(){
-		this.holder.hideNodeInfo(this.data, this);
+		// this.holder.hideNodeInfo(this.data, this);
+
+		this.holder.highlightLinks(this.getLinks(), null);
+
+
 		/*
 		let box = this.el.node().getBoundingClientRect();
 		let {x, y} = d3.event;
@@ -829,9 +887,14 @@ export class DAGViz extends BaseElement {
 
 		this.xMargin = 384;
 
-		this.track = true;
+		this.track = false;
 
-		this.unitDist = 100;
+		this.links = {
+			// parent : { },
+			// child : { }
+		}
+
+		//this.unitDist = 100;
 
 		//
 	}
@@ -918,10 +981,10 @@ export class DAGViz extends BaseElement {
 		//console.log("this.simulationNodes", this.simulationNodes)
 
 		this.simulation
-			.force("link", this.simulationLinkForce)
+			// .force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius(function(d) {
 				//console.log("d.size", d)
-			 	return d.data.size * 2;// * 2//d.radius
+			 	return d.data.size * 3;// * 2//d.radius
 			}))
 			.force("charge", d3.forceManyBody().strength(-500))
 //			.force("charge", d3.forceManyBody().strength(350))
@@ -1054,17 +1117,21 @@ export class DAGViz extends BaseElement {
 		// 	let discarded = this.simulationNodes.shift();
 		// 	discarded.purge();
 		// }
-		let link = node.buildLink(), linksUpdated=false;
-		if(link){
-			this.simulationLinks.push(link);
+
+
+
+		let linksUpdated = false;
+		let links = node.buildLinks();
+		if(links && links.length) {
+			this.simulationLinks.push(...links);
 			linksUpdated = true;
 		}
 
 		this.simulationNodes.forEach(n=>{
-			if(n.data.parent == node.data.id){
-				link = n.buildLink();
-				if(link){
-					this.simulationLinks.push(link);
+			if(n.partialLinks) {
+				links = n.buildLinks();
+				if(links && links.length) {
+					this.simulationLinks.push(...links);
 					linksUpdated = true;
 				}
 			}
@@ -1073,18 +1140,35 @@ export class DAGViz extends BaseElement {
 		
 		//console.log("node", node.data)
 		if(linksUpdated){
-			this.simulation.force('link').links(this.simulationLinks)
+			this.updateSimulationLinks();
 			//this.simulationLinkForce.links(this.simulationLinks);
 			//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
 		}
 	}
 
+
+	// createLink(parent, child) {
+	// 	let link = new GraphNodeLink(this, {parent, child});
+	// 	this.links[parent+child] = link;
+	// 	return link;
+	// }
+
+	updateSimulationLinks() {
+		if(this.simulation.force('link'))
+			this.simulation.force('link').links(this.simulationLinks);
+	}
+
 	updateSimulation() {
-		this.simulation.nodes(this.simulationNodes)
+		try {
+			this.simulation.nodes(this.simulationNodes)
+		} catch(ex) {
+			console.log(ex);
+		}
 		this.simulation.alpha(0.005);
 		this.simulation.alphaTarget(0.005);
 		this.simulation.alphaDecay(0.005);
 //		this.simulation.alpha(0.005);
+//		this.simulation.alpha(0.01);
 
 //		this.updateNodeInfoPosition();
 	}
@@ -1292,31 +1376,31 @@ export class DAGViz extends BaseElement {
 	updatePanInfo(transform) {
 //		console.log('transform:',transform);
 
-		let t = -(transform.x / transform.k / this.tdist);
+		let pos = -(transform.x / transform.k / this.ctx.unitDist);
 
-		let suffix = '';
-		let sign = t > 0 ? '+' : t < 0 ? '' : '';
-		if(t > 60 * 60) {
-			t = t / 60 / 60;
-			t = t.toFixed(2);
-			suffix = 'hrs';
-		}
-		else
-		if(t > 60) {
-			t = t / 60;
-			t = t.toFixed(2);
-			suffix = 'min';
-		}
-		else {
-			t = t.toFixed();
-			suffix = 'sec';
-		}
+		// let suffix = '';
+		// let sign = t > 0 ? '+' : t < 0 ? '' : '';
+		// if(t > 60 * 60) {
+		// 	t = t / 60 / 60;
+		// 	t = t.toFixed(2);
+		// 	suffix = 'hrs';
+		// }
+		// else
+		// if(t > 60) {
+		// 	t = t / 60;
+		// 	t = t.toFixed(2);
+		// 	suffix = 'min';
+		// }
+		// else {
+		// 	t = t.toFixed();
+		// 	suffix = 'sec';
+		// }
 
-		t = `${sign}${t} ${suffix}`;
+		// t = `${sign}${t} ${suffix}`;
 
 		if(!this.$hud)
 			this.$hud = $("#hud .info");
-		this.$hud.html(`T: ${t}`);
+		this.$hud.html(`T: ${pos}`);
 	}
 
 	registerRegionUpdateSink(fn) {
@@ -1326,14 +1410,20 @@ export class DAGViz extends BaseElement {
 	updateRegion(transform) {
 		if(!this.regionUpdateSink_)
 			return;
-		let t = -(transform.x / transform.k / this.unitDist);
-		var box = this.graphHolder.getBoundingClientRect();
-		let range = Math.ceil(box.width / transform.k / this.unitDist);
 
-		if(Math.round(this._last_t / 3) != Math.round(t/3) || this._last_range != range) {
-			this._last_t = t;
+		if(!this.ctx) {
+			console.log('updateRegion - no ctx');
+			return;
+		}
+
+		let pos = -(transform.x / transform.k / this.ctx.unitDist);
+		var box = this.graphHolder.getBoundingClientRect();
+		let range = Math.ceil(box.width / transform.k / this.ctx.unitDist);
+
+		if(Math.round(this._last_pos/3) != Math.round(pos/3) || this._last_range != range) {
+			this._last_pos = pos;
 			this._last_range = range;
-			this.regionUpdateSink_({t,range,transform,box});
+			this.regionUpdateSink_({pos,range,transform,box});
 		}
 	}
 
@@ -1343,6 +1433,7 @@ export class DAGViz extends BaseElement {
 	}
 
 	updateTracking() {
+		return;
 		if(this.lastNodeAdded && this.track) {
 			const ts = Date.now();
 			let delta = (ts - this.lastNodeAddedTS) / 15000;
@@ -1355,6 +1446,12 @@ export class DAGViz extends BaseElement {
 				t.y += v.cY * 0.1;// * delta;
 			}, offsetX : 0 } );
 		}
+	}
+
+	highlightLinks(links, highlight) {
+		links.forEach((link)=>{ 
+			link.highlight(highlight); 
+		});
 	}
 }
 

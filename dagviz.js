@@ -15,7 +15,8 @@ class DAGViz {
     constructor() {
         const args = MF.utils.args();
 
-        this.kasparov = `http://finland.aspectron.com:8082`;
+        this.kasparov = `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
+        // this.kasparov = `http://finland.aspectron.com:8082`;
         if(args['kasparov']) {
             this.kasparov = args['kasparov'];
         }
@@ -40,14 +41,14 @@ class DAGViz {
             // Serve up public/ftp folder
             const serve = serveStatic('./', { 'index': ['index.html', 'index.htm'] })
             
-            const time_slice = '/time-slice?';
+            const data_slice = '/data-slice?';
 
             // Create server
             const server = http.createServer((req, res)=>{
-                if(req.url.startsWith(time_slice)) {
-                    let q = req.url.substring(time_slice.length);
+                if(req.url.startsWith(data_slice)) {
+                    let q = req.url.substring(data_slice.length);
                     q = querystring.parse(q);
-                    this.timeSlice(q).then((data)=> {
+                    this.dataSlice(q).then((data)=> {
                         res.writeHead(200, {'Content-Type': 'application/json'});
                         res.write(JSON.stringify(data));
                         res.end();
@@ -88,45 +89,52 @@ class DAGViz {
 
         const port = 8309;
 
-        const mySQL = new MySQL({ port });
+        const mySQL = new MySQL({ port, database : this.uid });
         await mySQL.start()
 
         return new Promise((resolve,reject) => {
-            this.db_ = mysql.createConnection({
+            this.dbPool = mysql.createPool({
                 host : 'localhost', port,
                 user : 'root',
                 password: 'dagviz',
-                // database: 'mysql',
+                database: this.uid, //'mysql',
                 insecureAuth : true
             });
             
-            this.db_.connect(async (err) => {
-                if(err) {
-                    this.log(err);
-                    this.log("FATAL - MYSQL STARTUP SEQUENCE! [2]".brightRed);
-                    return reject(err);// resolve();
-                }
-
-                this.log("MySQL connection SUCCESSFUL!".brightGreen);
-
                 this.db = {
                     query : async (sql, args) => {
                         return new Promise((resolve,reject) => {
-                            this.db_.query(sql, args, (err, rows ) => {
+                            this.dbPool.getConnection((err, connection) => {
+                                //console.log("CONNECTION:",connection);
                                 if(err)
                                     return reject(err);
-                                    // console.log("SELECT GOT ROWS:",rows);
-                                resolve(rows);
+
+                                connection.query(sql, args, (err, rows) => {
+                                    connection.release();
+                                    if(err)
+                                        return reject(err);
+                                        // console.log("SELECT GOT ROWS:",rows);
+                                    resolve(rows);
+                                });
                             });
                         });
                     }                
                 }
+            // this.db_.connect(async (err) => {
+            //     if(err) {
+            //         this.log(err);
+            //         this.log("FATAL - MYSQL STARTUP SEQUENCE! [2]".brightRed);
+            //         return reject(err);// resolve();
+            //     }
+
+            //     this.log("MySQL connection SUCCESSFUL!".brightGreen);
+
 
                 resolve();
                 // db.end(()=>{
                 //     this.log("MySQL client disconnecting.".brightGreen);
                 // });
-            });
+            // });
         });
     }
 
@@ -154,17 +162,24 @@ class DAGViz {
                 blueScore              BIGINT UNSIGNED NOT NULL,
                 isChainBlock          TINYINT         NOT NULL,
                 mass                    BIGINT          NOT NULL,
+                parentBlockHashes   TEXT NOT NULL,
+                childBlockHashes   TEXT NOT NULL,
                 PRIMARY KEY (id),
                 UNIQUE INDEX idx_blocks_block_hash (blockHash),
                 INDEX idx_blocks_timestamp (timestamp),
-                INDEX idx_blocks_is_chain_block (isChainBlock)
+                INDEX idx_blocks_is_chain_block (isChainBlock),
+                INDEX idx_blocks_blueScore (blueScore)
             );        
         `);
         
         await this.sql(`
             CREATE TABLE IF NOT EXISTS block_relations (
+                id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 parent  CHAR(64) NOT NULL,
-                child CHAR(64) NOT NULL
+                child CHAR(64) NOT NULL,
+                linked TINYINT NOT NULL,
+                PRIMARY KEY (id),
+                INDEX idx_child (child)
             );
         `);
        
@@ -211,8 +226,11 @@ class DAGViz {
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
         this.skip = result.shift().total;
-        console.log(`SELECT COUNT(*) AS total FROM blocks => ${result.total}`);
+        console.log(`SELECT COUNT(*) AS total FROM blocks => ${this.skip}`);
         this.sync();
+        dpc(3000, () => {
+            this.updateRelations();
+        });
     }
 
     log(...args) {
@@ -224,7 +242,9 @@ class DAGViz {
         return new Promise((resolve,reject) => {
 
             let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
-
+            
+            // console.log(`${this.kasparov}/blocks?${args}`);
+            
             rp(`${this.kasparov}/blocks?${args}`).then((text) => {
                 let data = null;
                 try {
@@ -232,8 +252,12 @@ class DAGViz {
                 } catch(ex) {
                     reject(ex);
                 }
+                // console.log(data);
                 resolve(data);
-            }, reject);
+            }, (err) => {
+                console.log(err);
+                reject(err);
+            });
             
         })
     }
@@ -244,6 +268,7 @@ class DAGViz {
         const limit = 100;
         const order = 'asc';
 
+        process.stdout.write(` ...${skip}... `);
         // console.log(`fetching: ${skip}`);
         this.fetch({ skip, limit, order }).then(async (data) => {
             // let seq = skip;
@@ -251,9 +276,15 @@ class DAGViz {
             //     o.seq = seq++;
             // });
             // console.log("DATA:",data);
-            await this.post(data);
-            this.skip += data.length;
-            const wait = data.length != 100 ? 1000 : 0;
+            if(data.total && data.total != this.lastTotal)
+                this.lastTotal = data.total;
+
+            if(data.blocks && data.blocks.length) {
+                await this.post(data.blocks);
+                this.skip += data.blocks.length;
+            }
+            const wait = (!data || !data.blocks || data.blocks.length != 100) ? 1000 : 0;
+            //(data.blocks && data.blocks.length != 100) ? 1000 : 0;
             dpc(wait, ()=> {
                 this.sync();
             });
@@ -270,51 +301,62 @@ class DAGViz {
 
     }
 
-    post(data) {
+    post(blocks) {
+        // console.log("DATA:",data);
+
+        this.lastBlock = blocks[blocks.length-1];
+
         return new Promise(async (resolve,reject)=>{
     //console.log("DOING POST") // 'acceptingBlockTimestamp',
-            let order = ['blockHash', 'acceptingBlockHash',  'version', 'hashMerkleRoot', 'acceptedIDMerkleRoot', 'utxoCommitment', 'timestamp', 'bits', 'nonce', 'blueScore', 'isChainBlock', 'mass'];
+            let order = ['blockHash', 'acceptingBlockHash',  'version', 'hashMerkleRoot', 'acceptedIDMerkleRoot', 'utxoCommitment', 'timestamp', 'bits', 'nonce', 'blueScore', 'isChainBlock', 'mass', 'parentBlockHashes', 'childBlockHashes'];
 
+            // let blocks = data.blocks;
             let relations = [];
 
-            data.forEach(block => {
-                block.isChainBlock = block.isChainBlock == 'true' ? 1 : 0;
+            blocks.forEach(block => {
+                block.isChainBlock = block.isChainBlock === true ? 1 : 0;
 
                 if(block.parentBlockHashes) {
-                    block.parentBlockHashes.forEach(hash => relations.push([hash, block.blockHash]));
+                    block.parentBlockHashes.forEach(hash => relations.push([hash, block.blockHash, 0]));
                 }
-                delete block.parentBlockHashes;
+                
+                // delete block.parentBlockHashes;
+                block.parentBlockHashes = block.parentBlockHashes.join(',');
+                block.childBlockHashes = '';
 
-                if(block.acceptingBlockHash)
-                    relations.push([block.acceptingBlockHash, block.blockHash]);
+                // if(block.acceptingBlockHash)
+                //     relations.push([block.acceptingBlockHash, block.blockHash]);
 
                 if(block.acceptingBlockHash == null)
                     block.acceptingBlockHash = '';
                 //delete block.acceptingBlockHash;
             });
 
-            data = data.map(block => order.map(field => block[field]));
+            blocks = blocks.map(block => order.map(field => block[field]));
                 //Object.values(block));
 
-            console.log(data[data.length-1]);
+            process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
+            //console.log(data[data.length-1]);
+
+            // console.log(blocks.length,'blocks ',relations.length,'relations');
             // console.log(`
             // INSERT INTO blocks (
             //     ${order.join(', ')}
             // ) VALUES ?
-            // `, [data]);
+            // `, [blocks]);
 
             try {
                 await this.sql(`
                     INSERT INTO blocks (
                         ${order.join(', ')}
                     ) VALUES ?
-                `, [data]);
+                `, [blocks]);
 
                 if(relations.length) {
                     await this.sql(`
                         INSERT INTO block_relations (
-                            parent, child
+                            parent, child, linked
                         ) VALUES ?
                     `, [relations]);
                 }
@@ -330,6 +372,42 @@ class DAGViz {
         });
     }
 
+    async updateRelations() {
+        let rows = await this.sql('SELECT * FROM block_relations WHERE linked = 0 LIMIT 1000');
+        await this.sql('UPDATE block_relations SET linked = 1 WHERE linked = 0 LIMIT 1000');
+
+        let hashMap = { }
+        rows.forEach((row) => {
+            // hashMap[row.child] = true;
+            hashMap[row.parent] = true;
+        })
+        let blockHashes = Object.keys(hashMap);
+        // console.log(`+ processing ${blockHashes.length} blocks`)
+        while(blockHashes.length) {
+            let hash = blockHashes.shift()
+            let children = await this.sql(`SELECT * FROM block_relations WHERE parent = '${hash}'`);
+            children = children.map(row => row.child);
+            await this.sql(`UPDATE blocks SET childBlockHashes = '${children.join(',')}' WHERE blockHash='${hash}'`);
+            // console.log(`+ updating block children [${children.length}]`);
+        }
+
+        dpc(rows.length == 1000 ? 0 : 1000, () => {
+            this.updateRelations();
+        })
+
+    //     let children = await this.sql(`
+    //     SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks 
+    //     INNER JOIN ( 
+    //         SELECT * FROM blocks WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
+    //         ORDER BY blocks.${unit} 
+    //         LIMIT ${limit}
+    //     ) X ON (blocks.blockHash = X.blockHash)
+    //     LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash 
+    // `);
+
+
+    }
+
     update() {
         return new Promise(async (resolve, reject) => {
 
@@ -343,15 +421,24 @@ class DAGViz {
         })
     }
 
-    timeSlice(args) {
+    dataSlice(args) {
         return new Promise(async (resolve, reject) => {
 
-            let { from, to } = args;
+            let { from, to, unit } = args;
             console.log(`slice: ${from}-${to}`);
             if(!from && !to) {
                 to = Date.now() / 1000;
                 from = to - 1000 * 60 * 60;
             }
+
+            if(!unit)
+                reject('must supply units');
+
+            if(!['timestamp','lseq','blueScore'].includes(unit))
+                reject(`invalid unit '${unit}'`);
+
+            if(unit == 'lseq')
+                unit = 'id';
 
             from = parseInt(from);
             to = parseInt(to);
@@ -359,18 +446,104 @@ class DAGViz {
                 from = 0;
             if(to < from)
                 to = from+10;
-console.log('from:',from);
-            this.sql(`SELECT * FROM blocks WHERE timestamp >= ${from} AND timestamp <= ${to} LIMIT 100`)
-                .then((data) => {
-                    // postprocess
-                    // DO OUTLIER PROCESSING
-                    console.log(data);
-                    console.log(`[${data.length}]`);
-                    resolve(data);
-                }, reject);
+
+            console.log(`unit: ${unit} from: ${from} to: ${to}`);
+
+            let limit = 100;
+
+            try {
+                // console.log("REQUESTING...")
+
+                let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to}`);
+                // let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
+                // console.log('result:',result);
+                let total = result.shift().total;
+        
+
+                // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
+                let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
+                // console.log(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} LIMIT ${limit}`);
+                // let parents = await this.sql(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} ORDER BY blocks.${unit} LIMIT ${limit}`);
+                // let children = await this.sql(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} ORDER BY blocks.${unit} LIMIT ${limit}`);
+
+                // let parents = await this.sql(`
+                //     SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks 
+                //     INNER JOIN ( 
+                //         SELECT * FROM blocks WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
+                //         ORDER BY blocks.${unit} 
+                //         LIMIT ${limit}
+                //     ) X ON (blocks.blockHash = X.blockHash)
+                //     LEFT JOIN block_relations ON block_relations.child = blocks.blockHash 
+                // `);
+
+
+                // let children = await this.sql(`
+                //     SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks 
+                //     INNER JOIN ( 
+                //         SELECT * FROM blocks WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
+                //         ORDER BY blocks.${unit} 
+                //         LIMIT ${limit}
+                //     ) X ON (blocks.blockHash = X.blockHash)
+                //     LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash 
+                // `);
+
+
+                // let children = await this.sql(`
+                //     SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks 
+                //     LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash 
+                //     WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
+                //     ORDER BY blocks.${unit} 
+                //     LIMIT ${limit}`);
+
+
+
+
+                // [ blocks, relations ] = await Promise.all([blocks, relations]);
+                // console.log("RESPONDING...");
+                const blockHashMap = { };
+                blocks.forEach(block => {
+                    block.lseq = block.id;
+                    block.parentBlockHashes = block.parentBlockHashes.split(',');
+                    block.childBlockHashes = block.childBlockHashes.split(',');
+                    blockHashMap[block.blockHash] = block;
+                });
+                // parents.forEach(({ parent, child}) => {
+                //     let block = blockHashMap[child];
+                //     if(!block)
+                //         return; // TODO - obtain auxiliary data
+                //     if(!block.parentBlockHashes)
+                //         block.parentBlockHashes = [];
+                //     block.parentBlockHashes.push(parent);
+                // });
+
+                // children.forEach(({ parent, child}) => {
+                //     let block = blockHashMap[parent];
+                //     if(!block)
+                //         return; // TODO - obtain auxiliary data
+                //     if(!block.childBlockHashes)
+                //         block.childBlockHashes = [];
+                //     block.childBlockHashes.push(child);
+                // });
+
+
+                let tail = blocks.length-1;
+                let last = blocks[tail][unit];
+                if(last != blocks[0][unit]) {
+                    let last = blocks[tail--][unit];
+
+                    while(tail && last == blocks[tail]) {
+                        last = blocks[tail--][unit];
+                    }            
+                }
+
+                console.log(`blocks: ${blocks.length} last: ${last} total: ${total}`);
+                resolve({ blocks, last, total });
+            } catch(ex) {
+                console.log(ex);
+                reject(ex);
+            }
 
         })
-
     }
 
 
