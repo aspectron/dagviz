@@ -340,6 +340,7 @@ D3x.createShape = function(el, type, data) {
 export class GraphNodeLink{
 	constructor(holder, data){
 		this.holder = holder;
+		this.curves = holder.curves;
 		this.data = data;
 		this.el = holder.linksEl.append("path");
 		this.el.style('opacity',0).style('fill', 'none');
@@ -375,9 +376,10 @@ export class GraphNodeLink{
 		//this.el.transition().duration(1000).style('opacity', 1);
 	}
 	buildD(x1, y1, x2, y2) {
-	  return "M" + x1 + "," + y1
-	       +(this.curves?  "S" + (x1*1.1) + "," + (y1*1.3):'')
-	       + " " + x2 + "," + y2;
+		if(!this.curves)
+			return `M${x1},${y1} ${x2},${y2}`;
+		//M100,100 C100,180 400,20 400,100
+		return `M${x1},${y1} C${x1+(x2-x1)*0.5},${y1} ${x1+(x2-x1)*0.5},${y2} ${x2},${y2}`;
 	}
 	setStaticPosition(x, y, x2, y2){
 		if(typeof(x2) == 'undefined' || typeof(y2) == 'undefined'){
@@ -1120,7 +1122,7 @@ export class DAGViz extends BaseElement {
 
 		this.lastNodeAdded = node;
 		this.lastNodeAddedTS = Date.now();
-//		console.log("max:",this.max);
+		//console.log("max:",this.max);
 		// while(this.simulationNodes.length > this.max) {
 		// 	let discarded = this.simulationNodes.shift();
 		// 	discarded.purge();

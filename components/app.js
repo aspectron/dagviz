@@ -103,7 +103,7 @@ class GraphContext {
 		// 	node.x = node.data[this.unit] * this.unitScale * this.unitDist;
 		// }
 
-//		node.x = node.data[this.unit] * this.unitScale * this.unitDist;
+		//node.x = node.data[this.unit] * this.unitScale * this.unitDist;
 
 		// node.x = node.lscore;
 		// return;
@@ -122,7 +122,7 @@ class GraphContext {
 		} else {
 			node.x = node.data[this.unit] * this.unitScale * this.unitDist;
 		}
-//		console.log(node.x);
+		//console.log(node.x);
 	}
 
 	reposition(x) {
@@ -218,6 +218,7 @@ class GraphContext {
 			} break;
 			case 'curves':
 				let curves = this.curves;
+				this.graph.curves = curves;
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.linkNodes && node.linkNodes.map(link=>{
 						link.curves = curves;
