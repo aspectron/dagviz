@@ -86,3 +86,4 @@ Constant re-partitioning that occurs in the DAGViz user interface makes it very 
 ### v2 KNOWN PROBLEMS:
 
 - Graph rendering performance is much faster at the beginning of the chain (in comparison to the end).  We are working to identify the cause.
+- There can be occasional linkage tears when panning.
