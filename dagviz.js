@@ -286,8 +286,8 @@ class DAGViz {
                 this.lastTotal = data.total;
 
             if(data.blocks && data.blocks.length) {
-                await this.post(data.blocks);
                 this.skip += data.blocks.length;
+                await this.post(data.blocks);
             }
             const wait = (!data || !data.blocks || data.blocks.length != 100) ? 1000 : 0;
             //(data.blocks && data.blocks.length != 100) ? 1000 : 0;
@@ -301,8 +301,9 @@ class DAGViz {
             dpc(wait, ()=> {
                 this.sync();
             })
-
-        });
+        }).catch(e=>{
+            this.sync();
+        })
 
 
     }
@@ -372,7 +373,7 @@ class DAGViz {
                 resolve();
 
             } catch(ex) {
-                this.log(ex);
+                //this.log(ex);
                 reject(ex.toString());
             }
         });
@@ -466,7 +467,7 @@ class DAGViz {
                 let total = result.shift().total;
         
 
-                // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
+                console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 // console.log(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} LIMIT ${limit}`);
                 // let parents = await this.sql(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} ORDER BY blocks.${unit} LIMIT ${limit}`);

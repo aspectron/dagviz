@@ -379,7 +379,8 @@ export class GraphNodeLink{
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
 		//M100,100 C100,180 400,20 400,100
-		return `M${x1},${y1} C${x1+(x2-x1)*0.5},${y1} ${x1+(x2-x1)*0.5},${y2} ${x2},${y2}`;
+		let xx = x1+(x2-x1)*0.5;
+		return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
 	}
 	setStaticPosition(x, y, x2, y2){
 		if(typeof(x2) == 'undefined' || typeof(y2) == 'undefined'){
