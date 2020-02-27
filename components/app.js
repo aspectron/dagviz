@@ -111,6 +111,7 @@ class GraphContext {
 
 		// node.x = node.lscore;
 		// return;
+		node.y = Math.round(node.y);
 
 		if(node.data.parentBlockHashes) {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
@@ -120,9 +121,9 @@ class GraphContext {
 					max = parent.x;
 			});
 
-			node.x = max + this.unitDist;
+			node.x = Math.round(max + this.unitDist);
 		} else {
-			node.x = node.data[this.unit] * this.unitScale * this.unitDist;
+			node.x = Math.round(node.data[this.unit] * this.unitScale * this.unitDist);
 		}
 		//console.log(node.x);
 	}
