@@ -42,7 +42,7 @@ class AxisNavigator extends BaseElement{
 	render(){
 		let box = this.getBoundingClientRect();
 		return html`
-		<canvas id="canvas" style="height:48px;min-height:48px;border:1px solid red;width:100%;" width="${box.width}" height="${box.height}">Your browser does not support the HTML5 canvas tag</canvas>
+		<canvas id="canvas" style="height:48px;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width}" height="${box.height}">Your browser does not support the HTML5 canvas tag</canvas>
 		`;
 	}
 
