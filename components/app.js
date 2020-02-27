@@ -558,13 +558,29 @@ class Trigger {
 		this.el = $(`<span id="${ident}" class='trigger'></span>`);
 		$("#hud .ctl").append(this.el);
 
+		let url = new URL(window.location.href);
+		let params = url.searchParams;
+		let p = params.get(ident);
+		if(p==1 || p==0)
+			this.setValue(p==1)
+
 		$(this.el).on('click', () => {
-			this.target[this.ident] = !(!!this.target[this.ident]);
-			if(this.target.onTrigger)
-				this.target.onTrigger(ident, this.target[this.ident]);
-			this.update();
+			let value = !(!!this.target[this.ident]);
+			this.setValue(value);
+			let url = new URL(window.location.href);
+			url.searchParams.set(this.ident, value?1:0);
+			let state = {}
+			state[this.ident] = value;
+			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString())
 		})
 
+		this.update();
+	}
+
+	setValue(value){
+		this.target[this.ident] = value;
+		if(this.target.onTrigger)
+			this.target.onTrigger(this.ident, value);
 		this.update();
 	}
 
