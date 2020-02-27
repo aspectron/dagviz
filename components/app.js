@@ -88,7 +88,7 @@ class GraphContext {
 		this.trackSize = true;
 		this.max = 0;
 
-		this.rangeScale = 1.2;  // for of war vs viewport window coefficient
+		this.rangeScale = 1.4;  // for of war vs viewport window coefficient
 
 		// this.curves = true;
 	}
@@ -149,7 +149,7 @@ class GraphContext {
 			return;
 
 		this.position = x * this.max;// * this.unitDist;
-		console.log('position:',this.position,'x:',x,'max:',this.max);
+		// console.log('position:',this.position,'x:',x,'max:',this.max);
 		this.app.updatePosition();
 	}
 
@@ -336,7 +336,7 @@ export class App {
 			let done = false;
 			while(!done) {
 				// NOTE this produces multiple blocks!
-				console.log(`fetching: from: ${from} to: ${to}`);
+				this.verbose && console.log(`fetching: from: ${from} to: ${to}`);
 				let data = await this.fetch_impl({ from, to, unit });
 				blocks = blocks.concat(data.blocks);
 				let remains = data.total - data.blocks.length;
@@ -344,7 +344,7 @@ export class App {
 					return resolve({ blocks, max : data.max });
 				} else {
 					from = data.last;
-					console.log(`multi-fetch: from: ${from} to: ${to}`);
+					this.verbose && console.log(`multi-fetch: from: ${from} to: ${to}`);
 				}
 			}
 		});
@@ -360,7 +360,7 @@ export class App {
 			args.unit = this.ctx.unit;
 			
 			query = '?'+Object.entries(args).map(([k,v])=>`${k}=${typeof v == 'string' ? v : Math.round(v)}`).join('&');
-			console.log(query);
+			// console.log(query);
 			//$.ajax('http://finland.aspectron.com:8082/blocks'+query, 
 			$.ajax('/data-slice'+query, 
 			{
@@ -536,40 +536,44 @@ export class App {
 		// t += 1000;
 		// limit *= 1000;
 
-		/*
-		if(Math.round(this.last_range_) != Math.round(range)) {
-			if(this.last_range_ > range && Math.round(this.last_position_) == Math.round(this.ctx.position)) {
-				// ... do nothing ...
-				console.log('doing nothing...');
-				this.graph.updateSimulation();
-				this.navigator.redraw();
-				return;
+		
+		if(Math.round(this.last_range_*10) != Math.round(range*10)) {
+			// if(this.last_range_ > range && Math.round(this.last_position_) == Math.round(this.ctx.position)) {
+			// 	// ... do nothing ...
+			// 	console.log('doing nothing...');
+			// 	this.graph.updateSimulation();
+			// 	this.navigator.redraw();
+			// 	return;
 
-			} else {
-				// this.fullFetch = true;
-			}
+			// } else {
+			// 	// this.fullFetch = true;
+			// }
 			this.last_range_ = range;
-			this.last_position_ = this.ctx.position;
+			this.fullFetch = true;
+		//	this.last_position_ = this.ctx.position;
 		}
-		*/
+		
 
 		//let limit = 100;
-		let from = pos - range / 2;
-		let to = pos + range / 2;
+		const half_range = range / 2;
+		let from = pos - half_range;
+		let to = pos + half_range;
 
 
 		//this.navigator.update(pos / this.ctx.max);
 		this.navigator.redraw();
 		window.location.hash = '#'+Math.round(this.ctx.position);
 		// const first = skip - limit;
+		const eraseMargin = half_range * 0;
 		// const last = skip + limit;
 		let max, min;
 		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
 		// console.log("range:", {from,to,pos,range});
 		Object.values(this.graph.nodes).forEach((node) => {
 			//console.log("xxxxxxx", node.x+tx,  node.x, node.data[this.ctx.unit])
-			if(node.data[this.ctx.unit] < from || node.data[this.ctx.unit] > to) {
+			if(node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin)) {
 				//console.log('deleting:',node.data[this.ctx.unit]);
+				console.log(from,to);
 				// TODO - ensure links TO this node also get removed
 				node.purge();
 			} else {
@@ -595,7 +599,7 @@ export class App {
 		// console.log("xxxxx",this.ctx.position, region.position, range, region.range);
 
 		blocks = blocks.filter((block) => {
-			if(block[this.ctx.unit] < region.from || block[this.ctx.unit] > region.to)
+			if(block[this.ctx.unit] < (region.from-half_range) || block[this.ctx.unit] > (region.to+half_range))
 				return false;
 			return true;
 		});
