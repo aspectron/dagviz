@@ -16,7 +16,6 @@ export class Block extends GraphNode {
 		data.id = data.blockHash;
 		data.name = data.id.replace(/^\s*0+/,'').substring(0,6);//+'\n\n'+(data.blueScore||'####');
 		// data.parent = data.acceptingBlockHash;
-		data.size = ctx.trackSize ? Math.max(25, data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
 		data.xMargin = 0; // 500 + ((Date.now()/1000 - data.timestamp))*50;
 		data.timestmp = data.timestamp;// / 1000;
 		if(!data.shape)
@@ -29,6 +28,7 @@ export class Block extends GraphNode {
 		}
 		super(holder,data);
 
+		data.size = this.getSize(); // ctx.trackSize ? Math.max(25, data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
 
 		this.y = Math.random();
 		// this.x = 
@@ -57,8 +57,16 @@ export class Block extends GraphNode {
 		})
 	}
 
+	getSize() {
+		let size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
+		if(size > 100)
+			size = 100;
+
+		return size;
+	}
+
 	updateSize() {
-		this.data.size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
+		this.data.size = this.getSize();
 		this.updateStyle();
 		// this.holder.simulation.alpha(0.2);
 
