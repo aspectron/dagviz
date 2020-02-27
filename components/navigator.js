@@ -147,7 +147,7 @@ class AxisNavigator extends BaseElement{
 	}
 
 	handleClick(e) {
-		console.log(e);
+		// console.log(e);
 
 		const box = this.getBoundingClientRect();
 		let absolute = (e.clientX-this.margin) / (box.width - this.margin*2);
@@ -155,7 +155,7 @@ class AxisNavigator extends BaseElement{
 			absolute = 0;
 		if(absolute > 1)
 			absolute = 1;
-		console.log('absolute:', absolute);
+		// console.log('absolute:', absolute);
 		this.app.ctx.reposition(absolute);
 	}
 
