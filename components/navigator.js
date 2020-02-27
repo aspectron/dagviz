@@ -36,6 +36,7 @@ class AxisNavigator extends BaseElement{
 	constructor() {
 		super();
 		this.data = { }
+		this.margin = 24;
 	}
 
 
@@ -146,28 +147,42 @@ class AxisNavigator extends BaseElement{
 		ctx.lineWidth = 1;
 		
 		let absolute = this.app.ctx.position / this.app.ctx.max;
-		let x = width * absolute;
+		let x = (width-this.margin*2) * absolute + this.margin;
 		
 		console.log("clearRect:",width,height, 'position:',this.app.ctx.position,'max:',this.app.ctx.max,'absolute:',absolute, 'x:', x);
-		ctx.strokeStyle = `rgba(255,154,154,1.0)`;
-		ctx.lineWidth = 1;
+		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
+		ctx.lineWidth = 0.5;
 		ctx.beginPath();
 		// ctx.moveTo(x-1, 0);
 		// ctx.lineTo(x-1, height);
 		// ctx.stroke();
 		ctx.moveTo(x, 0);
-		ctx.lineTo(x, height);
+		ctx.lineTo(x, height-18);
 		ctx.stroke();
 		// ctx.moveTo(x+1, 0);
 		// ctx.lineTo(x+1, height);
 		// ctx.stroke();
+		ctx.lineWidth = 0.5;
+		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
+		ctx.font = '12px "Exo 2"';
+		ctx.textBaseline = "top";
+
+		let text = Math.round(this.app.ctx.position)+'';
+		let textMetrics = ctx.measureText(text);
+		ctx.fillText(text, x-textMetrics.width/2, 48-16);
+
+
 	}
 
 	handleClick(e) {
 		console.log(e);
 
 		const box = this.getBoundingClientRect();
-		let absolute = e.clientX / box.width;
+		let absolute = (e.clientX-this.margin) / (box.width - this.margin*2);
+		if(absolute < 0)
+			absolute = 0;
+		if(absolute > 1)
+			absolute = 1;
 		console.log('absolute:', absolute);
 		this.app.ctx.reposition(absolute);
 	}
