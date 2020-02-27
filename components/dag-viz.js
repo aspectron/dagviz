@@ -478,7 +478,7 @@ export class GraphNode{
 			//this.el = this.holder.nodesEl.append("g");
 
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : this.data.size,
+	            size : this.data.size || 100,
 	            rgba : shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
 	        });
