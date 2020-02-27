@@ -348,7 +348,7 @@ export class GraphNodeLink{
 		this.target = holder.nodes[data.parent];
 		this.target.addParentLink(this);
 		this.target.attachNode();
-		this.el.transition().duration(1000).style('opacity', 1);
+		this.el.transition().duration(1000).style('opacity', 0.75);
 	}
 	remove(){
 		this.el.remove();
@@ -630,7 +630,7 @@ export class GraphNode{
 
 
 		if(this.data.isChainBlock && this.holder.ctx.isChainBlock)
-			this.data.color = `rgba(110,210,216,0.99)`;
+			this.data.color = `rgba(194,255,204,0.99)`;
 		else
 			this.data.color = `rgba(194,244,255,0.99)`;
 
@@ -963,6 +963,7 @@ export class DAGViz extends BaseElement {
 		this.nodes = {};
 		this.svg = d3.select(this.graphHolder).append("svg");
 		var zoom = d3.zoom()
+			.scaleExtent([0.1,3.5])
     		.on('zoom', ()=>{
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
@@ -1419,7 +1420,7 @@ export class DAGViz extends BaseElement {
 
 		if(!this.$hud)
 			this.$hud = $("#hud .info");
-		this.$hud.html(`Pos: ${pos.toFixed(4)}`);
+		this.$hud.html(`Pos: ${pos.toFixed(1)}`);
 	}
 
 	registerRegionUpdateSink(fn) {
