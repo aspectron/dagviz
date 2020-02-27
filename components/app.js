@@ -22,7 +22,7 @@ export class Block extends GraphNode {
 			data.shape = 'square';
 		if(!data.color) {
 			if(data.isChainBlock && ctx.isChainBlock)
-				data.color = `rgba(110,210,216,0.99)`;
+				data.color = `rgba(194,255,204,0.99)`;
 			else
 				data.color = `rgba(194,244,255,0.99)`;
 		}
@@ -88,6 +88,8 @@ class GraphContext {
 		this.trackSize = true;
 		this.max = 0;
 
+		this.rangeScale = 1.2;  // for of war vs viewport window coefficient
+
 		// this.curves = true;
 	}
 
@@ -96,6 +98,20 @@ class GraphContext {
 		this.graph = graph;
 		this.position = 0;
 		
+		if(window.location.hash) {
+			let text = window.location.hash.substring(1);
+			let position = parseInt(text);
+			if(position) {
+				this.position = position;
+				console.log('initializing position to:',position);
+			}
+
+			dpc(()=>{
+
+				app.updatePosition();
+			})
+		}
+
 		if(this.unit == 'timestamp')
 			this.position = Date.now() / 1000;
 	}
@@ -121,7 +137,7 @@ class GraphContext {
 					max = parent.x;
 			});
 
-			node.x = Math.round(max + this.unitDist);
+			node.x = Math.round(max + this.unitDist*2);
 		} else {
 			node.x = Math.round(node.data[this.unit] * this.unitScale * this.unitDist);
 		}
@@ -215,7 +231,7 @@ class GraphContext {
 			return
 		this.max = max;
 
-		console.log('new max:',max);
+		// console.log('new max:',max);
 	}
 
 }
@@ -227,6 +243,10 @@ export class App {
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 		this.connect = this.argv.get('connect') !== null;
+
+		this.last_range_ = 1;
+		this.last_position_ = -1;
+
 		this.init();
 	}
 
@@ -355,7 +375,7 @@ export class App {
 						data.blocks.forEach(block => block.seq = block.id);
 
 
-					console.log(data);
+					// console.log(data);
 					resolve(data);
 				},
 				error: function (jqXhr, textStatus, errorMessage) { // error callback 
@@ -468,12 +488,20 @@ export class App {
 	initNavigator() {
 		this.navigator = document.getElementById("timenav");
 		this.navigator.app = this;
-		this.updateRegion({pos:0, range:10})
+//		this.updateRegion({pos:0, range:2});
+
+//		this.firstRegionUpdate = true;
+// console.log("init position is",this.ctx.position);
+		
+		 this.updateRegion({pos:this.ctx.position, range:16});
+
 		/*
 		this.ctx.position =  30000;
 		this.updatePosition();
 		this.updateRegion({pos:30000, range:10})
 		*/
+
+		// this.reposition
 	}
 
 	updateGraph() {
@@ -499,13 +527,31 @@ export class App {
 			right = true;
 		else
 			left = true;
-		this.ctx.position = pos
-		range *= 1.2; //1.6;
+		this.ctx.position = pos;
+		range *= this.ctx.rangeScale; //1.6;
+		this.ctx.range = range;
 
 		// if(limit > 100)
 		// 	limit = 100;
 		// t += 1000;
 		// limit *= 1000;
+
+		/*
+		if(Math.round(this.last_range_) != Math.round(range)) {
+			if(this.last_range_ > range && Math.round(this.last_position_) == Math.round(this.ctx.position)) {
+				// ... do nothing ...
+				console.log('doing nothing...');
+				this.graph.updateSimulation();
+				this.navigator.redraw();
+				return;
+
+			} else {
+				// this.fullFetch = true;
+			}
+			this.last_range_ = range;
+			this.last_position_ = this.ctx.position;
+		}
+		*/
 
 		//let limit = 100;
 		let from = pos - range / 2;
@@ -514,12 +560,12 @@ export class App {
 
 		//this.navigator.update(pos / this.ctx.max);
 		this.navigator.redraw();
-
+		window.location.hash = '#'+Math.round(this.ctx.position);
 		// const first = skip - limit;
 		// const last = skip + limit;
 		let max, min;
 		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
-		console.log("range:", {from,to,pos,range});
+		// console.log("range:", {from,to,pos,range});
 		Object.values(this.graph.nodes).forEach((node) => {
 			//console.log("xxxxxxx", node.x+tx,  node.x, node.data[this.ctx.unit])
 			if(node.data[this.ctx.unit] < from || node.data[this.ctx.unit] > to) {
@@ -543,10 +589,42 @@ export class App {
 		
 		let { blocks, max : max_ } = await this.fetch({ from, to });
 		this.ctx.updateMax(max_);
+
+
+		let region = this.getRegion();
+		// console.log("xxxxx",this.ctx.position, region.position, range, region.range);
+
+		blocks = blocks.filter((block) => {
+			if(block[this.ctx.unit] < region.from || block[this.ctx.unit] > region.to)
+				return false;
+			return true;
+		});
+
 		this.createBlocks(blocks);
 		//blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
 
+		// if(this.firstRegionUpdate) {
+		// 	this.firstRegionUpdate = false;
+		// 	let initPos = parseInt(window.location.hash.substring(1));
+		// 	this.position = initPos();
+		// 	this.updatePosition();
+		// 	//this.ctx.reposition();
+		// }
+
+		// this.navigator.redraw();
+	}
+
+
+	getRegion() {
+		let transform = this.graph.paintEl.transform;
+		let position = -(transform.x / transform.k / this.ctx.unitDist);
+		const box = this.graph.graphHolder.getBoundingClientRect();
+		let range = Math.ceil(box.width / transform.k / this.ctx.unitDist) * this.ctx.rangeScale;
+		let from = position - range / 2;
+		let to = position + range / 2;
+//		console.log("RANGE RANGE RANGE RANGE RANGE RANGE RANGE RANGE RANGE ",range);
+		return { position, range, from, to };
 	}
 }
 
@@ -565,13 +643,14 @@ class Trigger {
 			this.setValue(p==1)
 
 		$(this.el).on('click', () => {
+			let hash = window.location.hash;
 			let value = !(!!this.target[this.ident]);
 			this.setValue(value);
 			let url = new URL(window.location.href);
 			url.searchParams.set(this.ident, value?1:0);
 			let state = {}
 			state[this.ident] = value;
-			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString())
+			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+hash);
 		})
 
 		this.update();
