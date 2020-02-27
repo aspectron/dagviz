@@ -279,7 +279,7 @@ class DAGViz {
         const limit = 100;
         const order = 'asc';
 
-        process.stdout.write(` ...${skip}... `);
+        //process.stdout.write(` ...${skip}... `);
         // console.log(`fetching: ${skip}`);
         this.fetch({ skip, limit, order }).then(async (data) => {
             // let seq = skip;
@@ -347,7 +347,7 @@ class DAGViz {
             blocks = blocks.map(block => order.map(field => block[field]));
                 //Object.values(block));
 
-            process.stdout.write(` ${blocks.length}[${relations.length}] `);
+            //process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
             //console.log(data[data.length-1]);
 
