@@ -132,7 +132,7 @@ class AxisNavigator extends BaseElement{
 
 	redraw() {
 		const { ctx } = this;
-		if(!this.app)
+		if(!this.app || !this.app.ctx.max)
 			return
 
 		let parentBox = this.getBoundingClientRect();

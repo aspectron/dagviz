@@ -22,11 +22,11 @@ export class Block extends GraphNode {
 		if(!data.shape)
 			data.shape = 'square';
 		if(!data.color) {
-				if(data.isChainBlock && ctx.isChainBlock)
-					data.color = `rgba(110,210,216,0.99)`;
-				else
-					data.color = `rgba(194,244,255,0.99)`;
-			}
+			if(data.isChainBlock && ctx.isChainBlock)
+				data.color = `rgba(110,210,216,0.99)`;
+			else
+				data.color = `rgba(194,244,255,0.99)`;
+		}
 		super(holder,data);
 
 
@@ -346,7 +346,7 @@ export class App {
 						data.blocks.forEach(block => block.seq = block.id);
 
 
-					//console.log(data);
+					console.log(data);
 					resolve(data);
 				},
 				error: function (jqXhr, textStatus, errorMessage) { // error callback 
@@ -460,6 +460,11 @@ export class App {
 		this.navigator = document.getElementById("timenav");
 		this.navigator.app = this;
 		this.updateRegion({pos:0, range:10})
+		/*
+		this.ctx.position =  30000;
+		this.updatePosition();
+		this.updateRegion({pos:30000, range:10})
+		*/
 	}
 
 	updateGraph() {
