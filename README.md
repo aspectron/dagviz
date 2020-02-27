@@ -1,57 +1,83 @@
 # BlockDAG Vizualization library
 
-### Running DAGVIZ
+### Running DAGViz
+
+#### Prerequisites
+
+DAGViz requires NodeJS v12+ and a local MySQL database instance to operate.
+
+- Linux: `sudo apt-get install mysql-server` or `apk install mariadb mariadb-client`
+- Darwin: TODO (tested - functional - runs from `/usr/local/mysql/bin`)
+- Windows: DAGViz provides a script for local mysql deployment
+
+If you are running Windows, you must install local mysql binaries in the following way:
+```
+npm install -g emanator@latest
+cd dagviz
+emanate --mysql
+```
+This will download and unarchive Oracle MySQL for Windows.
+
+#### Running the application
+
+DAGViz connects to and feeds off Kasparov API server.  Kasparov URL can be specified via the `--kasparov` command line argument.
+
+##### Local Deployment
 ```
 git clone git@github.com:kaspanet/dagviz
 cd dagviz
 npm install
-node dagviz
+node dagviz --kasparov=<kasparov-api-server-url:port>
 ```
-then open http://127.0.0.1:8080 in your browser (tested with Chrome only)
+Following this, open http://localhost:8686 in your browser.
+
+##### Docker
+
+- build: `sudo docker build -t dagviz`
+- run: `sudo docker run -p 8686:8686 dagviz --kasparov=<kasparov-api-server-url:port>
+- build using emanator: `emanate --docker`
+
+### v2 NOTES
+
+This is a complete refactoring of the initial v1 prototype.
+
+- blueScore is used as a general height (x axis)
+- a child block is always located after the parent
+
+There are currently 3 modes:
+
+- *CURVES* - Uses curves instead of straight lines for block connections
+- *MASS* - Block is larger with larger mass (capped at max 200)
+- *CHAIN BLOCKS* - when turned on `isChainBlock == true` yields a different color block
+
+### DAGViz Structure
+
+##### Internal API
+
+Current implementation of DAGViz connects to kasparov and fetches the entire blockchain dataset. Once fetched, the system keeps up (currently via polling, until MQTT is stabilized and proper notifications are available).
+
+DAGViz downloads the data into the local MySQL database instance which is then used to serve the data to the webapp.
+
+DAGViz currently resides on top of a single internal API method `/data-slice`:
+
+*/data-slice* arguments:
+
+- `unit` - Units used to query the API, available: 'blueScore', 'timestamp', 'lseq' (*lseq* is a linear sequence derived from the database id)
+- `from` - Starting point of the range (inclusive)
+- `to` - Ending point of the range (exclusive)
+
+Returns a JSON object with the following fields:
+
+- `blocks : [ ]' - array of blocks (can contain a partial response)
+- `total : <integer>` - total number of blocks resulting from this query
+- `last : <unit>` - last item position in this response - can be used as `to` field in subsequent queries to continue fetching the range
+- `max : <unix>` - currently maximum value of unit type available (highest blueScore or largest timestamp currently available)
+
+##### API Block Data Structure:
+
+As of v2 the the block data structure used by DAGViz differs from Kasparov: in addition to `parentBlockHashes` field, DAGViz blocks contain `childBlockHashes` which allow for reverse mapping of parents to children.
+
+Constant re-partitioning that occurs in the DAGViz user interface makes it very difficult to traverse and perform chain analysis. Having `childBlockHashes` available as a part of the API response allows us to instantly notify already-existing children that they should link up to parents (otherwise we have to traverse the entire snapshot each time a new node is created).
 
 
-### Options
 
-There are few basic options that can be currently passed to DAGVIZ via the browser URL:
-
-For example `?simulate` will run a 100 block dataset simulation.  The command should be passed as follows: http://127.0.0.1:8686?simulate
-
-Following options are available:
-
-- `?simulate` - run simulation (do not stop live MQTT feed)
-- `?simulate-only` - run simulation and stop MQTT feed (no interference)
-- `?connect` - interconnect blocks incoming via MQTT with dag/selected-tip notifications
-- `?address=ws://<mqtt over websocket address>` - use this option to supply an alternate MQTT over websocket address. 
-
-DAGViz will currently connect to ws://finland.aspectron.com:7351 by default. Hence the url for an address like this would be as follows:  http://127.0.0.1:8686?address=ws://finland.aspectron.com:7351 Use this to connect to MQTT of your choosing.
-
-At the top of the UI you will find following options:
-- TRACKING - will cause DAGViz to track the viewport always focusing on the last added block
-- LINK SEQUENTIAL - (FAKE, Temporary) - Links blocks in the order received.
-
-
-### Test Instance
-
-There is currently a temporary instance of DAGViz running at:
-http://finland.aspectron.com:8686/
-
-You can run this with simulation enabled:
-http://finland.aspectron.com:8686/?simulate
-
-Or you can point it to your MQTT feed as described above, using the address query parameter:
-```http://finland.aspectron.com:8686/?address=<websocket mqtt server>```
-
-### Building Docker Image
-
-Using emanator:
-```
-emanate --docker
-```
-
-Native docker:
-```
-sudo docker build -t dagviz 
-sudo docker run -p 8686:8686 dagviz
-```
-
-HTTP user interface is exposed on port `8686`
