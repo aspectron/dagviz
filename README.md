@@ -37,7 +37,7 @@ Following this, open http://localhost:8686 in your browser.
 - run: `sudo docker run -p 8686:8686 dagviz --kasparov=<kasparov-api-server-url:port>
 - build using emanator: `emanate --docker`
 
-### v2 NOTES
+### v2 NOTES:
 
 This is a complete refactoring of the initial v1 prototype.
 
@@ -79,5 +79,6 @@ As of v2 the the block data structure used by DAGViz differs from Kasparov: in a
 
 Constant re-partitioning that occurs in the DAGViz user interface makes it very difficult to traverse and perform chain analysis. Having `childBlockHashes` available as a part of the API response allows us to instantly notify already-existing children that they should link up to parents (otherwise we have to traverse the entire snapshot each time a new node is created).
 
+### v2 KNOWN PROBLEMS:
 
-
+- Graph rendering performance is much faster at the beginning of the chain (in comparison to the end).  We are working to identify the cause.
