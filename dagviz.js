@@ -7,6 +7,7 @@ const rp = require('request-promise');
 const querystring = require('querystring');
 const MF = require('micro-fabric');
 const MySQL = require('./lib/mysql');
+const basicAuth = require('basic-auth');
 
  
 
@@ -45,6 +46,13 @@ class DAGViz {
 
             // Create server
             const server = http.createServer((req, res)=>{
+
+                var auth = basicAuth(req);
+                if(!auth || auth.name != 'dag' || auth.pass != 'dag') {
+                    res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
+                    return res.end();
+                }
+
                 if(req.url.startsWith(data_slice)) {
                     let q = req.url.substring(data_slice.length);
                     q = querystring.parse(q);
