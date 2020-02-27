@@ -32,7 +32,7 @@ export class Block extends GraphNode {
 
 		this.y = Math.random();
 		// this.x = 
-		ctx.nodePosition(this,holder,holder.nodes); //node.data[this.unit] * this.unitScale * this.unitDist
+		ctx.nodePosition(this,holder, holder.nodes); //node.data[this.unit] * this.unitScale * this.unitDist
 
 		// this.x = Math.random();
 		// this.y = Math.random();

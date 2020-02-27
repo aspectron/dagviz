@@ -658,6 +658,8 @@ export class GraphNode{
 				//.attr("class", )
 				.text(this.data.name);
 
+			//this.textEl.__box = this.textEl.node().getBoundingClientRect();
+
 			this.heightEl.remove();
 			this.heightEl = this.holder.nodesEl.append("text")
 				.style('opacity',0)
@@ -665,6 +667,7 @@ export class GraphNode{
 				.attr("class", ["node-name",this.data.type].join(' '))
 				//.attr("class", )
 				.text(this.data.blueScore+'');
+			//this.heightEl.__box = this.heightEl.node().getBoundingClientRect();
 
 			this.bindElEvents();
 
@@ -724,8 +727,8 @@ export class GraphNode{
 					return host && host.online ? "#b3e2ff" : "#ffb3b3";
 				}
 			})
-			let textBox = this.textEl.node().getBoundingClientRect();
-			let infoBox = this.heightEl.node().getBoundingClientRect();
+		let textBox = this.textEl.node().getBoundingClientRect();
+		let infoBox = this.heightEl.node().getBoundingClientRect();
 			//let {width, height} = textBox;
 		let zoom = this.holder.paintEl.transform.k
 		// width = width/zoom;
@@ -814,6 +817,10 @@ export class GraphNode{
 		delete this.holder.nodes[this.data.id];
 		// TODO - css animate opacity
 		this.remove();
+		let index = this.holder.simulationNodes.indexOf(this);
+		if(index > -1){
+			this.holder.simulationNodes.splice(index, 1);
+		}
 	}
 }
 
