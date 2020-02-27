@@ -313,7 +313,7 @@ class DAGViz {
         this.lastBlock = blocks[blocks.length-1];
 
         return new Promise(async (resolve,reject)=>{
-    //console.log("DOING POST") // 'acceptingBlockTimestamp',
+            //console.log("DOING POST") // 'acceptingBlockTimestamp',
             let order = ['blockHash', 'acceptingBlockHash',  'version', 'hashMerkleRoot', 'acceptedIDMerkleRoot', 'utxoCommitment', 'timestamp', 'bits', 'nonce', 'blueScore', 'isChainBlock', 'mass', 'parentBlockHashes', 'childBlockHashes'];
 
             // let blocks = data.blocks;

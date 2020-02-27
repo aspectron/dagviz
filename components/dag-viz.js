@@ -671,7 +671,7 @@ export class GraphNode{
 
 			this.heightEl.transition()
 				.duration(500)
-			   .style("opacity", 1);
+				.style("opacity", 1);
 
 			// this.rebuildLinks();
 
@@ -770,12 +770,8 @@ export class GraphNode{
 	}
 	onNodeHover(){
 		// this.holder.showNodeInfo(this.data, this);
-
-
 		this.holder.highlightLinks(this.linkNodes || [], 'green');
 		this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
-
-
 	}
 	onNodeOut(){
 		// this.holder.hideNodeInfo(this.data, this);
@@ -957,8 +953,8 @@ export class DAGViz extends BaseElement {
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
 				this.linksEl.attr("stroke-width", w);
-				this.updatePanInfo(this.paintEl.transform);
-				this.updateRegion(this.paintEl.transform);
+				//this.updatePanInfo(this.paintEl.transform);
+				//this.updateRegion(this.paintEl.transform);
     		})
     	this.svg.call(zoom);
     	this.paintEl = this.svg.append("g")
@@ -995,10 +991,10 @@ export class DAGViz extends BaseElement {
 			 	return d.data.size * 3;// * 2//d.radius
 			}))
 			.force("charge", d3.forceManyBody().strength(-200))
-//			.force("charge", d3.forceManyBody().strength(350))
-//			.force("charge", d3.forceManyBody().strength(150))
-			.force("x", d3.forceX())
-			.force("y", d3.forceY())
+			//.force("charge", d3.forceManyBody().strength(350))
+			//.force("charge", d3.forceManyBody().strength(150))
+			//.force("x", d3.forceX())
+			//.force("y", d3.forceY())
 
 
 		this.simulation.on("tick", () => {
@@ -1059,9 +1055,6 @@ export class DAGViz extends BaseElement {
 				.attr('d', `M${this.xMargin-(60*i*this.tdist)} -1000 L ${this.xMargin-(60*i*this.tdist)} 1000`)
 		}
 
-	
-
-
 		window.addEventListener("resize", this.updateSVGSize.bind(this))
 		this.fire("ready", {})
 	}
@@ -1100,6 +1093,7 @@ export class DAGViz extends BaseElement {
 			this.updateNodeInfoPosition();
 		}
 
+		this.updatePanInfo(this.paintEl.transform);
 		this.updateRegion(this.paintEl.transform);		
 	}
 	createNode(data){
@@ -1156,7 +1150,6 @@ export class DAGViz extends BaseElement {
 		}
 	}
 
-
 	// createLink(parent, child) {
 	// 	let link = new GraphNodeLink(this, {parent, child});
 	// 	this.links[parent+child] = link;
@@ -1177,10 +1170,10 @@ export class DAGViz extends BaseElement {
 		this.simulation.alpha(0.005);
 		this.simulation.alphaTarget(0.005);
 		this.simulation.alphaDecay(0.005);
-//		this.simulation.alpha(0.005);
-//		this.simulation.alpha(0.01);
+		//		this.simulation.alpha(0.005);
+		//		this.simulation.alpha(0.01);
 
-//		this.updateNodeInfoPosition();
+		//		this.updateNodeInfoPosition();
 	}
 
 	UID(){
@@ -1384,7 +1377,7 @@ export class DAGViz extends BaseElement {
 	}
 
 	updatePanInfo(transform) {
-//		console.log('transform:',transform);
+		//console.log('transform:',transform);
 
 		let pos = -(transform.x / transform.k / this.ctx.unitDist);
 
@@ -1426,15 +1419,19 @@ export class DAGViz extends BaseElement {
 			return;
 		}
 
+
 		let pos = -(transform.x / transform.k / this.ctx.unitDist);
+		//console.log("updateRegion::transform:", pos, -transform.x, transform.k,  this.ctx.unitDist)
+		//pos = -transform.x;
 		var box = this.graphHolder.getBoundingClientRect();
 		let range = Math.ceil(box.width / transform.k / this.ctx.unitDist);
 
-		if(Math.round(this._last_pos/3) != Math.round(pos/3) || this._last_range != range) {
+		//if(Math.round(this._last_pos/3) != Math.round(pos/3) || this._last_range != range) {
 			this._last_pos = pos;
 			this._last_range = range;
-			this.regionUpdateSink_({pos,range,transform,box});
-		}
+			console.log("regionUpdateSink_", pos)
+			this.regionUpdateSink_({pos, range, transform,box});
+		//}
 	}
 
 	filterCenterByTransform(t, v) {

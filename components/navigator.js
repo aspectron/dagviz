@@ -40,19 +40,10 @@ class AxisNavigator extends BaseElement{
 
 
 	render(){
-
 		let box = this.getBoundingClientRect();
-
 		return html`
-		
-		
 		<canvas id="canvas" style="height:48px;min-height:48px;border:1px solid red;width:100%;" width="${box.width}" height="${box.height}">Your browser does not support the HTML5 canvas tag</canvas>
-				
-		
-		
 		`;
-
-
 	}
 
 	// ready() {
@@ -118,7 +109,7 @@ class AxisNavigator extends BaseElement{
 
 		this.addEventListener('click', this.handleClick);
 
-//		let ctx = document.querySelector(); //this.$.canvas.getContext("2d");
+		//let ctx = document.querySelector(); //this.$.canvas.getContext("2d");
 
 		this.canvas = this.renderRoot.getElementById('canvas');
 		this.ctx = this.canvas.getContext('2d');
@@ -140,8 +131,9 @@ class AxisNavigator extends BaseElement{
 	}
 
 	redraw() {
-
 		const { ctx } = this;
+		if(!this.app)
+			return
 
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
@@ -169,10 +161,6 @@ class AxisNavigator extends BaseElement{
 		// ctx.moveTo(x+1, 0);
 		// ctx.lineTo(x+1, height);
 		// ctx.stroke();
-
-
-
-
 	}
 
 	handleClick(e) {
@@ -180,7 +168,7 @@ class AxisNavigator extends BaseElement{
 
 		const box = this.getBoundingClientRect();
 		let absolute = e.clientX / box.width;
-console.log('absolute:',absolute);
+		console.log('absolute:', absolute);
 		this.app.ctx.reposition(absolute);
 	}
 

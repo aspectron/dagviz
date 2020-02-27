@@ -87,16 +87,10 @@ class GraphContext {
 		this.position = 0;
 		
 		if(this.unit == 'timestamp')
-			this.position = Date.now() / 1000; // 1582398574;
-
-		// const t = graph.paintEl.transform;
-		// t.x = -this.position * this.unitDist;
-		// graph.setChartTransform(t);
+			this.position = Date.now() / 1000;
 	}
 
 	nodePosition(node, graph, nodes) {
-
-
 
 		// if(!node.init_) {
 		// 	node.init_ = true;
@@ -107,8 +101,6 @@ class GraphContext {
 
 		// node.x = node.lscore;
 		// return;
-
-
 
 		if(node.data.parentBlockHashes) {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
@@ -129,7 +121,7 @@ class GraphContext {
 		if(!this.max)
 			return;
 
-		this.position = x * this.max * this.unitDist;
+		this.position = x * this.max;// * this.unitDist;
 		console.log('position:',this.position,'x:',x,'max:',this.max);
 		this.app.updatePosition();
 	}
@@ -168,8 +160,6 @@ class GraphContext {
 		let nodes = Object.values(this.graph.nodes);
 
 		nodes.forEach((node) => {
-			// node.idx = 0; 
-			// delete node.children;
 			let tips_ = this.getTips(node);
 			tips_.forEach((node) => {
 				if(!tips[node.data.blockHash])
@@ -180,31 +170,6 @@ class GraphContext {
 		Object.values(tips).forEach((node) => {
 			this.generateScore(node, 0);
 		})
-
-		// nodes.forEach((node) => {
-
-		// 	if(node.data.parentBlockHashes) {
-
-		// 		node.data.parentBlockHashes.forEach((hash) => {
-		// 			let parent = graph.nodes[hash];
-		// 			if(!parent.children)
-		// 				parent.children = { };
-		// 			parent.children[node.blockHash];
-		// 		});
-	
-		// 		// node.x = max + this.unitDist;
-
-		// 	} else {
-
-		// 		// node.x = node.data[this.unit] * this.unitScale * this.unitDist;
-
-		// 	}
-	
-		// })
-
-		// nodes.forEach((node) => {
-
-		// })
 	}
 
 	onTrigger(e) {
@@ -230,6 +195,8 @@ class GraphContext {
 	}
 
 	updateMax(max) {
+		if(max == null)
+			return
 		this.max = max;
 
 		console.log('new max:',max);
@@ -240,7 +207,6 @@ class GraphContext {
 export class App {
 	constructor() {
 		this.scores = [];
-		//this.position = 0;//1582398574- 1578493784; //Date.now() / 1000 - 60 * 60 * 8000;
 		this.ctx = new GraphContext({ unit : 'blueScore' });
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
@@ -254,8 +220,8 @@ export class App {
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
-//		new Trigger(this.graph,'track','TRACKING');
-//		new Trigger(this,'connect','LINK SEQUENTIAL');
+		//new Trigger(this.graph,'track','TRACKING');
+		//new Trigger(this,'connect','LINK SEQUENTIAL');
 
 		new Trigger(this.ctx,'curves','CURVES');
 		new Trigger(this.ctx,'trackSize','MASS');
@@ -290,7 +256,7 @@ export class App {
 			switch(e.key) {
 				case 'ArrowRight': {
 					console.log('ArrowRight');
-					this.ctx.position += 60;
+					this.ctx.position += 10;
 
 					console.log('pos:',this.ctx.position);
 					this.updatePosition();
@@ -298,7 +264,7 @@ export class App {
 
 				case 'ArrowLeft': {
 					console.log('ArrowLeft');
-					this.ctx.position -= 60;
+					this.ctx.position -= 10;
 					if(this.ctx.position < 0)
 						this.ctx.position = 0;
 					console.log('pos:',this.ctx.position);
@@ -319,34 +285,10 @@ export class App {
 	}
 
 	async updatePosition() {
-
-		// let limit = 100;
-		// let skip = this.position - limit / 2;
-		// if(skip < 0)
-		// 	skip = 0;
-		// const order = 'asc';
-
-		// let to = Date.now();
-		// let from = to - 1000 * 60 * 60;
-
-
-
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
-		t.x = -this.ctx.position; // * this.ctx.unitDist;
+		t.x = - (this.ctx.position * t.k * this.ctx.unitDist);
 		this.graph.setChartTransform(t);
-
-
-
-
-
-// 		let from = this.ctx.position;
-// 		let to = from + 60 * 60;
-
-// 		let { blocks } = await this.fetch({ from, to });
-// 		this.createBlocks(blocks);
-// //		blocks.forEach(block=>this.createBlock(block));
-// 		this.graph.updateSimulation();
 	}
 
 	fetch(args) {
@@ -397,7 +339,7 @@ export class App {
 						data.blocks.forEach(block => block.seq = block.id);
 
 
-					console.log(data);
+					//console.log(data);
 					resolve(data);
 				},
 				error: function (jqXhr, textStatus, errorMessage) { // error callback 
@@ -503,21 +445,14 @@ export class App {
 		this.graph.registerRegionUpdateSink(this.updateRegion.bind(this));
 		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
 
-		this.graph.track = false; // this.argv.get('track') !== null;
-						//158239858000
-
-
+		this.graph.track = false;
 		this.ctx.init(this, this.graph);
-		// this.position = Date.now() / 1000; // 1582398574;
-
-		// const t = this.graph.paintEl.transform;
-		// t.x = -this.position * this.ctx.unitDist;
-		// this.graph.setChartTransform(t);
 	}
 
 	initNavigator() {
 		this.navigator = document.getElementById("timenav");
 		this.navigator.app = this;
+		this.updateRegion({pos:0, range:10})
 	}
 
 	updateGraph() {
@@ -543,8 +478,8 @@ export class App {
 			right = true;
 		else
 			left = true;
-		this.ctx.position = pos;
-		range *= 2.2; //1.6;
+		this.ctx.position = pos
+		range *= 1.2; //1.6;
 
 		// if(limit > 100)
 		// 	limit = 100;
@@ -561,23 +496,17 @@ export class App {
 
 		// const first = skip - limit;
 		// const last = skip + limit;
-		let max, min, init = true;
-		console.log("range:",from,to,pos,range);
+		let max, min;
+		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
+		console.log("range:", {from,to,pos,range});
 		Object.values(this.graph.nodes).forEach((node) => {
+			//console.log("xxxxxxx", node.x+tx,  node.x, node.data[this.ctx.unit])
 			if(node.data[this.ctx.unit] < from || node.data[this.ctx.unit] > to) {
-				console.log('deleting:',node.data[this.ctx.unit]);
+				//console.log('deleting:',node.data[this.ctx.unit]);
 				// TODO - ensure links TO this node also get removed
 				node.purge();
 			} else {
-				if(init) {
-					max = min = node.data[this.ctx.unit];
-				} else {
-					let v = node.data[this.ctx.unit];
-					if(v < min)
-						min = v;
-					if(v > max)
-						max = v;
-				}
+				max = min = node.data[this.ctx.unit];
 			}
 		})
 
@@ -594,7 +523,7 @@ export class App {
 		let { blocks, max : max_ } = await this.fetch({ from, to });
 		this.ctx.updateMax(max_);
 		this.createBlocks(blocks);
-//		blocks.forEach(block=>this.createBlock(block));
+		//blocks.forEach(block=>this.createBlock(block));
 		this.graph.updateSimulation();
 
 	}
