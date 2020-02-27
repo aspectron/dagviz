@@ -348,7 +348,7 @@ export class GraphNodeLink{
 		this.target = holder.nodes[data.parent];
 		this.target.addParentLink(this);
 		this.target.attachNode();
-		this.el.transition().duration(1000).style('opacity', 0.75);
+		this.el.transition().duration(1000).style('opacity', 0.65);
 	}
 	remove(){
 		this.el.remove();
@@ -396,7 +396,7 @@ export class GraphNodeLink{
 	}
 
 	highlight(color) {
-		this.el.transition().duration(200).attr('stroke', color || 'black').attr('stroke-width', color ? 5 : 1);
+		this.el.transition().duration(200).attr('stroke', color || 'black').attr('stroke-width', color ? 5 : 1).style('opacity', color ? 0.95 : 0.65);
 	}
 }
 
@@ -1446,7 +1446,7 @@ export class DAGViz extends BaseElement {
 		//if(Math.round(this._last_pos/3) != Math.round(pos/3) || this._last_range != range) {
 			this._last_pos = pos;
 			this._last_range = range;
-			console.log("regionUpdateSink_", pos)
+			// console.log("regionUpdateSink_", pos)
 			this.regionUpdateSink_({pos, range, transform,box});
 		//}
 	}
