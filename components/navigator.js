@@ -36,14 +36,14 @@ class AxisNavigator extends BaseElement{
 	constructor() {
 		super();
 		this.data = { }
-		this.margin = 24;
+		this.margin = 32;
 	}
 
 
 	render(){
 		let box = this.getBoundingClientRect();
 		return html`
-		<canvas id="canvas" style="height:48px;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width}" height="${box.height}">Your browser does not support the HTML5 canvas tag</canvas>
+		<canvas id="canvas" style="height:48px;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width*2}" height="${box.height*2}">Your browser does not support the HTML5 canvas tag</canvas>
 		`;
 	}
 
@@ -109,6 +109,9 @@ class AxisNavigator extends BaseElement{
 
 
 		this.addEventListener('click', this.handleClick);
+		['mousedown','mouseup','mousemove'].forEach((event) => {
+			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
+		})
 
 		//let ctx = document.querySelector(); //this.$.canvas.getContext("2d");
 
@@ -121,6 +124,39 @@ class AxisNavigator extends BaseElement{
 
 		this.redraw();
 
+	}
+
+	onMouseEvent(event, e) {
+		switch(event) {
+			case 'mousedown': {
+				this.drag = true;
+				this.handleClick(e);
+			} break;
+
+			case 'mouseup': {
+				this.drag = false;
+
+			} break;
+
+			case 'mousemove': {
+				if(!this.drag)
+					return;
+				this.handleClick(e);
+			} break;
+		}
+	}
+
+	handleClick(e) {
+		console.log(e);
+
+		const box = this.getBoundingClientRect();
+		let absolute = (e.clientX-this.margin) / (box.width - this.margin*2);
+		if(absolute < 0)
+			absolute = 0;
+		if(absolute > 1)
+			absolute = 1;
+		console.log('absolute:', absolute);
+		this.app.ctx.reposition(absolute);
 	}
 
 	onResize() {
@@ -139,6 +175,8 @@ class AxisNavigator extends BaseElement{
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
 		let { width, height } = canvasBox;
+		width *= 2;
+		height *= 2;
 		// let {width} = parentBox;
 		
 		
@@ -147,45 +185,54 @@ class AxisNavigator extends BaseElement{
 		ctx.lineWidth = 1;
 		
 		let absolute = this.app.ctx.position / this.app.ctx.max;
-		let x = (width-this.margin*2) * absolute + this.margin;
-		
-		console.log("clearRect:",width,height, 'position:',this.app.ctx.position,'max:',this.app.ctx.max,'absolute:',absolute, 'x:', x);
-		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
-		ctx.lineWidth = 0.5;
-		ctx.beginPath();
-		// ctx.moveTo(x-1, 0);
-		// ctx.lineTo(x-1, height);
-		// ctx.stroke();
-		ctx.moveTo(x, 0);
-		ctx.lineTo(x, height-18);
-		ctx.stroke();
-		// ctx.moveTo(x+1, 0);
-		// ctx.lineTo(x+1, height);
-		// ctx.stroke();
-		ctx.lineWidth = 0.5;
-		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
-		ctx.font = '12px "Exo 2"';
-		ctx.textBaseline = "top";
 
+
+		const thumbHeight = 32;
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
+		ctx.font = '28px "Exo 2"';
+		ctx.textBaseline = "top";
 		let text = Math.round(this.app.ctx.position)+'';
 		let textMetrics = ctx.measureText(text);
-		ctx.fillText(text, x-textMetrics.width/2, 48-16);
+		const textWidth = textMetrics.width;
+		const textHeight = 28; // textMetrics.height;
+		let thumbWidth = textWidth+32;
+		if(thumbWidth < 64)
+			thumbWidth = 64;
 
+			let x = (width-thumbWidth) * absolute + thumbWidth/2;
+		
+			//console.log("clearRect:",width,height, 'position:',this.app.ctx.position,'max:',this.app.ctx.max,'absolute:',absolute, 'x:', x);
+	
+
+		// console.log('text:',text, x-textWidth/2, height/2-textHeight/2);
+
+		ctx.fillText(text, x-textWidth/2+0.25, height/2-textHeight/2+0.25);
+
+		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.moveTo(x, 0);
+		ctx.lineTo(x, height/2-thumbHeight/2);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(x, height);
+		ctx.lineTo(x, height/2+thumbHeight/2);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.rect(x-thumbWidth/2,height/2-thumbHeight/2,thumbWidth,thumbHeight);
+		ctx.stroke();
+
+
+		// ctx.beginPath();
+		// ctx.moveTo(x-textWidth/2-8, height-18);
+		// ctx.lineTo(x+textWidth/2+8, height-18);
+		// ctx.stroke();
 
 	}
 
-	handleClick(e) {
-		console.log(e);
-
-		const box = this.getBoundingClientRect();
-		let absolute = (e.clientX-this.margin) / (box.width - this.margin*2);
-		if(absolute < 0)
-			absolute = 0;
-		if(absolute > 1)
-			absolute = 1;
-		console.log('absolute:', absolute);
-		this.app.ctx.reposition(absolute);
-	}
 
 	// updated(changedProperties) {
 	// 	changedProperties.forEach((oldValue, propName) => {
