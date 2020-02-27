@@ -233,6 +233,11 @@ class DAGViz {
         // console.log('result:',result);
         this.skip = result.shift().total;
         console.log(`SELECT COUNT(*) AS total FROM blocks => ${this.skip}`);
+        if(this.skip) {
+            let blocks = await this.sql('SELECT * FROM blocks ORDER BY id DESC LIMIT 1');
+            this.lastBlock = blocks.shift();
+            // console.log("LAST BLOCK:",this.lastBlock);
+        }
         this.sync();
         dpc(3000, () => {
             this.updateRelations();
