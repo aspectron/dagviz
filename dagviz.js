@@ -445,7 +445,7 @@ class DAGViz {
         return new Promise(async (resolve, reject) => {
 
             let { from, to, unit } = args;
-            console.log(`slice: ${from}-${to}`);
+            // console.log(`slice: ${from}-${to}`);
             if(!from && !to) {
                 to = Date.now() / 1000;
                 from = to - 1000 * 60 * 60;
@@ -467,7 +467,7 @@ class DAGViz {
             if(to < from)
                 to = from+10;
 
-            console.log(`unit: ${unit} from: ${from} to: ${to}`);
+            // console.log(`unit: ${unit} from: ${from} to: ${to}`);
 
             let limit = 100;
 
@@ -480,7 +480,7 @@ class DAGViz {
                 let total = result.shift().total;
         
 
-                console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
+                // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 // console.log(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} LIMIT ${limit}`);
                 // let parents = await this.sql(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} ORDER BY blocks.${unit} LIMIT ${limit}`);
@@ -564,7 +564,7 @@ class DAGViz {
                     max = this.lastBlock[unit];
                 }
 
-                console.log(`blocks: ${blocks.length} last: ${last} total: ${total} max: ${max}`);
+                // console.log(`blocks: ${blocks.length} last: ${last} total: ${total} max: ${max}`);
                 resolve({ blocks, last, total, max });
             } catch(ex) {
                 console.log(ex);
