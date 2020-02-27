@@ -18,6 +18,10 @@ emanate --mysql
 ```
 This will download and unarchive Oracle MySQL for Windows.
 
+Before running DAGViz, you must initialize the database as follows: `node dagviz.js --init-mysql`.
+
+NOTE:  MySQL database name used for local blockchain cache storage is derived from the Kasparov API endpoint.  You can safely connect the same instance of DAGViz to different instances of Kasparov.
+
 #### Running the application
 
 DAGViz connects to and feeds off Kasparov API server.  Kasparov URL can be specified via the `--kasparov` command line argument.
