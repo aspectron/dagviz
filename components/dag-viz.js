@@ -478,7 +478,7 @@ export class GraphNode{
 			//this.el = this.holder.nodesEl.append("g");
 
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : this.data.size,
+	            size : this.data.size || 100,
 	            rgba : shapeConfig.color,//shapeConfig.rgba,
 	            opacity : 0.5
 	        });
@@ -745,16 +745,16 @@ export class GraphNode{
 		this.textEl
 			//.transition('o')
 			//.duration(2000)
-			.attr("x", this.x-textBoxWidth/2)
-			.attr("y", (this.y-12)-0.25)
+			.attr("x", Math.round(this.x-textBoxWidth/2))
+			.attr("y", Math.round((this.y-12)-0.25))
 			//.attr("y", (this.y+height/3)-0.75)
         	.attr("opacity", 1)
 
 		this.heightEl
 			//.transition('o')
 			//.duration(2000)
-			.attr("x", this.x-infoBoxWidth/2)
-			.attr("y", (this.y+20)-0.25)
+			.attr("x", Math.round(this.x-infoBoxWidth/2))
+			.attr("y", Math.round((this.y+20)-0.25))
 			//.attr("y", (this.y+height/3)-0.25)
         	.attr("opacity", 1)
 
@@ -1000,6 +1000,7 @@ export class DAGViz extends BaseElement {
 		//console.log("this.simulationNodes", this.simulationNodes)
 
 		this.simulation
+			//.velocityDecay(0.9)
 			// .force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius(function(d) {
 				//console.log("d.size", d)
