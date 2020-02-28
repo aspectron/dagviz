@@ -1065,6 +1065,8 @@ export class DAGViz extends BaseElement {
 				flex-direction:column;
 				box-sizing:border-box;
 				position:relative;
+				user-select: none;        
+
 			}
 			:host([hidden]) { display: none;}
 			#graph{flex:1;height:100%;}
