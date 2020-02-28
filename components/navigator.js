@@ -150,7 +150,11 @@ class AxisNavigator extends BaseElement{
 		// console.log(e);
 
 		const box = this.getBoundingClientRect();
-		let absolute = (e.clientX-this.margin) / (box.width - this.margin*2);
+		const thumbWidth = 128;
+		//let absolute = (e.clientX+thumbWidth/2) / (box.width-thumbWidth/2);// - thumbWidth*2);
+//console.log(e);
+		let absolute = (e.clientX-thumbWidth/2) / (box.width-thumbWidth)
+		console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
 		if(absolute > 1)
@@ -197,8 +201,8 @@ class AxisNavigator extends BaseElement{
 		const textWidth = textMetrics.width;
 		const textHeight = 36; // textMetrics.height;
 		let thumbWidth = textWidth+32;
-		if(thumbWidth < 192)
-			thumbWidth = 192;
+		if(thumbWidth < 256)
+			thumbWidth = 256;
 
 			let x = (width-thumbWidth) * absolute + thumbWidth/2;
 		
