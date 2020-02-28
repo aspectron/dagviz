@@ -742,17 +742,17 @@ export class App {
 		this.updateRegion({pos:this.ctx.position, range:16});
 
 		if(/\w+:/.test(args)) {
-console.log('requesting args:',args);
+//console.log('requesting args:',args);
 			let blocks = await this.fetchBlock(args);
-			console.log('got blocks array:', blocks);
+			//console.log('got blocks array:', blocks);
 			let nodes = blocks.map((block) => {
-				if(this.graph.nodes[block.blockHash])
-					return null;
+				// if(this.graph.nodes[block.blockHash])
+				// 	return null;
 				let node = this.createBlock(block);
 				node.select(true);
 				return node;
 			}).filter(v=>v);
-			 console.log('created or obtained nodes:',nodes);
+			 //console.log('created or obtained nodes:',nodes);
 			let first = blocks[0];
 			this.updateRegion({pos:first[this.ctx.unit], range:16});
 
