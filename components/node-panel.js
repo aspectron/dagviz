@@ -22,7 +22,7 @@ class NodePanel extends BaseElement{
 				max-width:500px;
 				min-height: 96px;
 				min-width: 150px;
-				z-index:4;
+				z-index:-4;
 			    /*box-shadow:
 			    	0 4px 5px 0 rgba(0,0,0,.14),
 			    	0 1px 10px 0 rgba(0,0,0,.12), 
@@ -31,7 +31,7 @@ class NodePanel extends BaseElement{
 				/*border:1px solid #DDD;*/
 				
 				background-color:#FFF;
-				border-radius:5px;
+				/*border-radius:5px;*/
 				max-height: inherit;
 			}
 
@@ -478,6 +478,13 @@ class NodePanel extends BaseElement{
 			});
 			this.resizeObserver.observe(this);
 		}
+
+		['mousedown','mouseup','mousemove','click'].forEach((event) => {
+			e.stopEventPropagation();
+//			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
+		})
+
+
 	}
 	initDrag(){
 		return;
