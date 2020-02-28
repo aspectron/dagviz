@@ -2,7 +2,7 @@
 <html>
 <head>
 	<title>BlockDAG Viz</title>
-	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto|Roboto+Mono|Cousine|Share+Tech+Mono|Ubuntu+Mono&display=swap" rel="stylesheet">
 
 	<script type="module" src="./components/dag-viz.js"></script>
 	<script src="/resources/jquery-3.4.1.js"></script>
@@ -19,6 +19,7 @@
 	<script src="/resources/mqtt.min.js"></script>
 	<script type="module" src="./components/app.js"></script>
 	<script type="module" src="./components/navigator.js"></script>
+	<script type="module" src="./components/block-info.js"></script>
 	<style type="text/css">
 		#dagViz{height:100vh;}
 		#address { 
@@ -32,12 +33,12 @@
 			font-weight: 400;
 			padding-left: 64px;
 		}
-		.trigger { cursor:pointer; margin: 2px 8px 8px 8px; padding: 4px; display: inline-block; border-top: 1px solid rgba(0,0,0,0); }  
+		.trigger { cursor:pointer; margin: 2px 8px 2px 8px; padding: 2px; display: inline-block; border-top: 1px solid rgba(0,0,0,0); }  
 		.trigger:hover{ border-top: 1px dashed rgba(0,70,70,0.95); border-radius: 0px; }
 
 		#bottom { 
-			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
-			position: absolute; left: 4px; bottom: 54px; color: #222;
+			font-family: 'Roboto Mono', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
+			position: absolute; left: 4px; bottom: 54px; color: #444;
 			font-weight: 400;
 		}
 
@@ -62,15 +63,52 @@
 			display: inline-block;
 		}
 		body{padding:0px;margin:0px;overflow:hidden;}
+
+		.selection {
+			display: flex;
+            flex-direction: row;
+			flex-wrap: wrap-reverse;
+			align-items: flex-start;
+			justify-content: center;
+		}
+
+		#left {
+			position: absolute;
+			left : 10px;
+			top : 72px;
+		}
+
+		#left .tool {
+			background-position: center center;
+			background-size: cover;
+			background-repeat: no-repeat;
+			transition: all 0.15s;
+			cursor: pointer;
+			width: 24px;
+			height: 24px;
+		}
+
+		.needs-multi-select {
+			display: none;
+			opacity: 0;
+			transition: all 0.5s;
+		}
+
+		#copy-url { display: none; }
+
 	</style>
 </head>
 <body>
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='address'></div>
 	<div id='top'><span class='position'></span><span class='ctl'></span><br/><span class='info'></span></div>
-	<div id='bottom'><span class='info'></span></div>
+	<div id="left">
+		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="Copy link to Clipboard"></div>
+	</div>
+	<div id='bottom'><div class='selection'></div></div>
 	<axis-navigator id="timenav"></axis-navigator>
 	<div id='logo'></div>
+	<div id="copy-url"></div>
 	<script>
 		 // console.log("io is:",io);
 	</script>
@@ -85,34 +123,34 @@
 			if(app.argv.get('simulate-only') !== null)
 				return;
 			
-			let address = app.argv.get('address') || 'ws://finland.aspectron.com:7351';
-			$('#address').html(address);
-			var client = mqtt.connect(address);
-		  	client.subscribe("dag/selected-tip");
-			[
-				'connect','disconnect','close',
-				'reconnect','error','end',
-				// 'packetreceive'
-			].forEach((op) => {
-				client.on(op, (data) => {
-					console.log(`[MQTT] ${op}:`,data);
-				})
-			});
+			// let address = app.argv.get('address') || 'ws://finland.aspectron.com:7351';
+			// $('#address').html(address);
+			// var client = mqtt.connect(address);
+		  	// client.subscribe("dag/selected-tip");
+			// [
+			// 	'connect','disconnect','close',
+			// 	'reconnect','error','end',
+			// 	// 'packetreceive'
+			// ].forEach((op) => {
+			// 	client.on(op, (data) => {
+			// 		console.log(`[MQTT] ${op}:`,data);
+			// 	})
+			// });
 
 		 
-			client.on("message", function (topic, payload) {
-			    // console.log([topic, payload].join(": "))
-				if(topic == 'dag/selected-tip') {
-					try {
-						let data = JSON.parse(payload);
-						console.log('dag/selected-tip:', data);
-						app.onDagSelectedTip(data);
-					} catch(ex) {
-						console.log('error parsing dag/selected-tip:', ex);
-						console.log('payload:', payload);
-					}
-				}
-			});
+			// client.on("message", function (topic, payload) {
+			//     // console.log([topic, payload].join(": "))
+			// 	if(topic == 'dag/selected-tip') {
+			// 		try {
+			// 			let data = JSON.parse(payload);
+			// 			console.log('dag/selected-tip:', data);
+			// 			app.onDagSelectedTip(data);
+			// 		} catch(ex) {
+			// 			console.log('error parsing dag/selected-tip:', ex);
+			// 			console.log('payload:', payload);
+			// 		}
+			// 	}
+			// });
 		})
 	</script>
 </body>
