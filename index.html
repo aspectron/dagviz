@@ -5,18 +5,17 @@
 	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto|Roboto+Mono|Cousine|Share+Tech+Mono|Ubuntu+Mono&display=swap" rel="stylesheet">
 
 	<script type="module" src="./components/dag-viz.js"></script>
-	<script src="/resources/jquery-3.4.1.js"></script>
+	<script src="/resources/scripts/jquery-3.4.1.js"></script>
 	<!--script src="/resources/d3.v5.min.js"></script-->
 	
 	<!-- TODO switch to express, migrate to http/ as root -->
 	<script src="/socket.io/socket.io.js"></script>
-	<script src="/resources/fabric-rpc.js"></script>
-	<script src="/resources/underscore-min.js"></script>
-	<script src="/resources/blockdag.sample.js"></script>
-	<script src="https://d3js.org/d3.v5.min.js"></script>
+	<script src="/resources/scripts/fabric-rpc.js"></script>
+	<script src="/resources/scripts/underscore-min.js"></script>
+	<script src="/resources/scripts/d3.v5.min.js"></script>
 	<!--script src="https://d3js.org/d3.v3.min.js"></script-->
 	<!--script src="/resources/mqttws31.js"></script-->
-	<script src="/resources/mqtt.min.js"></script>
+	<script src="/resources/scripts/mqtt.min.js"></script>
 	<script type="module" src="./components/app.js"></script>
 	<script type="module" src="./components/navigator.js"></script>
 	<script type="module" src="./components/block-info.js"></script>
@@ -69,7 +68,7 @@
             flex-direction: row;
 			flex-wrap: wrap-reverse;
 			align-items: flex-start;
-			justify-content: center;
+			justify-content: left;
 		}
 
 		#left {
@@ -94,6 +93,9 @@
 			transition: all 0.5s;
 		}
 
+		.needs-multi-select:hover {
+			opacity: 1;
+		}
 		#copy-url { display: none; }
 
 	</style>
@@ -103,7 +105,7 @@
 	<div id='address'></div>
 	<div id='top'><span class='position'></span><span class='ctl'></span><br/><span class='info'></span></div>
 	<div id="left">
-		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="Copy link to Clipboard"></div>
+		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.35;" tooltip="Copy link to Clipboard"></div>
 	</div>
 	<div id='bottom'><div class='selection'></div></div>
 	<axis-navigator id="timenav"></axis-navigator>
