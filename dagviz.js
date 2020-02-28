@@ -72,7 +72,7 @@ class DAGViz {
                 else
                 if(req.url.startsWith('/block/')) {
                     let args = req.url.substring(7);
-                    console.log("getting block:",args);
+                    // console.log("getting block:",args);
                     this.getBlock(args).then((data) => {
                         res.writeHead(200, {'Content-Type': 'application/json'});
                         res.write(JSON.stringify(data));
