@@ -464,10 +464,30 @@ export class GraphNodeLink{
 	}
 
 	highlight(color) {
+
+		let stroke = this.defaultColor;
+		if(color) {
+			if(this.isChainBlockLink) {
+				if(this.source.selected && this.target.selected)
+					stroke = 'blue';
+				else
+				if(color == 'red')
+					stroke = 'rgba(92,0,0,1)';
+				else
+					stroke = 'rgba(0,48,0,1)';
+			}
+			else
+			if(this.source.selected && this.target.selected)
+				stroke = 'blue';
+			else
+				stroke = color;
+}
+
 		this.el.transition()
 			.duration(200)
 			.style('opacity', color ? 1 : this.defaultOpacity)
-			.attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
+			.attr('stroke', stroke)
+			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
 			.attr('stroke-width', color ? this.isChainBlockLink ? 7 : 5 : this.defaultStrokeWidth)
 	}
 }
@@ -480,6 +500,7 @@ export class GraphNode{
 		this.tOffset = 0;
 		holder.nodes[this.id] = this;
 		this.parentLinks = {};
+		this.selected = false;
 
 		this.holder.createIdx(this);
 		this.attachNode();
@@ -685,7 +706,7 @@ export class GraphNode{
 			this.linkNodes.forEach(node => node.setStaticPosition(x, y));
 				
 	}
-	updateStyle(){
+	updateStyle(force){
 		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
 			// console.log("aborting updateStyle (lack of data) for:",this);
 			return
@@ -714,7 +735,7 @@ export class GraphNode{
 			this.data.color = `rgba(194,244,255,0.99)`;
 
 
-		if(this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size) {
+		if(force || this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size) {
 			this.removeElEvents();
 			// console.log("DATA CHANGE",this);
 			this.el.remove();
@@ -742,7 +763,9 @@ export class GraphNode{
 	        this.shape = this.data.shape;
 			this.color = this.data.color;
 			this.size = this.data.size;
-			
+
+			// if(this.selected)			
+
 			const textColor = this.data.textColor || '#000';
 
 	        this.textEl.remove();
@@ -863,9 +886,12 @@ export class GraphNode{
         	.attr("opacity", 1)
 
 
-
+			
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
+
+		if(this.selected)
+			this.highlightLinks(true);
 	}
 	addParentLink(parentLink){
 		this.parentLinks[parentLink.data.child] = parentLink;
@@ -890,19 +916,34 @@ export class GraphNode{
 		this.holder.highlightLinks(this.linkNodes || [], 'green');
 		this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
 
+		const { data } = this;
 
 		if(!this.$info)
-			this.$info = $("#bottom .info");
-		this.$info.html(`${this.data.blockHash} @${this.data.blueScore} - ${this.getTS(new Date(this.data.timestamp*1000))}`);
+			this.$info = $("#top .info");
+		this.$info.html(`${data.blockHash} @${data.blueScore} [${(data.parentBlockHashes||[]).length}]->[${(data.childBlockHashes||[]).length}] - ${this.getTS(new Date(data.timestamp*1000))}`);
 
 
 
 	}
+
+	highlightLinks(highlight = true) {
+		if(highlight) {
+			this.holder.highlightLinks(this.linkNodes || [], 'green');
+			this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
+	
+		}
+		else {
+			this.holder.highlightLinks(this.getLinks(), null);
+
+		}
+	}
+
 	onNodeOut(){
 		// this.holder.hideNodeInfo(this.data, this);
 		this.$info.html('');
 
-		this.holder.highlightLinks(this.getLinks(), null);
+		if(!this.selected)
+			this.holder.highlightLinks(this.getLinks(), null);
 
 
 		/*
@@ -945,6 +986,10 @@ export class GraphNode{
 		return this.el.node().getBoundingClientRect();
 	}
 	purge(){
+
+		if(this.nodeInfoEl)
+			this.nodeInfoEl.remove();
+
 		delete this.holder.nodes[this.data.id];
 		// TODO - css animate opacity
 		this.remove();
@@ -953,6 +998,48 @@ export class GraphNode{
 			this.holder.simulationNodes.splice(index, 1);
 		}
 	}
+
+	select(flag) {
+
+
+		if(flag === undefined)
+			this.selected = !this.selected;
+		else
+			this.selected = !!flag;
+//		if(this.selected)
+
+		if(!this.selected)
+			delete this.holder.selection[this.data.blockHash];
+		else
+			this.holder.selection[this.data.blockHash] = this;
+
+		this.holder.ctx.onSelectionUpdate(this.holder.selection);
+
+		// dpc(()=>{
+		// 	this.updateStyle(true);
+		// });
+
+		this.el.transition()
+			.duration(200)
+			.attr('stroke', this.selected ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.5)')
+			.attr('stroke-width', this.selected ? 5 : 1);
+
+
+		if(!this.selected) {
+			if(this.nodeInfoEl) {
+				this.nodeInfoEl.remove();
+				delete this.nodeInfoEl;
+			}
+			this.highlightLinks(false);
+			return;
+		}
+
+		this.highlightLinks(true);
+		this.nodeInfoEl = $(`<block-info hash='${this.data.blockHash}'></block-info>`);
+		$('#bottom .selection').append(this.nodeInfoEl);
+
+	}
+
 }
 
 export class DAGViz extends BaseElement {
@@ -1043,8 +1130,9 @@ export class DAGViz extends BaseElement {
 			// child : { }
 		}
 
-		this.locationIdx = { }
+		this.locationIdx = { };
 
+		this.selection = { };
 		//this.unitDist = 100;
 
 		//
@@ -1087,7 +1175,8 @@ export class DAGViz extends BaseElement {
 		});
 		
 		this.graphHolder.addEventListener('click', ()=>{
-			this.hideNodeInfo(true)
+			// this.hideNodeInfo(true)
+			
 		})
 		this.initChart();
 	}
@@ -1143,7 +1232,16 @@ export class DAGViz extends BaseElement {
 		//console.log("this.simulationNodes", this.simulationNodes)
 
 		this.simulation
-			//.velocityDecay(0.9)
+
+		// .force("y", d3.forceY().y((d) => {
+		// 	// console.log('d',d);
+		// 	if(d.data.isChainBlock)
+		// 		return 0;
+		// 	return 100;
+		// }))
+
+
+//		.velocityDecay(0.45)
 			// .force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius((d) => {
 				//console.log("d.size", d)
@@ -1155,7 +1253,6 @@ export class DAGViz extends BaseElement {
 			.force("charge", d3.forceManyBody().strength(-200))
 			//.force("charge", d3.forceManyBody().strength(350))
 			//.force("charge", d3.forceManyBody().strength(150))
-			//.force("x", d3.forceX())
 			//.force("y", d3.forceY())
 
 
@@ -1318,6 +1415,8 @@ export class DAGViz extends BaseElement {
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
 
+		this.lastAddNodeTS = Date.now();
+
 		if(node.data.origin == 'tip-update') {
 			this.lastNodeAdded = node;
 			this.lastNodeAddedTS = Date.now();
@@ -1392,7 +1491,9 @@ this.simulation.alphaDecay(0.05);
 		//		this.simulation.alpha(0.005);
 		//		this.simulation.alpha(0.01);
 
-
+		if(Date.now() - this.lastAddNodeTS > 30 * 1000) {
+			this.simulation.alphaDecay(0.1);
+		}
 
 
 		//		this.updateNodeInfoPosition();
@@ -1413,10 +1514,12 @@ this.simulation.alphaDecay(0.05);
 	onNodeClick(node, e){
 		e.preventDefault();
 		e.stopPropagation();
-		this._selectedNode = null;
-		this.showNodeInfo(node.data, node);
-		this._node = node;
-		this._selectedNode = node;
+
+		this.selectNode(node);
+		// this._selectedNode = null;
+		// this.showNodeInfo(node.data, node);
+		// this._node = node;
+		// this._selectedNode = node;
 	}
 
 	showNodeInfo(data, node){
@@ -1695,6 +1798,24 @@ this.simulation.alphaDecay(0.05);
 				t.y += v.cY * delta; //0.0075;// * delta;
 			}, offsetX : 0.1 } );
 		}
+		else if(this.focusTargetHash) {
+
+			let { k } = this.paintEl.transform;
+
+			this.centerBy(this.focusTargetHash, { filter : (t,v) => {
+
+				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
+				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
+				if(X_ < 1e-1 && Y_ < 1e-1)
+					delete this.focusTargetHash;
+
+				let delta = 0.45;
+				t.x += v.cX * delta; //0.0075;// * delta;
+				t.y += v.cY * delta; //0.0075;// * delta;
+			}, offsetX : 0 } );
+
+		}
+
 	}
 
 	highlightLinks(links, highlight) {
@@ -1720,6 +1841,14 @@ this.simulation.alphaDecay(0.05);
 			if(!this.locationIdx[idx].length)
 				delete this.locationIdx[idx];
 		}
+	}
+
+	selectNode(node) {
+		node.select();
+	}
+	
+	setFocusTargetHash(hash) {
+		this.focusTargetHash = hash;
 	}
 }
 
