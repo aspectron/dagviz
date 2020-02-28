@@ -340,7 +340,7 @@ class GraphContext {
 		if(length > 1) {
 			$('.needs-multi-select').css({
 				display:'block',
-				opacity : 1
+				opacity : 0.65
 			});
 		} else {
 			$('.needs-multi-select').css({
