@@ -1,0 +1,62 @@
+.notifyjs-dagviz-base {
+	position: relative;
+	min-height: 52px;
+	color:#fff;
+	font-family: 'Exo 2';
+
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;        
+
+	box-shadow: 1px 1px 2px rgba(10,10,10,0.1);
+}
+
+.notifyjs-dagviz-base .image {
+	background-image: url(/resources/images/icons/cross.png);
+	position: absolute;
+	height: auto;
+	width: auto;
+	left: 25px;
+	top: 50%;
+	display: table;
+}
+
+.notifyjs-dagviz-base .close {
+	background-image: url(/resources/images/icons/cross.png);
+	float:right;
+	width: 8px;
+	height: 8px;
+	margin: 4px;
+}
+
+.notifyjs-dagviz-base .text-wrapper {
+	display: inline-block;
+	vertical-align: top;
+	text-align: left;
+	margin: 8px 16px 16px 16px;
+	clear: both;
+	font-size: 12px;
+}
+
+.text-wrapper a:link { text-decoration: none; color: #ccccff;}
+.text-wrapper a:visited { text-decoration: none; color: #ccccff;}
+.text-wrapper a:hover { text-decoration: underline; color: #ccccff;}
+
+.notifyjs-dagviz-base .title {
+	font-size: 18px;
+	font-weight: bold;
+/*	border-bottom: 1px solid #333;
+	padding-bottom: 4px;
+*/	margin-bottom: 8px;
+}
+
+.notifyjs-dagviz-base .text {
+	font-size: 16px;
+	font-weight: normal;
+	vertical-align: middle;
+}
+
+.notifyjs-dagviz-base.uncloseable>.close{ display: none }
