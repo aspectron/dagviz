@@ -187,18 +187,18 @@ class AxisNavigator extends BaseElement{
 		let absolute = this.app.ctx.position / this.app.ctx.max;
 
 
-		const thumbHeight = 32;
+		const thumbHeight = 54;
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
-		ctx.font = '28px "Exo 2"';
+		ctx.font = '36px "Exo 2"';
 		ctx.textBaseline = "top";
 		let text = Math.round(this.app.ctx.position)+'';
 		let textMetrics = ctx.measureText(text);
 		const textWidth = textMetrics.width;
-		const textHeight = 28; // textMetrics.height;
+		const textHeight = 36; // textMetrics.height;
 		let thumbWidth = textWidth+32;
-		if(thumbWidth < 64)
-			thumbWidth = 64;
+		if(thumbWidth < 192)
+			thumbWidth = 192;
 
 			let x = (width-thumbWidth) * absolute + thumbWidth/2;
 		
