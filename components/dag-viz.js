@@ -237,20 +237,62 @@ D3x.shape.circle = function(el, o) {
 
 D3x.shape.square = function(el, o) {
 
-    var size = o.size;
-    var node = el.append('svg:rect')
-        //.attr('', 0)//Math.random() * 25 + 25)
+	// node = el.append('svg:g')
+
+	let size = o.size;
+	
+	let root = null;
+	let node = null;
+
+	if(!o.pattern) {
+		node = el.append('svg:rect');
+		root = node;
+	} else {
+		root = el.append('svg:g');
+		node = root.append('svg:rect');
+		node.attr('opacity',1);
+	}
+
+	root.attr('opacity',1);
+
+
+		//.attr('', 0)//Math.random() * 25 + 25)
+	node
         .attr('x',-size)
         .attr('y',-size)
         .attr('width', size*2)
         .attr('height', size*2)
         //.attr('height', 0)// size*2)
-        .attr('opacity',0)
+//        .attr('opacity',0)
 	//        .attr('opacity',0.85)
         //.attr('fill', o.rgba)//D3x.rgba(o.rgba))
+        //.attr('fill', o.pattern ) // D3x.rgba(o.rgba))
         .attr('fill', o.rgba) // D3x.rgba(o.rgba))
+//        .attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
+//        .attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
+//        .attr('fill', o.rgba) // D3x.rgba(o.rgba))
         .attr("stroke", D3x.rgba([0,0,0], 0.5))
         //.attr("stroke-width", 1)
+
+
+	let pattern = null;
+
+	 if(o.pattern) {
+		 pattern = root.append('svg:rect')
+		 //.attr('', 0)//Math.random() * 25 + 25)
+		 .attr('x',-size)
+		 .attr('y',-size)
+		 .attr('width', size*2)
+		 .attr('height', size*2)
+		 //.attr('height', 0)// size*2)
+		 //.attr('opacity',0.125)
+		 .attr('opacity',o.patternOpacity || 0.125)
+//		 .attr('opacity',0.075)
+         .attr('fill', `url(#${o.pattern})`)
+
+		 // console.log(o.pattern);
+	 }
+	// 	node.attr('fill')
 
 	// node
 	//  		.transition()
@@ -265,17 +307,27 @@ D3x.shape.square = function(el, o) {
 	//        .duration(1000)
 	//        .attr("height", size * 2)
 
-    node.setPosition = (x, y)=>{
+    root.setPosition = (x, y)=>{
     	node
     		.attr("x", x-size)
-    		.attr("y", y-size)
-    	return node;
-    }
-    node.setFill = (fn)=>{
-    	node.attr("fill", fn())
-    }
+			.attr("y", y-size);
 
-    return node;
+		if(pattern) {
+			pattern
+				.attr("x", x-size)
+				.attr("y", y-size);
+		}
+
+    	return root;
+	}
+	
+    root.setFill = (fn)=>{
+		// console.log('set-fill');
+    	node.attr("fill", fn())
+	}
+	
+
+    return root;
 }
 
 D3x.shape.diamond = function(el, o) {
@@ -348,7 +400,23 @@ export class GraphNodeLink{
 		this.target = holder.nodes[data.parent];
 		this.target.addParentLink(this);
 		this.target.attachNode();
-		this.el.transition().duration(1000).style('opacity', 0.65);
+
+		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
+			this.isChainBlockLink = true;
+			this.defaultColor = 'rgba(0,32,64,1)';
+			this.defaultStrokeWidth = 7;
+			this.defaultOpacity = 0.95;
+		} else {
+			this.defaultColor = 'black';
+			this.defaultStrokeWidth = 1;
+			this.defaultOpacity = 0.65;
+		}
+
+		this.el.transition().duration(1000)
+			.attr('stroke', this.defaultColor)
+			.attr('stroke-width', this.defaultStrokeWidth)
+			.style('opacity', this.defaultOpacity);
+
 	}
 	remove(){
 		this.el.remove();
@@ -396,7 +464,11 @@ export class GraphNodeLink{
 	}
 
 	highlight(color) {
-		this.el.transition().duration(200).attr('stroke', color || 'black').attr('stroke-width', color ? 5 : 1).style('opacity', color ? 0.95 : 0.65);
+		this.el.transition()
+			.duration(200)
+			.style('opacity', color ? 1 : this.defaultOpacity)
+			.attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
+			.attr('stroke-width', color ? this.isChainBlockLink ? 7 : 5 : this.defaultStrokeWidth)
 	}
 }
 
@@ -408,6 +480,8 @@ export class GraphNode{
 		this.tOffset = 0;
 		holder.nodes[this.id] = this;
 		this.parentLinks = {};
+
+		this.holder.createIdx(this);
 		this.attachNode();
 	}
 	setData(data){
@@ -480,7 +554,8 @@ export class GraphNode{
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
 	            size : this.data.size || 100,
 	            rgba : shapeConfig.color,//shapeConfig.rgba,
-	            opacity : 0.5
+				opacity : 0.5,
+				pattern : this.data.isChainBlock ? 'diagonal-stripe-2' : null
 	        });
 
 	        //this.el.transform = d3.zoomIdentity.translate(0, 0).scale(0.5);
@@ -588,7 +663,9 @@ export class GraphNode{
 		_.each(this.parentLinks, (link, parent)=>{
 			link.remove();
 			delete this.parentLinks[parent];
-		})
+		});
+
+		this.holder.removeIdx(this);
 	}
 	initPosition(){
 		let {x, y} = this;
@@ -631,6 +708,8 @@ export class GraphNode{
 
 		if(this.data.isChainBlock && this.holder.ctx.isChainBlock)
 			this.data.color = `rgba(194,255,204,0.99)`;
+		else if(!this.data.acceptingBlockHash)
+			this.data.color = `rgba(255,194,194,0.99)`;
 		else
 			this.data.color = `rgba(194,244,255,0.99)`;
 
@@ -639,10 +718,25 @@ export class GraphNode{
 			this.removeElEvents();
 			// console.log("DATA CHANGE",this);
 			this.el.remove();
+
+			let pattern = null;
+			let patternOpacity = 0.125;
+			if(!this.data.acceptingBlockHash) {
+				pattern = 'crosshatch';
+				patternOpacity = 0.225;
+			}
+			if(this.holder.ctx.isChainBlock && this.data.isChainBlock) {
+				pattern = 'diagonal-stripe-1';
+			}
+			
+
+
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
 	            size : this.data.size,
 	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
-	            opacity : 0.5
+				opacity : 0.5,
+				pattern, patternOpacity // : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-1' : null) : null,
+//				pattern : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null,
 	        });
 
 	        this.shape = this.data.shape;
@@ -653,6 +747,7 @@ export class GraphNode{
 
 	        this.textEl.remove();
 			this.textEl = this.holder.nodesEl.append("text")
+		    	.attr("class", "node-text")
 				.style('opacity',0)
 				.attr("fill", textColor)
 				.attr("class", ["node-name",this.data.type].join(' '))
@@ -663,6 +758,7 @@ export class GraphNode{
 
 			this.heightEl.remove();
 			this.heightEl = this.holder.nodesEl.append("text")
+				.attr("class", "node-text")
 				.style('opacity',0)
 				.attr("fill", textColor)
 				.attr("class", ["node-name",this.data.type].join(' '))
@@ -722,12 +818,20 @@ export class GraphNode{
 		this.el
 			.setPosition(this.x, this.y)
 			.setFill(()=>{
+
+				// if(this.data.isChainBlock)
+				// 	return `url(#diagonal-stripe-1)`;
+
 				if(this.data.color) {
 					return this.data.color;
-				} else {
-					return host && host.online ? "#b3e2ff" : "#ffb3b3";
-				}
+				} 
+				// else {
+				// 	return host && host.online ? "#b3e2ff" : "#ffb3b3";
+				// }
 			})
+		// if(this.data.isChainBlock)
+		// 	this.el.setPattern('diagonal-stripe-1');
+
 		let textBox = this.textEl.node().getBoundingClientRect();
 		let infoBox = this.heightEl.node().getBoundingClientRect();
 			//let {width, height} = textBox;
@@ -778,14 +882,25 @@ export class GraphNode{
 		if (d3.event.defaultPrevented)
 			return
 		this.holder.onNodeClick(this, d3.event);
+
+//		this.holder.select(this);
 	}
 	onNodeHover(){
 		// this.holder.showNodeInfo(this.data, this);
 		this.holder.highlightLinks(this.linkNodes || [], 'green');
 		this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
+
+
+		if(!this.$info)
+			this.$info = $("#bottom .info");
+		this.$info.html(`${this.data.blockHash} @${this.data.blueScore} - ${this.getTS(new Date(this.data.timestamp*1000))}`);
+
+
+
 	}
 	onNodeOut(){
 		// this.holder.hideNodeInfo(this.data, this);
+		this.$info.html('');
 
 		this.holder.highlightLinks(this.getLinks(), null);
 
@@ -809,6 +924,21 @@ export class GraphNode{
 		//console.log("rrrr", r, Math.sqrt(X*X + Y*Y) < r)
 		*/
 	}
+
+
+	getTS(src_date) {
+		var a = src_date || (new Date());
+		var year = a.getFullYear();
+		var month = a.getMonth()+1; month = month < 10 ? '0' + month : month;
+		var date = a.getDate(); date = date < 10 ? '0' + date : date;
+		var hour = a.getHours(); hour = hour < 10 ? '0' + hour : hour;
+		var min = a.getMinutes(); min = min < 10 ? '0' + min : min;
+		var sec = a.getSeconds(); sec = sec < 10 ? '0' + sec : sec;
+		//var time = year + '-' + month + '-' + date + ' ' + hour + ':' + min + ':' + sec;
+		return `${year}-${month}-${date} ${hour}:${min}:${sec}`;
+	}
+	
+
 	getBoundingClientRect(){
 		if(this.el.getBoundingClientRect)
 			return this.el.getBoundingClientRect();
@@ -906,19 +1036,29 @@ export class DAGViz extends BaseElement {
 
 		this.xMargin = 384;
 
-		this.track = false;
+		//this.track = false;
 
 		this.links = {
 			// parent : { },
 			// child : { }
 		}
 
+		this.locationIdx = { }
+
 		//this.unitDist = 100;
 
 		//
 	}
 	render() {
+		// https://iros.github.io/patternfills/sample_d3.html
 		return html`
+		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzEnLz4KPC9zdmc+Cg==" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>		
+		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-2" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzInLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>
+		<svg height="8" width="8" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="crosshatch" patternUnits="userSpaceOnUse" width="8" height="8"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4JyBoZWlnaHQ9JzgnPgogIDxyZWN0IHdpZHRoPSc4JyBoZWlnaHQ9JzgnIGZpbGw9JyNmZmYnLz4KICA8cGF0aCBkPSdNMCAwTDggOFpNOCAwTDAgOFonIHN0cm9rZS13aWR0aD0nMC41JyBzdHJva2U9JyNhYWEnLz4KPC9zdmc+Cg==" x="0" y="0" width="8" height="8"> </image> </pattern> </defs> </svg>
+		<svg height="6" width="6" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="whitecarbon" patternUnits="userSpaceOnUse" width="6" height="6"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbG5zOnhsaW5rPSdodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rJyB3aWR0aD0nNicgaGVpZ2h0PSc2Jz4KICA8cmVjdCB3aWR0aD0nNicgaGVpZ2h0PSc2JyBmaWxsPScjZWVlZWVlJy8+CiAgPGcgaWQ9J2MnPgogICAgPHJlY3Qgd2lkdGg9JzMnIGhlaWdodD0nMycgZmlsbD0nI2U2ZTZlNicvPgogICAgPHJlY3QgeT0nMScgd2lkdGg9JzMnIGhlaWdodD0nMicgZmlsbD0nI2Q4ZDhkOCcvPgogIDwvZz4KICA8dXNlIHhsaW5rOmhyZWY9JyNjJyB4PSczJyB5PSczJy8+Cjwvc3ZnPg==" x="0" y="0" width="6" height="6"> </image> </pattern> </defs> </svg>
+		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="smalldot" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgo8cmVjdCB3aWR0aD0nNScgaGVpZ2h0PSc1JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyNjY2MnLz4KPC9zdmc+" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
+		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="circles-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSJ3aGl0ZSIgLz4KICA8Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIgZmlsbD0iYmxhY2siLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>						
+		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<div id="graph"></div>
 		<div id="nodeInfo"></div>
 		`;
@@ -968,7 +1108,9 @@ export class DAGViz extends BaseElement {
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
+    			this.nodesEl.attr("stroke", 'rgba(0,0,0,0.5)');
 				this.linksEl.attr("stroke-width", w);
+				// d3.select('node-text').attr("stroke-width", 0.5);
 				//this.updatePanInfo(this.paintEl.transform);
 				//this.updateRegion(this.paintEl.transform);
     		})
@@ -995,7 +1137,7 @@ export class DAGViz extends BaseElement {
 		this.simulationNodes = this.simulation.nodes();
 
 
-		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(200).strength(1)
+		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(200).strength(0.5)
 		this.simulationLinks = this.simulationLinkForce.links();
 
 		//console.log("this.simulationNodes", this.simulationNodes)
@@ -1003,9 +1145,12 @@ export class DAGViz extends BaseElement {
 		this.simulation
 			//.velocityDecay(0.9)
 			// .force("link", this.simulationLinkForce)
-			.force('collision', d3.forceCollide().radius(function(d) {
+			.force('collision', d3.forceCollide().radius((d) => {
 				//console.log("d.size", d)
-			 	return d.data.size * 3;// * 2//d.radius
+
+				return this.ctx.trackSize ? d.data.size * 2 : 75;
+
+			 	//return d.data.size * 3;// * 2//d.radius
 			}))
 			.force("charge", d3.forceManyBody().strength(-200))
 			//.force("charge", d3.forceManyBody().strength(350))
@@ -1025,6 +1170,9 @@ export class DAGViz extends BaseElement {
 			this._updateNodeInfoPosition();
 
 			this.updateTracking();
+
+			// if(this.ctx.track)
+			// 	this.simulation.restart();
 
 		});
 
@@ -1100,6 +1248,38 @@ export class DAGViz extends BaseElement {
 		}
 		this.setChartTransform(this.paintEl.transform);
 	}
+
+	translate(x,y, options) {
+		
+		let pBox = this.getBoundingClientRect();
+		let centerX = pBox.left + pBox.width/2;
+		if(options && options.offsetX)
+			centerX += options.offsetX * pBox.width;
+		let centerY = pBox.top + pBox.height/2;
+		// let box = node.getBoundingClientRect();
+		// //console.log("box", pBox, box)
+		// let cX = box.left + box.width/2;
+		// let cY = box.top + box.height/2;
+		// let cX = centerX-x;
+		// let cY = centerY-y;
+		// let cX = centerX-x;
+		// let cY = centerY-y;
+
+		let t = this.paintEl.transform;
+
+		t.x = -(x * t.k);
+		t.y = -y;
+
+		// if(options && options.filter) {
+		// 	options.filter(t,{ cX, cY });
+		// } else {
+			// t.x += cX;// * 0.01;
+			// t.y += cY;// * 0.01;
+		//}
+
+		this.setChartTransform(this.paintEl.transform);
+
+	}
 	setChartTransform(transform){
 		this.paintEl.transform = transform;
 		//this.paintEl.
@@ -1111,7 +1291,14 @@ export class DAGViz extends BaseElement {
 		}
 
 		this.updatePanInfo(this.paintEl.transform);
-		this.updateRegion(this.paintEl.transform);		
+		this.updateRegion(this.paintEl.transform);
+
+		const { k }	= transform;
+		let url = new URL(window.location.href);
+		url.searchParams.set('k', k.toFixed(4));
+		let state = { k };
+		history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash);
+
 	}
 	createNode(data){
 		if(!this.nodes[data.id]){
@@ -1131,8 +1318,10 @@ export class DAGViz extends BaseElement {
 		node = this.createNode(node);
 		this.simulationNodes.push(node);
 
-		this.lastNodeAdded = node;
-		this.lastNodeAddedTS = Date.now();
+		if(node.data.origin == 'tip-update') {
+			this.lastNodeAdded = node;
+			this.lastNodeAddedTS = Date.now();
+		}
 		//console.log("max:",this.max);
 		// while(this.simulationNodes.length > this.max) {
 		// 	let discarded = this.simulationNodes.shift();
@@ -1165,6 +1354,10 @@ export class DAGViz extends BaseElement {
 			//this.simulationLinkForce.links(this.simulationLinks);
 			//this.simulation.force('link', d3.forceLink(this.simulationLinks).id(d=>d.id).distance(30).strength(0.1));
 		}
+
+
+
+		this.simulation.restart();
 	}
 
 	// createLink(parent, child) {
@@ -1184,11 +1377,23 @@ export class DAGViz extends BaseElement {
 		} catch(ex) {
 			console.log(ex);
 		}
-		this.simulation.alpha(0.005);
-		this.simulation.alphaTarget(0.005);
-		this.simulation.alphaDecay(0.005);
+// console.log('update simulation..');
+		if(1) {
+			this.simulation.alpha(0.005);
+//			this.simulation.alphaTarget(0.005);
+this.simulation.alphaDecay(0.05);
+//this.simulation.alphaDecay(0.525);
+			
+		} else {
+			this.simulation.alpha(0.0045);
+	//		this.simulation.alphaTarget(0.005);
+			this.simulation.alphaDecay(0.001);
+		}
 		//		this.simulation.alpha(0.005);
 		//		this.simulation.alpha(0.01);
+
+
+
 
 		//		this.updateNodeInfoPosition();
 	}
@@ -1418,9 +1623,9 @@ export class DAGViz extends BaseElement {
 
 		// t = `${sign}${t} ${suffix}`;
 
-		if(!this.$hud)
-			this.$hud = $("#hud .info");
-		this.$hud.html(`Pos: ${pos.toFixed(1)}`);
+		if(!this.$position)
+			this.$position = $("#top .position");
+		this.$position.html(`Pos: ${pos.toFixed(1)}`);
 	}
 
 	registerRegionUpdateSink(fn) {
@@ -1436,12 +1641,13 @@ export class DAGViz extends BaseElement {
 			return;
 		}
 
+		const { axis, size, sign } = this.ctx.direction;
 
-		let pos = -(transform.x / transform.k / this.ctx.unitDist);
+		let pos = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
 		//console.log("updateRegion::transform:", pos, -transform.x, transform.k,  this.ctx.unitDist)
 		//pos = -transform.x;
 		var box = this.graphHolder.getBoundingClientRect();
-		let range = Math.ceil(box.width / transform.k / this.ctx.unitDist);
+		let range = Math.ceil(box[size] / transform.k / this.ctx.unitDist);
 
 		//if(Math.round(this._last_pos/3) != Math.round(pos/3) || this._last_range != range) {
 			this._last_pos = pos;
@@ -1457,18 +1663,37 @@ export class DAGViz extends BaseElement {
 	}
 
 	updateTracking() {
-		return;
-		if(this.lastNodeAdded && this.track) {
+		if(this.ctx && this.ctx.lastBlockData && this.ctx.track) {
 			const ts = Date.now();
-			let delta = (ts - this.lastNodeAddedTS) / 15000;
-			if(delta > 1.0)
-				delta = 1.0;
-			delta = 1.0 - delta;
+			// let delta = (ts - this.ctx.lastBlockDataTS) / 1000;
+			// if(delta > 1.0)
+			// 	delta = 1.0;
+			// delta = 1.0 - delta;
 			//delta = 1.0;
-			this.centerBy(this.lastNodeAdded.id, { filter : (t,v) => {
-				t.x += v.cX * 0.1;// * delta;
-				t.y += v.cY * 0.1;// * delta;
-			}, offsetX : 0 } );
+
+			let { k } = this.paintEl.transform;
+			
+			this.centerBy(this.ctx.lastBlockData.blockHash, { filter : (t,v) => {
+				
+				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
+				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
+
+				let delta = 0.015;
+				if(X_ > 256 || Y_ > 256)
+					delta = 0.75;
+				else
+				// if(X_ > 16 || Y_ > 16)
+				// 	delta = 0.05;
+				// else
+				if(X_ > 16 || Y_ > 16)
+					delta = 0.05;
+
+				//let n = 1/k;
+				//delta *= n*n*1.5; console.log(k,delta);
+			
+				t.x += v.cX * delta; //0.0075;// * delta;
+				t.y += v.cY * delta; //0.0075;// * delta;
+			}, offsetX : 0.1 } );
 		}
 	}
 
@@ -1476,6 +1701,25 @@ export class DAGViz extends BaseElement {
 		links.forEach((link)=>{ 
 			link.highlight(highlight); 
 		});
+	}
+
+	createIdx(node) {
+		const idx = this.ctx.getIdx(node);
+		if(!this.locationIdx[idx])
+			this.locationIdx[idx] = [ ]
+		this.locationIdx[idx].push(node);
+	}
+
+	removeIdx(node) {
+		const idx = this.ctx.getIdx(node);
+		if(this.locationIdx[idx]) {
+			this.locationIdx[idx] = this.locationIdx[idx].filter((block) => {
+				return block.data.blockHash != node.data.blockHash;
+			});
+
+			if(!this.locationIdx[idx].length)
+				delete this.locationIdx[idx];
+		}
 	}
 }
 
