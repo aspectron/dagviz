@@ -227,6 +227,15 @@ class BlockInfo extends BaseElement{
         document.execCommand('copy');
         $(el).hide();
         console.log('copied...');
+
+        $.notify({
+            //title : 'DAGViz',
+            text : 'Link Copied to Clipboard!',
+            className : 'yellow',
+            autoHide : true,
+            autoHideDelay : 1200
+        });
+
     }
     close() {
         if($(this.el).hasClass('advanced')) {
