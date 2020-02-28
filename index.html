@@ -7,7 +7,12 @@
 	<script type="module" src="./components/dag-viz.js"></script>
 	<script src="/resources/scripts/jquery-3.4.1.js"></script>
 	<!--script src="/resources/d3.v5.min.js"></script-->
-	
+
+	<script src="/resources/scripts/notify.js"></script>
+	<script src="/resources/scripts/notify.dagviz.js"></script>
+	<link rel="stylesheet" type="text/css" href="/resources/css/notify.css" />
+
+
 	<!-- TODO switch to express, migrate to http/ as root -->
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/resources/scripts/fabric-rpc.js"></script>
@@ -16,6 +21,7 @@
 	<!--script src="https://d3js.org/d3.v3.min.js"></script-->
 	<!--script src="/resources/mqttws31.js"></script-->
 	<script src="/resources/scripts/mqtt.min.js"></script>
+
 	<script type="module" src="./components/app.js"></script>
 	<script type="module" src="./components/navigator.js"></script>
 	<script type="module" src="./components/block-info.js"></script>
@@ -32,7 +38,7 @@
 			font-weight: 400;
 			padding-left: 64px;
 		}
-		.trigger { cursor:pointer; margin: 2px 8px 2px 8px; padding: 2px; display: inline-block; border-top: 1px solid rgba(0,0,0,0); }  
+		.trigger { cursor:pointer; margin: 2px 8px 2px 8px; padding: 2px; display: inline-block; border-top: 1px solid rgba(0,0,0,0); user-select: none; }  
 		.trigger:hover{ border-top: 1px dashed rgba(0,70,70,0.95); border-radius: 0px; }
 
 		#bottom { 
