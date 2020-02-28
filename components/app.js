@@ -58,9 +58,9 @@ export class Block extends GraphNode {
 	}
 
 	getSize() {
-		let size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 18) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
-		if(size > 100)
-			size = 100;
+		let size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 20) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
+		if(size > 50)
+			size = 50;
 
 		return size;
 	}
@@ -90,7 +90,40 @@ class GraphContext {
 
 		this.rangeScale = 1.4;  // for of war vs viewport window coefficient
 
+		this.isChainBlock = true;
 		// this.curves = true;
+		this.track = false;
+
+		this.dir = 'E';
+
+		this.directions = {
+			'E' : {
+				h : true,
+				size : 'width',
+				axis : 'x',
+				sign : 1,
+			},
+			'S' : {
+				v : true,
+				size : 'height',
+				axis : 'y',
+				sign : 1,
+			},
+			'W' : {
+				h : true,
+				size : 'width',
+				axis : 'x',
+				sign : -1,
+			},
+			'N' : {
+				v : true,
+				size : 'height',
+				axis : 'y',
+				sign : -1,
+			}
+		}
+
+		this.direction = this.directions[this.dir];
 	}
 
 	init(app,graph) {
@@ -114,6 +147,8 @@ class GraphContext {
 
 		if(this.unit == 'timestamp')
 			this.position = Date.now() / 1000;
+
+			
 	}
 
 	nodePosition(node, graph, nodes) {
@@ -125,21 +160,53 @@ class GraphContext {
 
 		//node.x = node.data[this.unit] * this.unitScale * this.unitDist;
 
+		if(this.inChainBlocksCenter) {
+			if(!node.location_init_)
+				node.location_init_ = Date.now();
+
+			if(node.location_init_ > Date.now()-100) {
+				// node.location_init_ = Date.now();
+				let idx = this.getIdx(node);
+				let cluster = graph.locationIdx[idx];
+				if(cluster && cluster.length > 1) {
+					if(node.data.isChainBlock) {
+						node.y = 0;
+						//node.y = node.y * 0.1;
+					} else {
+						let len = (cluster.length) || 1;
+						let pos = cluster.indexOf(node);
+						let dest = ((0 - len/2) + pos) * this.unitDist * 1.2;
+
+						// console.log('idx',idx,len,dest);
+						//node.y = (0 - len/2) * this.unitDist * 2;
+						node.y = dest;
+						//node.y = node.y * 0.9 + 0.1 * dest;
+					}
+				}
+			}
+		}
+		
+		
+			// else {
+			// 	node.y = this.unitDist; // Math.round(node.y);
+			// }
+
 		// node.x = node.lscore;
 		// return;
-		node.y = Math.round(node.y);
-
+		// node.y = node.data.isChainBlock ? 0 : Math.round(node.y);
+		const { axis, sign } = this.direction;
 		if(node.data.parentBlockHashes) {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
 			node.data.parentBlockHashes.forEach((hash) => {
 				let parent = graph.nodes[hash];
-				if(parent && parent.x && parent.x > max)
-					max = parent.x;
+				if(parent && parent[axis] && Math.abs(parent[axis]) > max)
+					max = Math.abs(parent[axis]);
 			});
 
-			node.x = Math.round(max + this.unitDist*2);
+			node[axis] = Math.round(max + this.unitDist*2)*sign;
+//			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
 		} else {
-			node.x = Math.round(node.data[this.unit] * this.unitScale * this.unitDist);
+			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
 		}
 		//console.log(node.x);
 	}
@@ -199,10 +266,15 @@ class GraphContext {
 		})
 	}
 
-	onTrigger(e) {
+	onTrigger(e, value) {
 
 		switch(e) {
-
+			case 'track': {
+				if(this.lastBlockData && this.track) {
+					let v = this.lastBlockData[this.unit] * this.unitDist;
+					this.graph.translate(v,0);
+				}
+			} break;
 			case 'trackSize': {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateSize();
@@ -223,6 +295,15 @@ class GraphContext {
 					})
 				});
 			break;
+
+			case 'dir': {
+
+				this.direction = this.directions[value];
+
+				Object.values(this.graph.nodes).forEach((node) => {
+					node.updateStyle();
+				})
+			} break;
 		}
 	}
 
@@ -232,6 +313,10 @@ class GraphContext {
 		this.max = max;
 
 		// console.log('new max:',max);
+	}
+
+	getIdx(node) {
+		return Math.round(node.data[this.unit] * 10);
 	}
 
 }
@@ -253,15 +338,20 @@ export class App {
 	init() {
 		this.initGraph();
 		this.initNavigator();
+		this.initIO();
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
-		//new Trigger(this.graph,'track','TRACKING');
+		new Trigger(this.ctx,'track','TRACKING');
 		//new Trigger(this,'connect','LINK SEQUENTIAL');
 
 		new Trigger(this.ctx,'curves','CURVES');
 		new Trigger(this.ctx,'trackSize','MASS');
-		new Trigger(this.ctx,'isChainBlock','CHAIN BLOCKS');
+//		new Trigger(this.ctx,'isChainBlock','CHAIN BLOCKS');
+		new Trigger(this.ctx,'inChainBlocksCenter','CENTER');
+//		new Trigger(this.ctx,'inChainBlocksTension','TENSION');
+
+//		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'DIRECTION');
 
 		let ts = Date.now();
 		// let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
@@ -307,7 +397,7 @@ export class App {
 					this.updatePosition();
 				} break;
 			}
-		})
+		});
 	}
 
 	createBlocks(blocks) {
@@ -389,6 +479,7 @@ export class App {
 	}
 
 	createBlock(data){
+		//console.log("creating",data.blockHash);
 		// let blueScore = data.blueScore;
 		// if(this.scores.includes(blueScore)) {
 		// 	data.shape = "hexagonA";
@@ -483,6 +574,57 @@ export class App {
 
 		this.graph.track = false;
 		this.ctx.init(this, this.graph);
+
+
+		const t = this.graph.paintEl.transform;
+		let url = new URL(window.location.href);
+		let k = url.searchParams.get('k');
+		k = parseFloat(k);
+		if(k) {
+
+		//t.x = - (this.ctx.position * t.k * this.ctx.unitDist);
+			t.k = k;
+			// this.graph.setChartTransform(t);
+		}
+
+	}
+
+	initIO() {
+		this.io = io();//new io();//new io('/socket.io');
+
+		this.io.on('blocks', (blocks) => {
+			console.log('blocks:', blocks);
+
+			this.ctx.lastBlockData = blocks[blocks.length-1];
+			this.ctx.lastBlockDataTS = Date.now();
+
+			if(!this.ctx.track) {
+				let region = this.getRegion();
+				blocks = blocks.filter((block) => {
+					block.origin = 'tip-update';
+					if(block[this.ctx.unit] < (region.from-this.range_) || block[this.ctx.unit] > (region.to+this.range_))
+						return false;
+					return true;
+				});
+			}
+	
+			if(blocks.length) {
+
+				this.createBlocks(blocks);
+				this.graph.updateSimulation();
+			}
+		});
+
+		//this.io.on('connect', (socket) => {
+			
+			// console.log('connected...', socket);
+			// socket.on('message', (msg) => {
+			// 	console.log('message: ', msg);
+			// });
+			// socket.on('blocks', (msg) => {
+			// 	console.log('incoming-blocks: ', msg);
+			// });
+		//});		
 	}
 
 	initNavigator() {
@@ -494,6 +636,11 @@ export class App {
 // console.log("init position is",this.ctx.position);
 		
 		 this.updateRegion({pos:this.ctx.position, range:16});
+
+
+		//  let url = new URL(window.location.href);
+		//  url.searchParams.set(this.ident, value?1:0);
+
 
 		/*
 		this.ctx.position =  30000;
@@ -536,6 +683,7 @@ export class App {
 		// t += 1000;
 		// limit *= 1000;
 
+		this.range_ = range;
 		
 		if(Math.round(this.last_range_*10) != Math.round(range*10)) {
 			// if(this.last_range_ > range && Math.round(this.last_position_) == Math.round(this.ctx.position)) {
@@ -570,10 +718,13 @@ export class App {
 		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
 		// console.log("range:", {from,to,pos,range});
 		Object.values(this.graph.nodes).forEach((node) => {
+			if(this.ctx && this.ctx.lastBlockData && node.data.blockHash == this.ctx.lastBlockData.blockHash)
+				return;
+
 			//console.log("xxxxxxx", node.x+tx,  node.x, node.data[this.ctx.unit])
 			if(node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin)) {
 				//console.log('deleting:',node.data[this.ctx.unit]);
-				console.log(from,to);
+				// console.log(from,to);
 				// TODO - ensure links TO this node also get removed
 				node.purge();
 			} else {
@@ -638,7 +789,7 @@ class Trigger {
 		this.ident = ident;
 		this.caption = caption;
 		this.el = $(`<span id="${ident}" class='trigger'></span>`);
-		$("#hud .ctl").append(this.el);
+		$("#top .ctl").append(this.el);
 
 		let url = new URL(window.location.href);
 		let params = url.searchParams;
@@ -647,14 +798,16 @@ class Trigger {
 			this.setValue(p==1)
 
 		$(this.el).on('click', () => {
-			let hash = window.location.hash;
+			//let hash = window.location.hash;
 			let value = !(!!this.target[this.ident]);
 			this.setValue(value);
-			let url = new URL(window.location.href);
+			let url = new URL(window.location);
 			url.searchParams.set(this.ident, value?1:0);
-			let state = {}
-			state[this.ident] = value;
-			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+hash);
+			let state = {
+				[this.ident] : value
+			}
+			// state[this.ident] = value;
+			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash.toString());
 		})
 
 		this.update();
@@ -669,5 +822,66 @@ class Trigger {
 
 	update() {
 		this.el.html(`${this.caption}: ${this.target[this.ident] ? 'ON' : 'OFF' }`);
+	}
+}
+
+class MultiChoice {
+	constructor(target, ident, choices, caption) {
+		this.target = target;
+		this.ident = ident;
+		this.caption = caption;
+		this.choices = choices;
+		this.el = $(`<span id="${ident}" class='trigger'></span>`);
+		$("#top .ctl").append(this.el);
+
+		let url = new URL(window.location.href);
+		let params = url.searchParams;
+		let p = params.get(ident);
+		//if(p==1 || p==0)
+		if(p)
+			this.setValue(p);
+
+		$(this.el).on('click', () => {
+			// let hash = window.location.hash;
+			let value = this.target[this.ident];
+			let idx = this.choices.indexOf(value);
+			idx++;
+			if(idx > this.choices.length-1)
+				idx = 0;
+			value = this.choices[idx];
+			this.setValue(value);
+			let url = new URL(window.location.href);
+			url.searchParams.set(this.ident, value);
+			let state = {
+				[this.ident] : value
+			}
+			// state[this.ident] = value;
+			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash);
+		})
+
+		this.update();
+	}
+
+	setNext() {
+		let v = this.target[this.ident];
+		if(v === undefined) {
+			this.target[this.ident] = this.choices[0];
+			return this.target[this.ident];
+		}
+	}
+
+	setValue(value){
+console.log(value);
+		if(!this.choices.includes(value))
+			value = this.choices[0];
+
+		this.target[this.ident] = value;
+		if(this.target.onTrigger)
+			this.target.onTrigger(this.ident, value);
+		this.update();
+	}
+
+	update() {
+		this.el.html(`${this.caption}: ${this.target[this.ident] }`);
 	}
 }
