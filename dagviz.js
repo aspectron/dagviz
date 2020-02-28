@@ -25,7 +25,7 @@ class DAGViz {
         console.log(`kasparov api server at ${this.kasparov}`);
         this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
 
-        this.verbose = true;
+        this.verbose = this.args.verbose ? true : false;
     }
 
     hash(data,h='sha256') {
@@ -63,6 +63,22 @@ class DAGViz {
                         res.write(JSON.stringify(data));
                         res.end();
                     }, (err) => {
+                        console.log('error:',err);
+                        res.writeHead(500, {'Content-Type': 'application/json'});
+                        res.write(`{ "dagviz-api-error":"${err.toString()}"}`);
+                        res.end();
+                    });
+                }
+                else
+                if(req.url.startsWith('/block/')) {
+                    let args = req.url.substring(7);
+                    console.log("getting block:",args);
+                    this.getBlock(args).then((data) => {
+                        res.writeHead(200, {'Content-Type': 'application/json'});
+                        res.write(JSON.stringify(data));
+                        res.end();
+                    }, (err) => {
+                        console.log('error:',err);
                         res.writeHead(500, {'Content-Type': 'application/json'});
                         res.write(`{ "dagviz-api-error":"${err.toString()}"}`);
                         res.end();
@@ -98,6 +114,9 @@ class DAGViz {
             this.io.on('connection', (socket) => {
               //  console.log('connected',socket);
               this.socket = socket;
+
+              if(this.lastBlock)
+                  socket.emit('last-block-data', this.lastBlock);
             })
     
         });
@@ -295,8 +314,11 @@ class DAGViz {
     sync() {
 
         const skip = this.skip;
-        const limit = 2;// 100;
+        let limit = 100;
         const order = 'asc';
+
+        if(this.args['rate-limit'])
+            limit = parseInt(this.args['rate-limit']) || 100;
 
         this.verbose && process.stdout.write(` ...${skip}... `);
         // console.log(`fetching: ${skip}`);
@@ -587,6 +609,47 @@ class DAGViz {
         })
     }
 
+    async getBlock(args_) {
+        
+        let args = args_.split(':');
+
+        let type = args.shift();
+
+        if(!['blockHash','lseq','block'].includes(type))
+            return Promise.reject('invalid getBlock() type');
+
+        args = args.filter(v=>v);
+
+        if(!args.length)
+            return Promise.reject(`invalid request: no arguments for ${type}`);
+
+        type = {
+            'lseq' : 'id',
+            'block' : 'blockHash'
+        }[type] || type;
+
+        //let hashes = hashes.split(':');
+
+        if(type == 'id') {
+            args = args.map((arg) => {
+                return parseInt(arg,16);
+            });
+        }
+        
+        // console.log(`asing for blocks:`,args);
+        let blocks = await this.sql(`SELECT * FROM blocks WHERE (${type}) IN (?)`,[args]);
+        // console.log("GOT BLOCKS:",blocks.map(block=>block.id).join(','));
+        // if(!blocks.length)
+        //     return null;
+
+        blocks.forEach(block => {
+            block.lseq = block.id;
+            block.parentBlockHashes = block.parentBlockHashes.split(',');
+            block.childBlockHashes = block.childBlockHashes.split(',');
+        })
+
+        return Promise.resolve(blocks);
+    }
 
 }
 
