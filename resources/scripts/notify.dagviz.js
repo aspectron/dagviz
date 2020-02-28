@@ -12,7 +12,7 @@ $.notify.addStyle('dagviz', {
 		yellow: {
 			"color": "#000 !important",
 			"background-color": "rgba(255,255,230,0.975)",
-			"border": "1px solid #666",
+			"border": "1px solid #edeb79",
 			"font-family": "Exo 2",
 			"font-weight": "bold"
 		},
