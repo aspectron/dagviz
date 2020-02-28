@@ -359,7 +359,8 @@ class DAGViz {
 
         this.lastBlock = blocks[blocks.length-1];
         // console.log('posting blocks...',blocks.length);
-        this.socket.emit('blocks',blocks);
+        if(blocks.length < 100)
+            this.socket.emit('blocks',blocks);
 
         return new Promise(async (resolve,reject)=>{
             //console.log("DOING POST") // 'acceptingBlockTimestamp',
