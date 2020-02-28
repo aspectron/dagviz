@@ -131,19 +131,33 @@ class GraphContext {
 		this.graph = graph;
 		this.position = 0;
 		
-		if(window.location.hash) {
-			let text = window.location.hash.substring(1);
-			let position = parseInt(text);
-			if(position) {
-				this.position = position;
-				console.log('initializing position to:',position);
-			}
 
+		let url = new URL(window.location.href);
+		let position = url.searchParams.get('pos');
+		if(position) {
+			this.position = position;
+			console.log('initializing position to:',position);
 			dpc(()=>{
-
 				app.updatePosition();
 			})
+
 		}
+
+
+		// if(window.location.hash) {
+		// 	let text = window.location.hash.substring(1);
+		// 	if(text.length < 64) {
+		// 		let position = parseInt(text);
+		// 		if(position) {
+		// 			this.position = position;
+		// 			console.log('initializing position to:',position);
+		// 		}
+
+		// 		dpc(()=>{
+		// 			app.updatePosition();
+		// 		})
+		// 	}
+		// }
 
 		if(this.unit == 'timestamp')
 			this.position = Date.now() / 1000;
@@ -319,6 +333,24 @@ class GraphContext {
 		return Math.round(node.data[this.unit] * 10);
 	}
 
+
+	onSelectionUpdate(selection) {
+		// console.log('selection:',selection);
+		let length = Object.keys(selection).length;
+		if(length > 1) {
+			$('.needs-multi-select').css({
+				display:'block',
+				opacity : 1
+			});
+		} else {
+			$('.needs-multi-select').css({
+				opacity : 0
+			});
+		}
+
+		window.location.hash = '#lseq:'+Object.values(selection).map(block=>parseInt(block.data.lseq).toString(16)).join(':');
+	}
+
 }
 
 export class App {
@@ -339,6 +371,7 @@ export class App {
 		this.initGraph();
 		this.initNavigator();
 		this.initIO();
+		this.initPosition();
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
 		
@@ -398,16 +431,47 @@ export class App {
 				} break;
 			}
 		});
+
+
+		window.addEventListener('hashchange', () => {
+			console.log('hash changed!');
+//			this.initPosition();			
+		}, false);
+
+
+		$('#get-multi-select-link').on('click', (e) => {
+			const selection = Object.values(this.graph.selection).map(node => parseInt(node.data.lseq).toString(16)).join(':');
+			let el = document.getElementById('copy-url');
+			let url = new URL(window.location.href);
+			url.hash = `lseq:${selection}`;
+			console.log(url.toString());
+			el.innerText = url.toString();
+			$(el).show();
+			window.app.selectText(el);//.select();
+			document.execCommand('copy');
+			$(el).hide();
+			console.log('copied...');	
+		});
+
+		$("#logo").on('click', () => {
+			this.ctx.reposition(0);
+		})
 	}
 
 	createBlocks(blocks) {
-		blocks.forEach((block) => {
-			if(this.graph.nodes[block.blockHash])
-				return;
-			this.createBlock(block);
+		const nodes = blocks.map((block) => {
+			// let node = this.graph.nodes[block.blockHash];
+			// if(node) {
+			// 	// update node's data
+			// 	Object.assign(node.data, block );
+			// 	return node;
+			// }
+			return this.createBlock(block);
 		});
 
-		this.ctx.generateNodeLayout();
+		this.ctx.generateNodeLayout(nodes);
+
+		return nodes;
 	}
 
 	async updatePosition() {
@@ -498,8 +562,18 @@ export class App {
 		// while(this.scores.length > 128)
 		// 	this.scores.shift();
 
+		let node = this.graph.nodes[data.blockHash];
+		if(node) {
+			// update node's data
+			delete data.id;
+			Object.assign(node.data, data);
+			return node;
+		}
+
+
 		let block = new Block(this.graph, data, this.ctx);
 		this.graph.addNode(block);
+		return block;
 	}
 
 	onDagSelectedTip(data) {
@@ -615,6 +689,14 @@ export class App {
 			}
 		});
 
+		this.io.on('last-block-data', (data) => {
+			// console.log('last block:', data);
+
+			let v = data[this.ctx.unit];
+			if(v)
+				this.ctx.updateMax(v);
+		})
+
 		//this.io.on('connect', (socket) => {
 			
 			// console.log('connected...', socket);
@@ -634,8 +716,61 @@ export class App {
 
 //		this.firstRegionUpdate = true;
 // console.log("init position is",this.ctx.position);
-		
-		 this.updateRegion({pos:this.ctx.position, range:16});
+
+
+		// $("#logo").on('click', () => {
+			// TODO - reset to 0
+		// })
+
+	}
+
+	async initPosition() {
+
+		let args = window.location.hash;
+		if(args) 
+			args = args.substring(1);
+
+		this.updateRegion({pos:this.ctx.position, range:16});
+
+		if(/\w+:/.test(args)) {
+console.log('requesting args:',args);
+			let blocks = await this.fetchBlock(args);
+			console.log('got blocks array:', blocks);
+			let nodes = blocks.map((block) => {
+				if(this.graph.nodes[block.blockHash])
+					return null;
+				let node = this.createBlock(block);
+				node.select(true);
+				return node;
+			}).filter(v=>v);
+			 console.log('created or obtained nodes:',nodes);
+			let first = blocks[0];
+			this.updateRegion({pos:first[this.ctx.unit], range:16});
+
+//			this.graph.updateSimulation();
+/*
+			dpc(1000, ()=>{
+
+				let node = nodes.shift();
+
+				if(node)
+					this.graph.centerBy(node);
+				
+				this.updatePosition();			
+
+				if(node)
+					node.select(true);
+			})
+*/
+
+			// dpc(1000,()=>{
+			// 	node.select(true);
+			// })
+		 } 
+		 // else {
+// console.log('update region....');
+// 			this.updateRegion({pos:this.ctx.position, range:16});
+// 		}
 
 
 		//  let url = new URL(window.location.href);
@@ -710,14 +845,18 @@ export class App {
 
 		//this.navigator.update(pos / this.ctx.max);
 		this.navigator.redraw();
-		window.location.hash = '#'+Math.round(this.ctx.position);
+		// window.location.hash = '#'+Math.round(this.ctx.position);
+		this.updateLocationSearchStringWithPosition(Math.round(this.ctx.position));
 		// const first = skip - limit;
-		const eraseMargin = half_range * 0;
+		const eraseMargin = half_range;
 		// const last = skip + limit;
 		let max, min;
 		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
 		// console.log("range:", {from,to,pos,range});
 		Object.values(this.graph.nodes).forEach((node) => {
+			if(node.selected)
+				return;
+
 			if(this.ctx && this.ctx.lastBlockData && node.data.blockHash == this.ctx.lastBlockData.blockHash)
 				return;
 
@@ -770,6 +909,13 @@ export class App {
 		// this.navigator.redraw();
 	}
 
+	updateLocationSearchStringWithPosition(pos) {
+		let url = new URL(window.location.href);
+		url.searchParams.set('pos', pos);
+		let state = { pos }
+		history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash);
+
+	}
 
 	getRegion() {
 		let transform = this.graph.paintEl.transform;
@@ -781,6 +927,60 @@ export class App {
 //		console.log("RANGE RANGE RANGE RANGE RANGE RANGE RANGE RANGE RANGE ",range);
 		return { position, range, from, to };
 	}
+
+	fetchBlock(hash) {
+		return new Promise((resolve,reject) => {
+			$.ajax('/block/'+hash, 
+			{
+				dataType: 'json', // type of response data
+				// timeout: 500,     // timeout milliseconds
+				success: function (data,status,xhr) {   // success callback function
+					// $('p').append(data.firstName + ' ' + data.middleName + ' ' + data.lastName);
+					//let seq = args.skip;
+					// if(!args.order || args.order == 'asc')
+					// 	data.forEach((v) => v.seq = seq++);
+					// if(data.blocks && data.blocks.length)
+					// 	data.blocks.forEach(block => block.seq = block.id);
+
+
+					// console.log(data);
+					resolve(data);
+				},
+				error: function (jqXhr, textStatus, errorMessage) { // error callback 
+					console.log(textStatus,errorMessage,jqXhr);
+					// $('p').append('Error: ' + errorMessage);
+					reject(errorMessage);
+				}
+			});
+		});
+
+	}
+
+
+
+
+    selectText(node) {
+        //node = this.shadowRoot.getElementById(node);
+    
+        if (document.body.createTextRange) {
+            const range = document.body.createTextRange();
+            range.moveToElementText(node);
+            range.select();
+            console.log('range');
+        } else if (window.getSelection) {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            console.log('getSelection');
+
+        } else {
+            console.warn("Could not select text in node: Unsupported browser.");
+        }
+    }
+    
+
 }
 
 class Trigger {
