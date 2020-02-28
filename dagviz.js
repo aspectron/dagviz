@@ -8,6 +8,7 @@ const querystring = require('querystring');
 const MF = require('micro-fabric');
 const MySQL = require('./lib/mysql');
 const basicAuth = require('basic-auth');
+const io = require('socket.io');//(http);
 
  
 
@@ -24,6 +25,7 @@ class DAGViz {
         console.log(`kasparov api server at ${this.kasparov}`);
         this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
 
+        this.verbose = true;
     }
 
     hash(data,h='sha256') {
@@ -31,8 +33,8 @@ class DAGViz {
     }
 
     async init() {
-        await this.initHTTP();
         await this.initDatabase()
+        await this.initHTTP();
         return this.main();
     }
 
@@ -85,12 +87,21 @@ class DAGViz {
                     });
                 }
                 else
-                serve(req, res, finalhandler(req, res))
+                    serve(req, res, finalhandler(req, res))
             }).listen(8686, () => {
                 console.log('listening on 8686');
                 resolve();
+            });
+
+            this.io = io(server);
+
+            this.io.on('connection', (socket) => {
+              //  console.log('connected',socket);
+              this.socket = socket;
             })
+    
         });
+
     }
 
     async initDatabase() {
@@ -284,10 +295,10 @@ class DAGViz {
     sync() {
 
         const skip = this.skip;
-        const limit = 100;
+        const limit = 2;// 100;
         const order = 'asc';
 
-        //process.stdout.write(` ...${skip}... `);
+        this.verbose && process.stdout.write(` ...${skip}... `);
         // console.log(`fetching: ${skip}`);
         this.fetch({ skip, limit, order }).then(async (data) => {
             // let seq = skip;
@@ -325,6 +336,8 @@ class DAGViz {
         // console.log("DATA:",data);
 
         this.lastBlock = blocks[blocks.length-1];
+        // console.log('posting blocks...',blocks.length);
+        this.socket.emit('blocks',blocks);
 
         return new Promise(async (resolve,reject)=>{
             //console.log("DOING POST") // 'acceptingBlockTimestamp',
@@ -355,7 +368,7 @@ class DAGViz {
             blocks = blocks.map(block => order.map(field => block[field]));
                 //Object.values(block));
 
-            //process.stdout.write(` ${blocks.length}[${relations.length}] `);
+            this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
             //console.log(data[data.length-1]);
 
