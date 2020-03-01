@@ -19,7 +19,7 @@ export class Block extends GraphNode {
 		data.xMargin = 0; // 500 + ((Date.now()/1000 - data.timestamp))*50;
 		data.timestmp = data.timestamp;// / 1000;
 		if(!data.shape)
-			data.shape = 'square';
+			data.shape = ctx.shape; // 'square';
 		if(!data.color) {
 			if(data.isChainBlock && ctx.chainBlocksDistinct)
 				data.color = `rgba(194,255,204,0.99)`;
@@ -101,10 +101,11 @@ class GraphContext {
 		// this.curves = true;
 		this.track = false;
 
+		this.shape = 'square';
 		//this.det = false;
 		this.layout = 'determ';
 
-		this.perf = 'off';
+		this.quality = 'high';
 
 		this.dir = 'E';
 
@@ -448,8 +449,8 @@ class GraphContext {
 				this.restart();
 			} break;
 
-			case 'perf': {
-				this.rangeScale = this.perf == 'off' ? 1.4 : 1;
+			case 'quality': {
+				this.rangeScale = this.quality == 'high' ? 1.4 : 1;
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
 				})
@@ -534,13 +535,13 @@ export class App {
 		this.ctls = [];
 
 		
-			new Toggle(this.ctx,'track','TRACKING');
+			new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks');
 			//new Toggle(this,'connect','LINK SEQUENTIAL');
 
-			new Toggle(this.ctx,'curves','CURVES');
-			new Toggle(this.ctx,'mass','MASS');
-			new Toggle(this.ctx,'chainBlocksDistinct','CHAIN BLOCKS');
-			new Toggle(this.ctx,'chainBlocksCenter','CENTER');
+			new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
+			new Toggle(this.ctx,'mass','MASS','fal fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
+			new Toggle(this.ctx,'chainBlocksDistinct','CHAIN BLOCKS','fal fa-highlighter:Highlight chain blocks');
+			new Toggle(this.ctx,'chainBlocksCenter','CENTER','fa fa-compress-alt:Chain block position is biased toward center');
 	//		new Toggle(this.ctx,'det','DETERMINISTIC');
 	//		new Toggle(this.ctx,'inChainBlocksTension','TENSION');
 
@@ -548,13 +549,13 @@ export class App {
 				'determ' : 'DETERMINISTIC',
 				'random' : 'RANDOM',
 				'free' : 'FREE',
-			},'LAYOUT');
+			},'LAYOUT', 'fal fa-bring-front:Block layout');
 
-			new MultiChoice(this.ctx,'perf',{
-				'off' : 'OFF',
-				'medium' : 'MEDIUM',
+			new MultiChoice(this.ctx,'quality',{
 				'high' : 'HIGH',
-			},'PERFORMANCE');
+				'medium' : 'MEDIUM',
+				'low' : 'LOW',
+			},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
 	//		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'DIRECTION');
 
@@ -693,7 +694,7 @@ export class App {
 			tooltip = parts.join(':');
 		}
 		console.log(icon);
-		this.$info.html(`<span class='tooltip'><i class="fa ${icon}"></i> <span>${tooltip}</span></span>`);
+		this.$info.html(`<span class='tooltip'><i class="fa ${icon}"></i> <span class='text'>${tooltip}</span></span>`);
 	}
 
 	clearTooltip(text) {
@@ -989,7 +990,7 @@ export class App {
 			chainBlocksDistinct : ctx.chainBlocksDistinct,
 			chainBlocksCenter : ctx.chainBlocksCenter,
 			layout : ctx.layout,
-			perf : ctx.perf,
+			quality : ctx.quality,
 			select : 'none'
 		}
 		params = Object.assign(defaults, params);
@@ -1123,7 +1124,7 @@ export class App {
 		//this.updateLocationSearchStringWithPosition(this.ctx.position);
 		this.storeUndo();
 		// const first = skip - limit;
-		const eraseMargin = this.ctx.perf == 'off' ? half_range : 0;
+		const eraseMargin = this.ctx.quality == 'high' ? half_range : 0;
 		// const last = skip + limit;
 		let max, min;
 		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
@@ -1295,10 +1296,10 @@ console.log('initContext',JSON.stringify(state,null,'\t'));
 	storeUndo() {
 	// 	this.updateLocationSearchStringWithPosition(this.ctx.position);
 	// }
-	console.log('storeUndo');
+		// console.log('storeUndo');
 		if(!this.undo || this.suspend)
 			return;
-			console.log('storeUndo starting...');
+		// console.log('storeUndo starting...');
 
 //		let ctls = { }
 //		let ctls = 
@@ -1438,13 +1439,15 @@ console.log('initContext',JSON.stringify(state,null,'\t'));
 }
 
 class Toggle {
-	constructor(target, ident, caption) {
+	constructor(target, ident, caption, tooltip) {
 		window.app.ctls.push(this);
 		this.type = 'toggle';
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.el = $(`<span id="${ident}" class='toggle'></span>`);
+		if(tooltip)
+			tooltip = `tooltip="${tooltip}"`;
+		this.el = $(`<span id="${ident}" class='toggle' ${tooltip}></span>`);
 		$("#top .ctl").append(this.el);
 
 		let url = new URL(window.location.href);
@@ -1496,13 +1499,15 @@ class Toggle {
 }
 
 class MultiChoice {
-	constructor(target, ident, choices, caption) {
+	constructor(target, ident, choices, caption, tooltip) {
 		window.app.ctls.push(this);
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
 		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v[v]])) : choices;
-		this.el = $(`<span id="${ident}" class='toggle'></span>`);
+		if(tooltip)
+			tooltip = `tooltip="${tooltip}"`;
+		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
 		$("#top .ctl").append(this.el);
 
 		let url = new URL(window.location.href);
