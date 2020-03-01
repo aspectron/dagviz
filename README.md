@@ -1,8 +1,8 @@
 # BlockDAG Vizualization library
 
-### Running DAGViz
+## Running DAGViz
 
-#### Prerequisites
+### Prerequisites
 
 DAGViz requires NodeJS v12+ and a local MySQL database instance to operate.
 
@@ -22,11 +22,11 @@ Before running DAGViz, you must initialize the database as follows: `node dagviz
 
 NOTE:  MySQL database name used for local blockchain cache storage is derived from the Kasparov API endpoint.  You can safely connect the same instance of DAGViz to different instances of Kasparov.
 
-#### Running the application
+### Running the application
 
 DAGViz connects to and feeds off Kasparov API server.  Kasparov URL can be specified via the `--kasparov` command line argument.
 
-##### Local Deployment
+### Local Deployment
 ```
 git clone git@github.com:kaspanet/dagviz
 cd dagviz
@@ -35,28 +35,22 @@ node dagviz --kasparov=<kasparov-api-server-url:port>
 ```
 Following this, open http://localhost:8686 in your browser.
 
-##### Docker
+### Docker
 
 - build: `sudo docker build -t dagviz`
 - run: `sudo docker run -p 8686:8686 dagviz --kasparov=<kasparov-api-server-url:port>
 - build using emanator: `emanate --docker`
 
-### v2 NOTES:
+## v2 NOTES:
 
 This is a complete refactoring of the initial v1 prototype.
 
 - blueScore is used as a general height (x axis)
 - a child block is always located after the parent
 
-There are currently 3 modes:
+## DAGViz Structure
 
-- *CURVES* - Uses curves instead of straight lines for block connections
-- *MASS* - Block is larger with larger mass (capped at max 200)
-- *CHAIN BLOCKS* - when turned on `isChainBlock == true` yields a different color block
-
-### DAGViz Structure
-
-##### Internal API
+### Internal API
 
 Current implementation of DAGViz connects to kasparov and fetches the entire blockchain dataset. Once fetched, the system keeps up (currently via polling, until MQTT is stabilized and proper notifications are available).
 
@@ -77,13 +71,9 @@ Returns a JSON object with the following fields:
 - `last : <unit>` - last item position in this response - can be used as `to` field in subsequent queries to continue fetching the range
 - `max : <unix>` - currently maximum value of unit type available (highest blueScore or largest timestamp currently available)
 
-##### API Block Data Structure:
+### API Block Data Structure:
 
 As of v2 the the block data structure used by DAGViz differs from Kasparov: in addition to `parentBlockHashes` field, DAGViz blocks contain `childBlockHashes` which allow for reverse mapping of parents to children.
 
 Constant re-partitioning that occurs in the DAGViz user interface makes it very difficult to traverse and perform chain analysis. Having `childBlockHashes` available as a part of the API response allows us to instantly notify already-existing children that they should link up to parents (otherwise we have to traverse the entire snapshot each time a new node is created).
 
-### v2 KNOWN PROBLEMS:
-
-- Graph rendering performance is much faster at the beginning of the chain (in comparison to the end).  We are working to identify the cause.
-- There can be occasional linkage tears when panning.

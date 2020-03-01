@@ -1882,7 +1882,7 @@ this.simulation.alphaDecay(0.005);
 			let { k } = this.paintEl.transform;
 
 			this.centerBy(this.focusTargetHash, { filter : (t,v) => {
-console.log('???',v.cX,k,t.x,t.y);
+				// console.log('???',v.cX,k,t.x,t.y);
 				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
 				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
 				if(X_ < 1e-1 && Y_ < 1e-1) {

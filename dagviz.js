@@ -226,46 +226,6 @@ class DAGViz {
                 INDEX idx_child (child)
             );
         `);
-       
-        /*await this.sql(`
-            INSERT INTO blocks (
-                
-                blockHash, 
-                acceptingBlockHash, 
-                acceptingBlockTimestamp, 
-                version, 
-                hashMerkleRoot, 
-                acceptedIDMerkleRoot, 
-                utxoCommitment, 
-                timestamp, 
-                bits, 
-                nonce, 
-                blueScore, 
-                isChainBlock, 
-                mass
-        
-
-            ) VALUES (
-                'xblock_hash3', 
-                '0',
-                NULL,
-                '0',
-                'xhash_merkle_root',
-                'xaccepted_id_merkle_root',
-                'xutxo_commitment',
-                NOW(),
-                '0',
-                '0',
-                '0',
-                '0',
-                '0'
-            );
-        
-        `);
-
-        let result = await this.sql(`SELECT * FROM blocks`);
-        console.log("result:", JSON.stringify(result,null,'\t'));
-        */
         
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
@@ -393,15 +353,6 @@ class DAGViz {
 
             this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
-            //console.log(data[data.length-1]);
-
-            // console.log(blocks.length,'blocks ',relations.length,'relations');
-            // console.log(`
-            // INSERT INTO blocks (
-            //     ${order.join(', ')}
-            // ) VALUES ?
-            // `, [blocks]);
-
             try {
                 await this.sql(`
                     INSERT INTO blocks (
@@ -514,8 +465,6 @@ class DAGViz {
                 // let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
                 // console.log('result:',result);
                 let total = result.shift().total;
-        
-
                 // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
 
@@ -555,8 +504,6 @@ class DAGViz {
                 //     WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
                 //     ORDER BY blocks.${unit} 
                 //     LIMIT ${limit}`);
-
-
 
 
                 // [ blocks, relations ] = await Promise.all([blocks, relations]);
