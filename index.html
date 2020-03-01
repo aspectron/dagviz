@@ -12,8 +12,9 @@
 	<script src="/resources/scripts/notify.dagviz.js"></script>
 	<link rel="stylesheet" type="text/css" href="/resources/css/notify.css" />
 
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/regular.min.css" />
 
 	<!-- TODO switch to express, migrate to http/ as root -->
 	<script src="/socket.io/socket.io.js"></script>
@@ -35,7 +36,7 @@
 			font-weight: 400;
 		}
 		#top { 
-			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 14px;
+			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
 			position: absolute; left: 8px; top: 8px; color: #222;
 			font-weight: 400;
 			padding-left: 64px;
@@ -139,34 +140,46 @@
 
 		.tooltip {
 			opacity: 0.6;
-			display:inline-block;
+			display: block;
 			margin:2px;
+
+			display: flex;
+            flex-direction: row;
+			/*flex-wrap: wrap-reverse;
+			align-items: flex-start;*/
+			justify-content: left;
+			
+
 		}
 
 		.tooltip i {
-			display: inline-block;
-			margin: 4px;
+			display: block;
+			margin: 4px 4px 4px 4px;
+			font-size: 26px;
+			/*border: 1px solid red;*/
+		}
+
+		.tooltip .text {
+			display: block;
+			margin: 4px 4px 4px 4px;
+			/*border: 1px solid royalblue;*/
 		}
 
 	</style>
 </head>
 <body>
 	<dag-viz id="dagViz"></dag-viz>
-	<div id='address'></div>
+	<div id='logo' tooltip="fa fa-arrow-to-left:Go to the Genesis block"></div>
 	<div id='top'><span class='position'></span><span class='ctl'></span><br/><span class='info'></span></div>
 	<div id="left">
-		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);" tooltip="fal fa-copy:Copy link with selection to clipboard"></div>
-		<div id="clear-selection" class="tool needs-single-select" tooltip="fal fa-unlink:Clear selection">
+		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);" tooltip="fal fa-copy:Copy link with the current block selection to clipboard"></div>
+		<div id="clear-selection" class="tool needs-single-select" tooltip="fal fa-unlink:Clear block selection">
 			<i class="fa fa-unlink"></i>
 		</div>
 	</div>
 	<div id='bottom'><div class='selection'></div></div>
 	<axis-navigator id="timenav"></axis-navigator>
-	<div id='logo'></div>
 	<div id="copy-url"></div>
-	<script>
-		 // console.log("io is:",io);
-	</script>
 	<script type="module">
 		import { App } from './components/app.js';
 		// import { io } from './node_modules/socket.io-client/dist/socket.io.js';
