@@ -37,13 +37,15 @@ class AxisNavigator extends BaseElement{
 		super();
 		this.data = { }
 		this.margin = 32;
+		this.scale = 0.75;
 	}
 
 
 	render(){
 		let box = this.getBoundingClientRect();
+		// console.log("box",box);
 		return html`
-		<canvas id="canvas" style="height:48px;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width*2}" height="${box.height*2}">Your browser does not support the HTML5 canvas tag</canvas>
+		<canvas id="canvas" style="height:48px;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width*this.scale}" height="${box.height*this.scale}">Your browser does not support the HTML5 canvas tag</canvas>
 		`;
 	}
 
@@ -66,7 +68,7 @@ class AxisNavigator extends BaseElement{
 
 
 	getPixelRatio(){
-    	var ctx = this.$.canvas.getContext("2d"),
+    	const ctx = this.canvas.getContext("2d"),
         dpr = window.devicePixelRatio || 1,
         bsr = ctx.webkitBackingStorePixelRatio ||
               ctx.mozBackingStorePixelRatio ||
@@ -74,14 +76,16 @@ class AxisNavigator extends BaseElement{
               ctx.oBackingStorePixelRatio ||
               ctx.backingStorePixelRatio || 1;
 
-    	return dpr / bsr;
+    	return dpr / bsr * 2;
 	}
 	setHiDPICanvas(w, h, ratio) {
-		var can = this.$.canvas;
-		can.width = w * ratio;
-		can.height = h * ratio;
-		can.style.width = w + "px";
-		can.style.height = h + "px";
+		const can = this.canvas;
+		let w_ = w;
+		let h_ = h;
+		can.width = w_ * ratio;
+		can.height = h_ * ratio;
+		// can.style.width = w_ + "px";
+		// can.style.height = h_ + "px";
 		can.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
 	}
 
@@ -108,45 +112,55 @@ class AxisNavigator extends BaseElement{
 		}
 
 
-		this.addEventListener('click', this.handleClick);
-		['mousedown','mouseup','mousemove'].forEach((event) => {
+		//this.addEventListener('click', this.handleClick);
+		['mousedown','mouseup','mousemove','click'].forEach((event) => {
 			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
 		})
 
 		//let ctx = document.querySelector(); //this.$.canvas.getContext("2d");
-
-		this.canvas = this.renderRoot.getElementById('canvas');
-		this.ctx = this.canvas.getContext('2d');
-
 		this.addEventListener('navigator-resize', (e)=>{
-			this.debounce("navigator-resize", this._onResize, 100)
+			this.debounce("navigator-resize", this._onResize.bind(this), 100);
 		})
 
-		this.redraw();
+		//dpc(()=>{
+			this.canvas = this.renderRoot.getElementById('canvas');
+			// if(!this.canvas)
+			// 	return;
+			this.ctx = this.canvas.getContext('2d');
+			//this.redraw();
 
+			this.updateCanvas();
+		//})
 	}
 
 	onMouseEvent(event, e) {
 		switch(event) {
 			case 'mousedown': {
 				this.drag = true;
-				this.handleClick(e);
 			} break;
-
+			
 			case 'mouseup': {
 				this.drag = false;
+				this.handleMouse(e);
 
 			} break;
 
 			case 'mousemove': {
 				if(!this.drag)
 					return;
-				this.handleClick(e);
+				this.handleMouse(e, true);
+				this.redraw();
+
+					// this.handleClick(e);
+			} break;
+
+			case 'click': {
+				this.handleMouse(e);
 			} break;
 		}
 	}
 
-	handleClick(e) {
+	handleMouse(e, skipUpdates) {
 		// console.log(e);
 
 		const box = this.getBoundingClientRect();
@@ -160,15 +174,33 @@ class AxisNavigator extends BaseElement{
 		if(absolute > 1)
 			absolute = 1;
 		// console.log('absolute:', absolute);
-		this.app.ctx.reposition(absolute);
+		this.app.ctx.reposition(absolute, skipUpdates);
 	}
 
-	onResize() {
+	updateCanvas() {
+
+		if(!this.canvas)
+			return;
+
 		let canvasBox = this.canvas.getBoundingClientRect();
 		let { width, height } = canvasBox;
-		this.canvas.width = width;
-		this.canvas.height = height;
+
 		
+		this.PIXEL_RATIO = this.getPixelRatio();
+		this.setHiDPICanvas(width*this.scale,height*this.scale,this.PIXEL_RATIO);
+		this.redraw();
+
+	}
+
+	_onResize() {
+console.log("ON RESIZE");
+		this.updateCanvas();
+		// let canvasBox = this.canvas.getBoundingClientRect();
+		// let { width, height } = canvasBox;
+		// this.canvas.width = width;
+		// this.canvas.height = height;
+		
+
 	}
 
 	redraw() {
@@ -179,10 +211,11 @@ class AxisNavigator extends BaseElement{
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
 		let { width, height } = canvasBox;
-		width *= 2;
-		height *= 2;
+		width *= this.scale;
+		height *= this.scale;
 		// let {width} = parentBox;
 		
+		// let ratio = this.getPixelRatio();
 		
 		
 		ctx.clearRect(0, 0, width, height);
@@ -191,18 +224,18 @@ class AxisNavigator extends BaseElement{
 		let absolute = this.app.ctx.position / this.app.ctx.max;
 
 
-		const thumbHeight = 54;
+		const thumbHeight = (54/2)*this.scale;
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
-		ctx.font = '36px "Exo 2"';
+		ctx.font = `${Math.round(36/2*this.scale)}px "Exo 2"`;
 		ctx.textBaseline = "top";
 		let text = Math.round(this.app.ctx.position)+'';
 		let textMetrics = ctx.measureText(text);
 		const textWidth = textMetrics.width;
-		const textHeight = 36; // textMetrics.height;
+		const textHeight = 36/2*this.scale; // textMetrics.height;
 		let thumbWidth = textWidth+32;
-		if(thumbWidth < 256)
-			thumbWidth = 256;
+		if(thumbWidth < 128*this.scale)
+			thumbWidth = 128*this.scale;
 
 			let x = (width-thumbWidth) * absolute + thumbWidth/2;
 		
@@ -211,7 +244,8 @@ class AxisNavigator extends BaseElement{
 
 		// console.log('text:',text, x-textWidth/2, height/2-textHeight/2);
 
-		ctx.fillText(text, x-textWidth/2+0.25, height/2-textHeight/2+0.25);
+		let offset = 0.5;
+		ctx.fillText(text, x-textWidth/2+offset, height/2-textHeight/2+offset);
 
 		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
 		ctx.lineWidth = 1;
