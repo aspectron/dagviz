@@ -10,7 +10,7 @@ class BlockInfo extends BaseElement{
 	static get styles(){
 		return css `
 			:host{
-				font-family: "Exo 2";
+				font-family: "Cousine";
 				font-size: 14px;
                 z-index:4;
                 display: block;
@@ -19,6 +19,8 @@ class BlockInfo extends BaseElement{
                 margin: 8px;
                 padding: 0px;
                 background-color: rgba(255,255,255,0.9);
+
+                max-height: 80vh;                
             }
             
             .panel {
@@ -56,9 +58,9 @@ class BlockInfo extends BaseElement{
             .red { background-color: rgba(255,194,194,0.49); }
             .green { background-color: rgba(194,255,204,0.49); }
             .blue { background-color: rgba(194,244,255,0.49); }
-            .red:hover { background-color: rgba(255,194,194,0.79); }
-            .green:hover { background-color: rgba(194,255,204,0.79); }
-            .blue:hover { background-color: rgba(194,244,255,0.79); }
+            .red:hover, .focus .red { background-color: rgba(255,194,194,0.79); }
+            .green:hover, .focus .green { background-color: rgba(194,255,204,0.79); }
+            .blue:hover, .focus .blue  { background-color: rgba(194,244,255,0.79); }
 
             .info {
                 cursor: pointer;
@@ -79,12 +81,15 @@ class BlockInfo extends BaseElement{
             .info-basic {
                 display: block;
                 cusror: pointer;
+                user-select: none;
             }
 
             .info-advanced {
                 display: none;
                 margin-top: 16px;
                 cusror: text;
+                /*overflow-y: scroll;*/
+                cursor: text;
             }
 
             .advanced .info-basic {
@@ -98,8 +103,15 @@ class BlockInfo extends BaseElement{
 
             td {
                 vertical-align: top;
+                color: #333;
+            }
+
+            strong {
+                font-weight: normal;
+                color: #000;
             }
         
+
 		`;
 	}
 
@@ -120,21 +132,21 @@ class BlockInfo extends BaseElement{
         let ident = data.blockHash.replace(/^0+/,'').substring(0,10);
 
         return html`
-                <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.navigateToPanelClick}">
+                <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.panelClick}">
                     <div class='toolbar' style=''>
                         <div  class="button" style="background-image:url(/resources/images/icons/filled-box.png);transform:scale(1.5);margin-right:8px;" tip="Navigate to"></div>
                         <div style="flex:1;max-width:12px;"></div>
-                        <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="Details"></div>
-                        <div @click="${this.focus}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="Focus"></div>
+                        <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-info-circle:Open Detailed Block Information"></div>
+                        <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
                         <div style="flex:1;min-width:16px;"></div>
-                        <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="Copy link to Clipboard"></div>
+                        <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
                         <div @click="${this.close}" class="button" tooltip="Close" 
                             style="background-image:url(/resources/images/icons/cross.png);position:relative;transform:scale(0.85) translate(14px,-8px);"></div>
 
                     </div>
                     <div class='info-basic'>
                         <span class='blockHash'>${ident}</span>
-                            @${data.blueScore} <br/>
+                            &Delta;${data.blueScore} <br/>
                             ${this.getTS(new Date(data.timestamp*1000))} 
                     </div>
                     <div class='info-advanced'>
@@ -193,22 +205,33 @@ class BlockInfo extends BaseElement{
     click(e) {
         console.log('click!',e);
     }
-    navigateToPanelClick() {
-        if($(this.el).hasClass('advanced'))
+    panelClick() {
+        if($(this.el).hasClass('advanced')) {
+            // $(this.el).toggleClass('advanced');
+            // $("block-info").css('display','block');
             return;
-        this.navigateTo();
+        }
+        else {
+            this.navigateTo();
+        }
     }
-    navigateTo() {
+    navigateTo(...args) {
+        console.log('navigateTo:',args);
+        // e.preventDefault();
+        console.log("BI is calling navigateTo...");
         this.graph.setFocusTargetHash(this.hash);
 
 //        this.graph.centerBy(this.hash);
     }
 
-    focus() {
+    focusClick(e) {
+        e.preventDefault();
+        console.log("BI is calling focus...");
 //        this.graph.setFocusTargetHash(this.hash);
+        // this.graph.paintEl.transform.k = 1;
         this.graph.centerBy(this.hash);
-        this.graph.paintEl.transform.k = 1;
-        this.graph.setChartTransform(this.graph.paintEl.transform);        
+        // this.graph.setChartTransform(this.graph.paintEl.transform);        
+
     }
 
     getUrl() {
@@ -219,7 +242,8 @@ class BlockInfo extends BaseElement{
         const { data } = this.getBlock();
         let el = this.shadowRoot.getElementById('url');
         let url = new URL(window.location.href);
-        url.hash = 'lseq:'+parseInt(data.lseq).toString(16);
+        url.searchParams.set('select','lseq$'+parseInt(data.lseq).toString(16));
+        //url.hash = 'lseq:'+parseInt(data.lseq).toString(16);
         console.log(url.toString());
         el.innerText = url.toString();
         $(el).show();
@@ -248,6 +272,7 @@ class BlockInfo extends BaseElement{
     
 	firstUpdated() {
         this.el = this.shadowRoot.getElementById('info-panel');
+        window.app.generateTooltips(this.el);
 
 		// if(window.ResizeObserver){
 		// 	this.resizeObserver = new ResizeObserver(e => {
