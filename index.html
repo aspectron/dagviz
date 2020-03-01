@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>BlockDAG Viz</title>
+	<title>DAGViz</title>
 	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto|Roboto+Mono|Cousine|Share+Tech+Mono|Ubuntu+Mono&display=swap" rel="stylesheet">
 
 	<script type="module" src="./components/dag-viz.js"></script>
@@ -12,6 +12,8 @@
 	<script src="/resources/scripts/notify.dagviz.js"></script>
 	<link rel="stylesheet" type="text/css" href="/resources/css/notify.css" />
 
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.css" />
 
 	<!-- TODO switch to express, migrate to http/ as root -->
 	<script src="/socket.io/socket.io.js"></script>
@@ -33,13 +35,13 @@
 			font-weight: 400;
 		}
 		#top { 
-			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
+			font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 14px;
 			position: absolute; left: 8px; top: 8px; color: #222;
 			font-weight: 400;
 			padding-left: 64px;
 		}
-		.trigger { cursor:pointer; margin: 2px 8px 2px 8px; padding: 2px; display: inline-block; border-top: 1px solid rgba(0,0,0,0); user-select: none; }  
-		.trigger:hover{ border-top: 1px dashed rgba(0,70,70,0.95); border-radius: 0px; }
+		.toggle { cursor:pointer; margin: 2px 8px 2px 8px; padding: 2px; display: inline-block; border-top: 1px solid rgba(0,0,0,0); user-select: none; }  
+		.toggle:hover{ border-top: 1px dashed rgba(0,70,70,0.95); border-radius: 0px; }
 
 		#bottom { 
 			font-family: 'Roboto Mono', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
@@ -91,6 +93,14 @@
 			cursor: pointer;
 			width: 24px;
 			height: 24px;
+			margin-top: 16px;
+			text-align: center;
+			opacity: 0.5;
+			transition: all 0.25s;
+		}
+
+		#left .tool:hover {
+			opacity: 1.0;
 		}
 
 		.needs-multi-select {
@@ -99,10 +109,44 @@
 			transition: all 0.5s;
 		}
 
-		.needs-multi-select:hover {
+		/* .needs-multi-select:hover {
 			opacity: 1;
+		} */
+
+		.needs-single-select {
+			display: none;
+			opacity: 0;
+			transition: all 0.5s;
 		}
+
+		/* .needs-single-select:hover {
+			opacity: 1;
+		} */
+
+		.tool:hover {
+			opacity: 1.0;
+		}
+
 		#copy-url { display: none; }
+
+		#bottom, .selection {
+			pointer-events: none;
+		}
+
+		.selection > * {
+			pointer-events: auto;
+		}
+
+		.tooltip {
+			opacity: 0.6;
+			display:inline-block;
+			margin:2px;
+		}
+
+		.tooltip i {
+			display: inline-block;
+			margin: 4px;
+		}
 
 	</style>
 </head>
@@ -111,7 +155,10 @@
 	<div id='address'></div>
 	<div id='top'><span class='position'></span><span class='ctl'></span><br/><span class='info'></span></div>
 	<div id="left">
-		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.35;" tooltip="Copy link to Clipboard"></div>
+		<div id="get-multi-select-link" class="tool needs-multi-select" style="background-image:url(/resources/images/icons/copy-link-2.png);" tooltip="fal fa-copy:Copy link with selection to clipboard"></div>
+		<div id="clear-selection" class="tool needs-single-select" tooltip="fal fa-unlink:Clear selection">
+			<i class="fa fa-unlink"></i>
+		</div>
 	</div>
 	<div id='bottom'><div class='selection'></div></div>
 	<axis-navigator id="timenav"></axis-navigator>
@@ -125,6 +172,7 @@
 		// import { io } from './node_modules/socket.io-client/dist/socket.io.js';
 		$(document).ready(()=>{
 			window.app = new App();
+			window.app.init();
 			// window.io = io;
 			return;
 			
