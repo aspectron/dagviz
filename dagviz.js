@@ -655,7 +655,7 @@ class DAGViz {
             block.parentBlockHashes = block.parentBlockHashes.split(',');
             block.childBlockHashes = block.childBlockHashes.split(',');
         })
-console.log("responding:",blocks);
+        // console.log("responding:",blocks);
         return Promise.resolve(blocks);
     }
 
