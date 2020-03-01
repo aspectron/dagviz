@@ -518,6 +518,11 @@ class DAGViz {
 
                 // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
+
+
+                if(this.args.latency) {
+                    await this.sleep(parseInt(this.flags.latency));
+                }
                 // console.log(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} LIMIT ${limit}`);
                 // let parents = await this.sql(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} ORDER BY blocks.${unit} LIMIT ${limit}`);
                 // let children = await this.sql(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} ORDER BY blocks.${unit} LIMIT ${limit}`);
@@ -612,10 +617,12 @@ class DAGViz {
 
     async getBlock(args_) {
         
-        let args = args_.split(':');
+        let args = args_.split('/');
 
-        let type = args.shift();
+        let type = args.length > 1 ? args.shift() : 'blockHash';
 
+        args = args.shift().split('x')
+        console.log('getBlock type:',type,'args:',args);
         if(!['blockHash','lseq','block'].includes(type))
             return Promise.reject('invalid getBlock() type');
 
@@ -648,10 +655,15 @@ class DAGViz {
             block.parentBlockHashes = block.parentBlockHashes.split(',');
             block.childBlockHashes = block.childBlockHashes.split(',');
         })
-
+console.log("responding:",blocks);
         return Promise.resolve(blocks);
     }
 
+    sleep(t) {
+        return new Promise((resolve) => {
+            dpc(t,resolve);
+        })
+    }
 }
 
 (async () => {
