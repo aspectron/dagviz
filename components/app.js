@@ -539,7 +539,7 @@ export class App {
 			//new Toggle(this,'connect','LINK SEQUENTIAL');
 
 			new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
-			new Toggle(this.ctx,'mass','MASS','fal fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
+			new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
 			new Toggle(this.ctx,'chainBlocksDistinct','CHAIN BLOCKS','fal fa-highlighter:Highlight chain blocks');
 			new Toggle(this.ctx,'chainBlocksCenter','CENTER','fa fa-compress-alt:Chain block position is biased toward center');
 	//		new Toggle(this.ctx,'det','DETERMINISTIC');
