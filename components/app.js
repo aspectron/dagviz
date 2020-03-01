@@ -21,7 +21,7 @@ export class Block extends GraphNode {
 		if(!data.shape)
 			data.shape = 'square';
 		if(!data.color) {
-			if(data.isChainBlock && ctx.isChainBlock)
+			if(data.isChainBlock && ctx.chainBlocksDistinct)
 				data.color = `rgba(194,255,204,0.99)`;
 			else
 				data.color = `rgba(194,244,255,0.99)`;
@@ -58,7 +58,7 @@ export class Block extends GraphNode {
 	}
 
 	getSize() {
-		let size = this.holder.ctx.trackSize ? Math.max(25, this.data.mass / 20) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
+		let size = this.holder.ctx.mass ? Math.max(25, this.data.mass / 20) : 25; // 25; //data.mass/20*Math.exp(data.mass/20/10);
 		if(size > 50)
 			size = 50;
 
@@ -85,14 +85,26 @@ class GraphContext {
 		// this.init = 0;
 		// if(this.unit == 'timestamp')
 		// 	this.init = Date.now() / 1000; 
-		this.trackSize = true;
+		//this.trackSize = true;
+		this.position = 10;
 		this.max = 0;
+
+		this.mass = true;
+
+		this.curves = true;
+		this.initZoom = 0.5;
 
 		this.rangeScale = 1.4;  // for of war vs viewport window coefficient
 
-		this.isChainBlock = true;
+		this.chainBlocksDistinct = true;
+		this.chainBlocksCenter = true;
 		// this.curves = true;
 		this.track = false;
+
+		//this.det = false;
+		this.layout = 'determ';
+
+		this.perf = 'off';
 
 		this.dir = 'E';
 
@@ -101,24 +113,28 @@ class GraphContext {
 				h : true,
 				size : 'width',
 				axis : 'x',
+				layoutAxis : 'y',
 				sign : 1,
 			},
 			'S' : {
 				v : true,
 				size : 'height',
 				axis : 'y',
+				layoutAxis : 'x',
 				sign : 1,
 			},
 			'W' : {
 				h : true,
 				size : 'width',
 				axis : 'x',
+				layoutAxis : 'y',
 				sign : -1,
 			},
 			'N' : {
 				v : true,
 				size : 'height',
 				axis : 'y',
+				layoutAxis : 'x',
 				sign : -1,
 			}
 		}
@@ -132,16 +148,17 @@ class GraphContext {
 		this.position = 0;
 		
 
-		let url = new URL(window.location.href);
-		let position = url.searchParams.get('pos');
-		if(position) {
-			this.position = position;
-			console.log('initializing position to:',position);
-			dpc(()=>{
-				app.updatePosition();
-			})
+		// let url = new URL(window.location.href);
+		// let position = url.searchParams.get('pos');
+		// console.log('ctx init location:',typeof(position),position);
+		// if(position) {
+		// 	this.position = position;
+		// 	console.log('initializing position to:',position);
+		// 	dpc(()=>{
+		// 		app.updatePosition();
+		// 	})
 
-		}
+		// }
 
 
 		// if(window.location.hash) {
@@ -165,41 +182,137 @@ class GraphContext {
 			
 	}
 
+
 	nodePosition(node, graph, nodes) {
+
+		const { axis, sign, layoutAxis } = this.direction;
+		const ts = Date.now();
 
 		// if(!node.init_) {
 		// 	node.init_ = true;
 		// 	node.x = node.data[this.unit] * this.unitScale * this.unitDist;
 		// }
 
+		node[layoutAxis] = Math.round(node[layoutAxis]);
+
 		//node.x = node.data[this.unit] * this.unitScale * this.unitDist;
 
-		if(this.inChainBlocksCenter) {
-			if(!node.location_init_)
-				node.location_init_ = Date.now();
+//		if(this.chainBlocksCenter) {
+			let needsToRun = false;
+			if(!node.location_init_) {
+				node.location_init_ = ts;
+				needsToRun = true;
+			}
 
-			if(node.location_init_ > Date.now()-100) {
-				// node.location_init_ = Date.now();
-				let idx = this.getIdx(node);
-				let cluster = graph.locationIdx[idx];
+			if(!node.cluster_) {
+				const idx = this.getIdx(node);
+				node.cluster_ = graph.locationIdx[idx];
+			}
+
+			if(node.cluster_size_ != node.cluster_.length) {
+				node.cluster_size_ = node.cluster_.length;
+				needsToRun = true;
+			}
+
+			if(this.layout != this.last_layout_) {
+				this.last_layout_ = this.layout;
+				needsToRun = true;
+			}
+
+
+//			if(node.location_init_ > ts-128 || needsToRun) {
+			if(node.location_init_ > ts-64 || needsToRun || !node.layout_ctx_) {
+					// node.location_init_ = ts;
+				const cluster = node.cluster_;
+				const clusterSize = cluster ? cluster.length || 1 : 1;
+				// if(cluster) {
+				// 	cluster.forEach()
+				// }
+
+				if(!node.layout_ctx_ || node.layout_ctx_.clusterSize != clusterSize || needsToRun) {
+					const clusterIdx = cluster && cluster.length ? cluster.indexOf(node) : 0;
+					const detPos = parseInt(node.data.blockHash.substring(64-4), 16) / 0xffff * clusterSize;
+					node.layout_ctx_ = {
+						enable : true
+						//idx, 
+						// cluster, clusterSize //, clusterIdx, detPos,
+					};
+					
+					if(node.data.isChainBlock && this.chainBlocksCenter) {
+						node.layout_ctx_.pos = 0;
+					} else {  //if(this.det) {
+
+						// console.log(this.layout);
+						switch(this.layout) {
+							case 'determ': {
+								node.layout_ctx_.pos = ((0 - clusterSize/2) + detPos) * this.unitDist * 2.5;
+							} break;
+
+							case 'random': {
+								node.layout_ctx_.pos = ((0 - clusterSize/2) + clusterIdx) * this.unitDist * 2.5;
+							} break;
+							case 'free': 
+							default: {
+								node.layout_ctx_.enable = false;				
+								node[layoutAxis] = Math.random()*2-1;
+							} break;
+						}
+
+						// if(!this.det)
+						// console.log('parts',(0 - clusterSize/2),(this.det ? detPos : clusterIdx),'->',node.layout_ctx_.pos, clusterIdx, clusterSize);
+					}
+						// let pos = this.det ? detPos : clusterIdx;
+						// node[layoutAxis] = ((0 - clusterSize/2) + pos) * this.unitDist * 2.5;
+						// node[layoutAxis] = ;
+					//} else {
+						//node.layout_ctx_.pos = ((0 - clusterSize/2) + detPos) * this.unitDist * 2.5;	
+					//}
+
+				}
+
+				// if(node.data.isChainBlock && this.chainBlocksCenter && node.location_init_ > ts - 1024)
+				// 	node.layout_ctx_.pos = Math.random()-0.5;
+
+
+				if(node.layout_ctx_.enable)
+					node[layoutAxis] = node.layout_ctx_.pos;
+
+//				console.log(node.layout_ctx_.pos,node.layout_ctx_);
+
+
+/*
 				if(cluster && cluster.length > 1) {
 					if(node.data.isChainBlock) {
-						node.y = 0;
+						node[layoutAxis] = 0;
 						//node.y = node.y * 0.1;
 					} else {
+						let h = node.data.blockHash;
 						let len = (cluster.length) || 1;
-						let pos = cluster.indexOf(node);
-						let dest = ((0 - len/2) + pos) * this.unitDist * 1.2;
-
+						
+						let pos = 0;
+						if(this.det)
+						else
+							pos = cluster.indexOf(node);
+						
+						let dest = ((0 - len/2) + pos) * this.unitDist * 2.5;//3;// 1.2;
 						// console.log('idx',idx,len,dest);
 						//node.y = (0 - len/2) * this.unitDist * 2;
-						node.y = dest;
+						node[layoutAxis] = dest;
 						//node.y = node.y * 0.9 + 0.1 * dest;
 					}
 				}
+*/				
+			} 
+			else {
+				if(node.data.isChainBlock && this.chainBlocksCenter && node.location_init_ > ts - 512)
+					node[layoutAxis] = Math.random()-0.5;
+
+				if(this.layout_pos_ctx_)
+					delete this.layout_post_ctx_;
 			}
-		}
+//		}
 		
+			// node.y = Math.round(node.y);
 		
 			// else {
 			// 	node.y = this.unitDist; // Math.round(node.y);
@@ -208,29 +321,36 @@ class GraphContext {
 		// node.x = node.lscore;
 		// return;
 		// node.y = node.data.isChainBlock ? 0 : Math.round(node.y);
-		const { axis, sign } = this.direction;
-		if(node.data.parentBlockHashes) {
-			let max = node.data[this.unit] * this.unitScale * this.unitDist;
-			node.data.parentBlockHashes.forEach((hash) => {
-				let parent = graph.nodes[hash];
-				if(parent && parent[axis] && Math.abs(parent[axis]) > max)
-					max = Math.abs(parent[axis]);
-			});
 
-			node[axis] = Math.round(max + this.unitDist*2)*sign;
-//			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
-		} else {
-			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
-		}
+		//if(node.location_init_ > ts-128) {
+
+			if(node.data.parentBlockHashes) {
+				let max = node.data[this.unit] * this.unitScale * this.unitDist;
+				node.data.parentBlockHashes.forEach((hash) => {
+					let parent = graph.nodes[hash];
+					if(parent && parent[axis] && Math.abs(parent[axis]) > max)
+						max = Math.abs(parent[axis]);
+				});
+
+				node[axis] = Math.round(max + this.unitDist*2)*sign;
+	//			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
+			} else {
+				node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
+			}
 		//console.log(node.x);
+		//}
+
 	}
 
-	reposition(x) {
+	reposition(x, skipUpdate) {
 		if(!this.max)
 			return;
 
 		this.position = x * this.max;// * this.unitDist;
 		// console.log('position:',this.position,'x:',x,'max:',this.max);
+		if(skipUpdate)
+			return;
+
 		this.app.updatePosition();
 	}
 
@@ -280,7 +400,7 @@ class GraphContext {
 		})
 	}
 
-	onTrigger(e, value) {
+	onToggle(e, value) {
 
 		switch(e) {
 			case 'track': {
@@ -289,15 +409,19 @@ class GraphContext {
 					this.graph.translate(v,0);
 				}
 			} break;
-			case 'trackSize': {
+			case 'mass': {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateSize();
 				});
+				this.restart();
 			} break;
-			case 'isChainBlock': {
+			case 'chainBlocksDistinct': {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
 				});
+			} break;
+			case 'chainBlocksCenter': {
+				this.restart();
 			} break;
 			case 'curves':
 				let curves = this.curves;
@@ -317,8 +441,30 @@ class GraphContext {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
 				})
+				this.graph.restartSimulation();
+			} break;
+
+			case 'layout': {
+				this.restart();
+			} break;
+
+			case 'perf': {
+				this.rangeScale = this.perf == 'off' ? 1.4 : 1;
+				Object.values(this.graph.nodes).forEach((node) => {
+					node.updateStyle();
+				})
+
 			} break;
 		}
+	}
+
+	restart() {
+		const ts = Date.now();
+		Object.values(this.graph.nodes).forEach((node) => {
+			node.location_init_ = ts;
+			delete node.layout_ctx_;
+		})
+		this.graph.restartSimulation();
 	}
 
 	updateMax(max) {
@@ -337,18 +483,34 @@ class GraphContext {
 	onSelectionUpdate(selection) {
 		// console.log('selection:',selection);
 		let length = Object.keys(selection).length;
+		if(length == 1) {
+			$('.needs-single-select').css({
+				display:'block',
+				opacity : 0.65
+			});
+		}
+		else
 		if(length > 1) {
 			$('.needs-multi-select').css({
 				display:'block',
 				opacity : 0.65
 			});
 		} else {
+			$('.needs-single-select').css({
+				opacity : 0
+			});
 			$('.needs-multi-select').css({
 				opacity : 0
 			});
 		}
 
-		window.location.hash = '#lseq:'+Object.values(selection).map(block=>parseInt(block.data.lseq).toString(16)).join(':');
+		// if(length)
+		// 	window.location.hash = '#lseq:'+Object.values(selection).map(block=>parseInt(block.data.lseq).toString(16)).join(':');
+		// else
+		// 	window.location.hash = '';
+
+		this.app.storeUndo();
+
 	}
 
 }
@@ -364,27 +526,50 @@ export class App {
 		this.last_range_ = 1;
 		this.last_position_ = -1;
 
-		this.init();
+		this.undo = true;
+		// this.init();
+	}
+
+	initCtls() {
+		this.ctls = [];
+
+		
+			new Toggle(this.ctx,'track','TRACKING');
+			//new Toggle(this,'connect','LINK SEQUENTIAL');
+
+			new Toggle(this.ctx,'curves','CURVES');
+			new Toggle(this.ctx,'mass','MASS');
+			new Toggle(this.ctx,'chainBlocksDistinct','CHAIN BLOCKS');
+			new Toggle(this.ctx,'chainBlocksCenter','CENTER');
+	//		new Toggle(this.ctx,'det','DETERMINISTIC');
+	//		new Toggle(this.ctx,'inChainBlocksTension','TENSION');
+
+			new MultiChoice(this.ctx,'layout',{
+				'determ' : 'DETERMINISTIC',
+				'random' : 'RANDOM',
+				'free' : 'FREE',
+			},'LAYOUT');
+
+			new MultiChoice(this.ctx,'perf',{
+				'off' : 'OFF',
+				'medium' : 'MEDIUM',
+				'high' : 'HIGH',
+			},'PERFORMANCE');
+
+	//		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'DIRECTION');
+
 	}
 
 	init() {
 		this.initGraph();
 		this.initNavigator();
 		this.initIO();
-		this.initPosition();
 		this.afterInit();
 		this.addSmallScreenCls(document.body);
+		this.initCtls();
 		
-		new Trigger(this.ctx,'track','TRACKING');
-		//new Trigger(this,'connect','LINK SEQUENTIAL');
+		this.initPosition();
 
-		new Trigger(this.ctx,'curves','CURVES');
-		new Trigger(this.ctx,'trackSize','MASS');
-//		new Trigger(this.ctx,'isChainBlock','CHAIN BLOCKS');
-		new Trigger(this.ctx,'inChainBlocksCenter','CENTER');
-//		new Trigger(this.ctx,'inChainBlocksTension','TENSION');
-
-//		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'DIRECTION');
 
 		let ts = Date.now();
 		// let _BLOCKDAGCHAIN = BLOCKDAGCHAIN.reverse();
@@ -438,14 +623,24 @@ export class App {
 //			this.initPosition();			
 		}, false);
 
+		window.addEventListener('popstate', (e) => {
+			console.log('popstate:',e.state);
+			e.preventDefault();
+
+			const { state } = e;
+			if(state)
+				this.restoreUndo(state);
+		});
+
 
 		$('#get-multi-select-link').on('click', (e) => {
 			const selection = Object.values(this.graph.selection).map(node => parseInt(node.data.lseq).toString(16)).join(':');
 			let el = document.getElementById('copy-url');
-			let url = new URL(window.location.href);
-			url.hash = `lseq:${selection}`;
-			console.log(url.toString());
-			el.innerText = url.toString();
+			const url = window.location.toString();
+			// let url = new URL(window.location.href);
+			// url.hash = `lseq:${selection}`;
+			// console.log(url.toString());
+			el.innerText = url;//url.toString();
 			$(el).show();
 			window.app.selectText(el);//.select();
 			document.execCommand('copy');
@@ -462,9 +657,47 @@ export class App {
 			});
 		});
 
+		$("#clear-selection").on('click', (e) => {
+			Object.values(this.graph.nodes).forEach((node) => {
+				node.select(false);
+			})
+		});
+
 		$("#logo").on('click', () => {
 			this.ctx.reposition(0);
+		});
+
+		if(!this.$info)
+			this.$info = $("#top .info");
+		
+		this.generateTooltips();
+	}
+
+	generateTooltips(root) {
+		$("[tooltip]", root).each((idx,el) => {
+			let tooltip = el.getAttribute('tooltip');
+			let $el = $(el);
+			$el.on('mouseover', ()=>{
+				this.displayTooltip(tooltip);
+			}).on('mouseout', ()=>{
+				this.clearTooltip();
+			})
 		})
+	}
+
+	displayTooltip(tooltip) {
+		let icon = 'fa-question-circle';
+		if(/^fa[\w\-\s]+:/.test(tooltip)) {
+			let parts = tooltip.split(':');
+			icon = parts.shift();
+			tooltip = parts.join(':');
+		}
+		console.log(icon);
+		this.$info.html(`<span class='tooltip'><i class="fa ${icon}"></i> <span>${tooltip}</span></span>`);
+	}
+
+	clearTooltip(text) {
+		this.$info.html('');
 	}
 
 	createBlocks(blocks) {
@@ -652,23 +885,26 @@ export class App {
 	initGraph() {
 		this.graph = document.getElementById("dagViz");
 		this.graph.ctx = this.ctx;
-		this.graph.registerRegionUpdateSink(this.updateRegion.bind(this));
-		this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
-
+		// this.graph.tdist = parseInt(this.argv.get('tdist') || 0) || this.graph.tdist;
+		
 		this.graph.track = false;
+
+
+		// const t = this.graph.paintEl.transform;
+		// let url = new URL(window.location.href);
+		// let k = url.searchParams.get('k');
+		// k = parseFloat(k);
+		// if(k) {
+
+		// //t.x = - (this.ctx.position * t.k * this.ctx.unitDist);
+		// 	t.k = k;
+		// 	// this.graph.setChartTransform(t);
+		// }
+
 		this.ctx.init(this, this.graph);
+		
+		this.graph.registerRegionUpdateSink(this.updateRegion.bind(this));
 
-
-		const t = this.graph.paintEl.transform;
-		let url = new URL(window.location.href);
-		let k = url.searchParams.get('k');
-		k = parseFloat(k);
-		if(k) {
-
-		//t.x = - (this.ctx.position * t.k * this.ctx.unitDist);
-			t.k = k;
-			// this.graph.setChartTransform(t);
-		}
 
 	}
 
@@ -735,26 +971,52 @@ export class App {
 
 	async initPosition() {
 
-		let args = window.location.hash;
-		if(args) 
-			args = args.substring(1);
+		// let args = window.location.hash;
+		// if(args) 
+		// 	args = args.substring(1);
 
-		this.updateRegion({pos:this.ctx.position, range:16});
+		let url = new URL(window.location.href);
+		let params = Object.fromEntries(url.searchParams.entries());
+		console.log("initializing with params:",params);
+//		if(params.pos === 'undefined')
+		const { ctx } = this;
+		const defaults = {
+			pos : ctx.position,
+			k : ctx.initZoom, // 0.35,
+			track : ctx.track,
+			curves : ctx.curves,
+			mass : ctx.mass,
+			chainBlocksDistinct : ctx.chainBlocksDistinct,
+			chainBlocksCenter : ctx.chainBlocksCenter,
+			layout : ctx.layout,
+			perf : ctx.perf,
+			select : 'none'
+		}
+		params = Object.assign(defaults, params);
+				
+		this.initContext(params);
 
-		if(/\w+:/.test(args)) {
+//		this.updateRegion({pos:this.ctx.position, range:16});
+
+//		if(/\w+:/.test(args)) {
 //console.log('requesting args:',args);
-			let blocks = await this.fetchBlock(args);
-			//console.log('got blocks array:', blocks);
-			let nodes = blocks.map((block) => {
-				// if(this.graph.nodes[block.blockHash])
-				// 	return null;
-				let node = this.createBlock(block);
-				node.select(true);
-				return node;
-			}).filter(v=>v);
+
+
+			// let blocks = await this.fetchBlock(args);
+			// //console.log('got blocks array:', blocks);
+			// let nodes = blocks.map((block) => {
+			// 	// if(this.graph.nodes[block.blockHash])
+			// 	// 	return null;
+			// 	let node = this.createBlock(block);
+			// 	node.select(true);
+			// 	return node;
+			// }).filter(v=>v);
+
+
+
 			 //console.log('created or obtained nodes:',nodes);
-			let first = blocks[0];
-			this.updateRegion({pos:first[this.ctx.unit], range:16});
+			// let first = blocks[0];
+			// this.updateRegion({pos:first[this.ctx.unit], range:16});
 
 //			this.graph.updateSimulation();
 /*
@@ -775,7 +1037,7 @@ export class App {
 			// dpc(1000,()=>{
 			// 	node.select(true);
 			// })
-		 } 
+//		 } 
 		 // else {
 // console.log('update region....');
 // 			this.updateRegion({pos:this.ctx.position, range:16});
@@ -811,6 +1073,9 @@ export class App {
 	}
 
 	async updateRegion(o) {
+		if(this.suspend)
+			return Promise.resolve();
+
 		let { pos, range } = o;
 
 		let left = false, right = false;
@@ -855,9 +1120,10 @@ export class App {
 		//this.navigator.update(pos / this.ctx.max);
 		this.navigator.redraw();
 		// window.location.hash = '#'+Math.round(this.ctx.position);
-		this.updateLocationSearchStringWithPosition(Math.round(this.ctx.position));
+		//this.updateLocationSearchStringWithPosition(this.ctx.position);
+		this.storeUndo();
 		// const first = skip - limit;
-		const eraseMargin = half_range;
+		const eraseMargin = this.ctx.perf == 'off' ? half_range : 0;
 		// const last = skip + limit;
 		let max, min;
 		//let t = this.graph.paintEl.transform, tx = t.x/t.k;
@@ -916,14 +1182,193 @@ export class App {
 		// }
 
 		// this.navigator.redraw();
+		return Promise.resolve();
 	}
 
-	updateLocationSearchStringWithPosition(pos) {
-		let url = new URL(window.location.href);
-		url.searchParams.set('pos', pos);
-		let state = { pos }
-		history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash);
+	enableUndo(enable) {
+		this.undo = !!enable;
+	}
 
+
+	restoreUndo(state) {
+
+		this.initContext(state);
+		
+	}
+	
+	async initContext(state) {
+		// pos, k, select, all ctls
+console.log('initContext',JSON.stringify(state,null,'\t'));
+		this.suspend = true;
+
+		let updateTransform = false;
+		if(state.pos) {
+			const position = parseFloat(state.pos);
+			if(this.ctx.position != position) {
+				this.ctx.position = position;
+				updateTransform = true;
+			}
+		}
+
+		if(state.k) {
+			const t = this.graph.paintEl.transform;
+			let k_ = t.k;
+			const k = parseFloat(state.k);
+			if(!isNaN(k) && k && k != k_) {
+				t.k = k;
+				updateTransform = true;
+				this.graph.setChartTransform(t);
+			}
+		}
+
+		if(state.select) {
+			try {
+				if(state.select != 'none') {
+					let args = state.select.split('x');
+					let type = args.shift();
+					if(type == 'lseq') {
+						args = args.map(v=>parseInt(v,16)).filter(v=>!isNaN(v)&&v!==undefined&&v>=0).map(v=>v.toString(16));
+						console.log('args:',args);
+						if(args.length) {
+							let blocks = await this.fetchBlock('lseq/'+args.join('x'));
+							//console.log('got blocks array:', blocks);
+							let selection = { }
+							console.log('requesting:',blocks);
+							let nodes = blocks.map((block) => {
+								// if(this.graph.nodes[block.blockHash])
+								// 	return null;
+								let node = this.createBlock(block);
+								console.log('selecting',node.data.lseq)
+								node.select(true);
+
+								selection[node.data.blockHash] = node;
+								return node;
+							}).filter(v=>v);
+
+							// let existing = Object.keys(this.graph.selection);
+							// existing.forEach((hash) => {
+							// 	if(!selection[hash])
+							// 		this.graph.nodes[hash].select(false);
+							// });
+				
+							Object.values(this.graph.selection).forEach((node) => {
+								if(!selection[node.data.blockHash])
+									node.select(false);
+							});
+						
+
+						}
+					}
+				}
+				else {
+					Object.values(this.graph.selection).forEach((node) => {
+						node.select(false);
+					});
+
+				}
+			} catch(ex) {
+				console.log(ex);
+			}
+		}
+		// else
+		// 	state.select = null;
+
+		let ctls = {};
+		this.ctls.forEach((ctl)=>{
+			const { ident } = ctl;
+			if(state[ident] !== undefined)
+				ctl.setValue(state[ident]);
+				//ctlSet[ctl.ident] = ctl;
+		});
+
+		this.suspend = false;
+		this.undo = false;
+		// this.undo = false;
+		if(updateTransform) {
+			this.updatePosition();
+		}
+		
+		this.undo = true;
+
+	}
+
+	storeUndo() {
+	// 	this.updateLocationSearchStringWithPosition(this.ctx.position);
+	// }
+	console.log('storeUndo');
+		if(!this.undo || this.suspend)
+			return;
+			console.log('storeUndo starting...');
+
+//		let ctls = { }
+//		let ctls = 
+		const state = { }
+
+		this.ctls.map(ctl=>state[ctl.ident] = ctl.getValue(true));
+
+
+	// updateLocationSearchStringWithPosition(pos) {
+		// console.trace('updating location...',pos);
+		const pos = Math.round(this.ctx.position);
+		const k = (this.graph.paintEl.transform.k).toFixed(4);
+
+		if(Math.round(pos/3) == Math.round(this.last_stored_pos_/3) && k == this.last_sored_k_)
+			return;
+		this.last_stored_pos_ = pos;
+		this.last_stored_k_ = k;
+
+		state.pos = pos;
+		state.k = k;
+
+//		state.unit = this.ctx.unit;
+//		state.seek = this.ctx.seek;
+
+		const lseq = Object.values(this.graph.selection).map(node=>parseInt(node.data.lseq).toString(16));
+		if(lseq.length)
+			state.select = 'lseqx'+lseq.join('x');
+		else
+			state.select = 'none';
+
+
+		// console.log(state);
+		// console.log('--> perf:',state.perf);
+		if(!this.last_undo_state_)
+			this.last_undo_state_ = { };
+
+		const selectChange = state.select != this.last_undo_state_.select;
+
+		let keys = Object.keys(state);
+
+		keys.forEach((key) => {
+			if(state[key] == this.last_undo_state_[key])
+				delete state[key];
+		});
+
+		if(!Object.keys(state).length)
+			return;
+
+		// if(!state.select)// && this.last_undo_state_.select != 'none')
+		// 	state.select = this.last_undo_state_.select;
+
+		if(selectChange) {
+			if(this.last_undo_state_.pos !== undefined)
+				state.pos = this.last_undo_state_.pos;
+			if(this.last_undo_state_.k !== undefined)
+				state.k = this.last_undo_state_.k;
+		}
+
+		let url = new URL(window.location);
+		keys.forEach((key) => {
+			if(state[key] !== undefined) {
+				this.last_undo_state_[key] = state[key];
+				console.log('setting',key,'to:',state[key]);
+				url.searchParams.set(key, state[key]);
+			}
+		});
+		//url.searchParams.set('k', k);
+		//let state = { pos, k };
+		const ts = Date.now();
+		history.pushState(state, "DAGViz", "?"+url.searchParams.toString());//+('#'+ts.toString(16)));
 	}
 
 	getRegion() {
@@ -992,12 +1437,14 @@ export class App {
 
 }
 
-class Trigger {
+class Toggle {
 	constructor(target, ident, caption) {
+		window.app.ctls.push(this);
+		this.type = 'toggle';
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.el = $(`<span id="${ident}" class='trigger'></span>`);
+		this.el = $(`<span id="${ident}" class='toggle'></span>`);
 		$("#top .ctl").append(this.el);
 
 		let url = new URL(window.location.href);
@@ -1007,26 +1454,40 @@ class Trigger {
 			this.setValue(p==1)
 
 		$(this.el).on('click', () => {
-			//let hash = window.location.hash;
-			let value = !(!!this.target[this.ident]);
+		// 	//let hash = window.location.hash;
+		 	let value = !(!!this.target[this.ident]);
 			this.setValue(value);
-			let url = new URL(window.location);
-			url.searchParams.set(this.ident, value?1:0);
-			let state = {
-				[this.ident] : value
-			}
-			// state[this.ident] = value;
-			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash.toString());
+			window.app.storeUndo();
+			 
+		// 	let url = new URL(window.location);
+		// 	url.searchParams.set(this.ident, value?1:0);
+		// 	let state = {
+		// 		[this.ident] : value
+		// 	}
+		// 	// state[this.ident] = value;
+		// 	history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash.toString());
 		})
+
+		// window.app.storeUndo();
 
 		this.update();
 	}
 
 	setValue(value){
+		if(value === 'false' || value === '0')
+			value = false;
+		else if(value === 'true' || value === '1')
+			value = true;
+
 		this.target[this.ident] = value;
-		if(this.target.onTrigger)
-			this.target.onTrigger(this.ident, value);
+		if(this.target.onToggle)
+			this.target.onToggle(this.ident, value);
 		this.update();
+	}
+
+	getValue(storage) {
+		let v = this.target[this.ident];
+		return  storage ? (v ? 1 : 0) : v;
 	}
 
 	update() {
@@ -1036,11 +1497,12 @@ class Trigger {
 
 class MultiChoice {
 	constructor(target, ident, choices, caption) {
+		window.app.ctls.push(this);
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.choices = choices;
-		this.el = $(`<span id="${ident}" class='trigger'></span>`);
+		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v[v]])) : choices;
+		this.el = $(`<span id="${ident}" class='toggle'></span>`);
 		$("#top .ctl").append(this.el);
 
 		let url = new URL(window.location.href);
@@ -1051,46 +1513,55 @@ class MultiChoice {
 			this.setValue(p);
 
 		$(this.el).on('click', () => {
-			// let hash = window.location.hash;
+		 	const choices = Object.keys(this.choices);
+		// 	// let hash = window.location.hash;
 			let value = this.target[this.ident];
-			let idx = this.choices.indexOf(value);
+			let idx = choices.indexOf(value);
 			idx++;
-			if(idx > this.choices.length-1)
+			if(idx > choices.length-1)
 				idx = 0;
-			value = this.choices[idx];
+			value = choices[idx];
 			this.setValue(value);
-			let url = new URL(window.location.href);
-			url.searchParams.set(this.ident, value);
-			let state = {
-				[this.ident] : value
-			}
-			// state[this.ident] = value;
-			history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash);
+			window.app.storeUndo();
+		// 	let url = new URL(window.location.href);
+		// 	url.searchParams.set(this.ident, value);
+		// 	let state = {
+		// 		[this.ident] : value
+		// 	}
+		// 	// state[this.ident] = value;
+		// 	history.replaceState(state, "BlockDAG Viz", "?"+url.searchParams.toString()+url.hash);
 		})
+
+		// window.app.storeUndo();
 
 		this.update();
 	}
 
-	setNext() {
-		let v = this.target[this.ident];
-		if(v === undefined) {
-			this.target[this.ident] = this.choices[0];
-			return this.target[this.ident];
-		}
-	}
+	// setNext() {
+	// 	let v = this.target[this.ident];
+	// 	if(v === undefined) {
+	// 		this.target[this.ident] = Object.keys(this.choices).shift();
+	// 		return this.target[this.ident];
+	// 	}
+	// }
+
+	getValue() {
+		return this.target[this.ident];
+	}	
 
 	setValue(value){
-console.log(value);
-		if(!this.choices.includes(value))
-			value = this.choices[0];
+//console.log(value);
+		const choices = Object.keys(this.choices);
+		if(!choices.includes(value))
+			value = choices[0];
 
 		this.target[this.ident] = value;
-		if(this.target.onTrigger)
-			this.target.onTrigger(this.ident, value);
+		if(this.target.onToggle)
+			this.target.onToggle(this.ident, value);
 		this.update();
 	}
 
 	update() {
-		this.el.html(`${this.caption}: ${this.target[this.ident] }`);
+		this.el.html(`${this.caption}: ${this.choices[this.target[this.ident]] }`);
 	}
 }
