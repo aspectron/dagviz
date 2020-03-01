@@ -134,13 +134,13 @@ class BlockInfo extends BaseElement{
         return html`
                 <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.panelClick}">
                     <div class='toolbar' style=''>
-                        <div  class="button" style="background-image:url(/resources/images/icons/filled-box.png);transform:scale(1.5);margin-right:8px;" tip="Navigate to"></div>
+                        <div  class="button" style="background-image:url(/resources/images/icons/filled-box.png);transform:scale(1.5);margin-right:8px;" x-tooltip="Navigate to"></div>
                         <div style="flex:1;max-width:12px;"></div>
                         <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-info-circle:Open Detailed Block Information"></div>
                         <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
                         <div style="flex:1;min-width:16px;"></div>
                         <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
-                        <div @click="${this.close}" class="button" tooltip="Close" 
+                        <div @click="${this.close}" class="button" x-tooltip="Close" 
                             style="background-image:url(/resources/images/icons/cross.png);position:relative;transform:scale(0.85) translate(14px,-8px);"></div>
 
                     </div>
