@@ -163,6 +163,11 @@ class GraphContext {
 			needsToRun = true;
 		}
 
+		if(this.dir != node.last_dir){
+			node.last_dir = this.dir;
+			needsToRun = true;
+		}
+
 
 		if(node.location_init_ > ts-64 || needsToRun || !node.layout_ctx_) {
 			const cluster = node.cluster_;
