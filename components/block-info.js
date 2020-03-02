@@ -126,19 +126,13 @@ class BlockInfo extends BaseElement{
                     -->
                     <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-info-circle:Open detailed block information"></div>
                     <!--
-                        <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
-<<<<<<< HEAD
-                    -->
-                    <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
-                    <div style="flex:1;min-width:16px;"></div>
-                        <div @click="${this.close}" class="button" x-tooltip="Close" 
-=======
-                        <div style="flex:1;min-width:16px;"></div>
-                        <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
-                        <div class="button close-btn" x-tooltip="Close" 
->>>>>>> 82b91e9d6c15debea20da893bb33c4137932c944
-                            style="background-image:url(/resources/images/icons/cross.png);position:relative;transform:scale(0.85) translate(14px,-8px);"></div>
-                    </div>
+                    <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
+    -->
+    <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
+    <div style="flex:1;min-width:16px;"></div>
+                    <div class="button close-btn" x-tooltip="Close" 
+                    style="background-image:url(/resources/images/icons/cross.png);position:relative;transform:scale(0.85) translate(14px,-8px);"></div>
+                </div>
                     <div class='info-basic'>
                         <span class='blockHash'>${ident}</span>
                             &Delta;${data.blueScore} <br/>
