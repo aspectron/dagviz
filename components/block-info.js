@@ -141,7 +141,7 @@ class BlockInfo extends BaseElement{
                     </div>
                     <div class='info-advanced'>
                         <table>
-                            <tr><td>Block Hash</td><td><strong>${data.blockHash}<i @click="${this.focusOnBlock(data.blockHash)}" class='fal fa-clipboard'> </i> <i @click="${this.focusOnBlock(data.blockHash)}" class='fal fa-map-marker-alt'> </i></strong></td></tr>
+                            <tr><td>Block Hash</td><td>${data.blockHash}<i @click="${this.focusOnBlock_(data.blockHash)}" class='fal fa-clipboard'> GO TO</i> <i @click="${this.copyToClipboard_(data.blockHash)}" class='fal fa-map-marker-alt'>COPY </i></td></tr>
                             <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                             <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
                             <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
@@ -174,8 +174,10 @@ class BlockInfo extends BaseElement{
         }
     }
 
-    focusOnBlock(hash) {
-        window.app.focusOnBlock(hash);
+    focusOnBlock_(hash) {
+        return (e) => {
+            window.app.focusOnBlock(hash);
+        }
     }
 
     cls() {
@@ -271,6 +273,19 @@ class BlockInfo extends BaseElement{
         window.app.selectText(el);
         document.execCommand('copy');
         $(el).hide();
+    }
+
+    copyToClipboard_(text, caption) {
+        return () => {
+            this.copyToClipboard(text);
+            $.notify({
+                //title : 'DAGViz',
+                text : caption+'copied to Clipboard!',
+                className : 'yellow',
+                autoHide : true,
+                autoHideDelay : 1200
+            });
+            }
     }
 
     close() {
