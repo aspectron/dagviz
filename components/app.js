@@ -27,7 +27,7 @@ export class Block extends GraphNode {
 				data.color = `rgba(194,244,255,0.99)`;
 		}
 		super(holder,data);
-
+		this.detsalt = data.detsalt;
 		data.size = this.getSize(); 
 		this.x = Math.random();
 		this.y = Math.random();
