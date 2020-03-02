@@ -302,19 +302,30 @@ D3x.shape.square = function(el, o) {
 
 	let selector = null;
 	
-	//if(o.selected) {
+	if(o.selected) {
 		selector = root.append('svg:path')
 	//.attr("transform", "translate(400,200)")
 		.attr("d", d3.arc()
 			.innerRadius( o.size*2 )
 			.outerRadius( o.size*2+10 )
 			.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
-			.endAngle( 6.27 )       // 2*Pi = 6.28 = top
+			.endAngle( 6.29 )       // 2*Pi = 6.28 = top
 		)
-		// .attr('stroke', 'black')
-		// .attr('stroke-width',5)
+		 .attr('stroke', 'black')
+		 .attr('stroke-width',0)
 		.attr('fill', `rgba(0,0,0,0.5)`)	
-	
+	}
+		
+/*
+	if(o.selected) {
+		selector = el.append('svg:circle')
+			.attr('r', o.size * 2)//Math.random() * 25 + 25)
+			.attr('opacity',0.5)
+			//.attr('fill', D3x.rgba(o.rgba))
+			.attr('stroke', `rgba(0,0,0,0.5)`)	
+			.attr('stroke-width',10)
+	}
+*/
 	//}
 
 	// node
@@ -555,22 +566,24 @@ export class GraphNodeLink{
 		}
 	}
 
-	highlight(color) {
+	highlight(color, node) {
 
 		let stroke = this.defaultColor;
 		if(color) {
 			if(this.isChainBlockLink) {
 				if(this.source.selected && this.target.selected)
 					stroke = 'blue';
-				else
-				if(color == 'red')
-					stroke = 'rgba(92,0,0,1)';
-				else
-					stroke = 'rgba(0,48,0,1)';
+				// else
+				// if(color == 'red')
+				// 	stroke = 'rgba(92,0,0,1)';
+				// else
+				// 	stroke = 'rgba(0,48,0,1)';
 			}
 			else
 			if(this.source.selected && this.target.selected)
 				stroke = 'blue';
+			else if(node.selected)
+				stroke = this.defaultColor;
 			else
 				stroke = color;
 }
@@ -840,7 +853,7 @@ export class GraphNode{
 			this.data.color = `rgba(255,194,194,0.99)`;
 
 
-			
+			/*
 		if(this.selected) {
 			let colors = [...this.data.color.matchAll(/(\d+),(\d+),(\d+),([\.\d]+)/g)].shift();
 			//console.log('colors:',JSON.stringify(colors));
@@ -867,7 +880,7 @@ export class GraphNode{
 
 			this.data.color = `rgba(${r},${g},${b},${a})`;
 			//console.log(this.data.color);
-		}
+		}*/
 
 		if(force || this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size || this.quality != this.holder.ctx.quality) {
 			this.removeElEvents();
@@ -1081,8 +1094,8 @@ export class GraphNode{
 	}
 	onNodeHover(){
 		// this.holder.showNodeInfo(this.data, this);
-		this.holder.highlightLinks(this.linkNodes || [], 'green');
-		this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
+		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
+		this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
 
 		const { data } = this;
 
@@ -1097,12 +1110,12 @@ export class GraphNode{
 
 	highlightLinks(highlight = true) {
 		if(highlight) {
-			this.holder.highlightLinks(this.linkNodes || [], 'green');
-			this.holder.highlightLinks(Object.values(this.parentLinks), 'red');
+			this.holder.highlightLinks(this.linkNodes || [], 'green', this);
+			this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
 	
 		}
 		else {
-			this.holder.highlightLinks(this.getLinks(), null);
+			this.holder.highlightLinks(this.getLinks(), null, this);
 
 		}
 	}
@@ -1116,7 +1129,7 @@ export class GraphNode{
 		this.$info.html('');
 
 		if(!this.selected)
-			this.holder.highlightLinks(this.getLinks(), null);
+			this.holder.highlightLinks(this.getLinks(), null, this);
 
 
 		/*
@@ -1208,11 +1221,11 @@ export class GraphNode{
 				this.nodeInfoEl.remove();
 				delete this.nodeInfoEl;
 			}
-			this.highlightLinks(false);
+			this.highlightLinks(false, null, this);
 			return;
 		}
 
-		this.highlightLinks(true);
+		this.highlightLinks(true, null, this);
 		this.nodeInfoEl = $(`<block-info hash='${this.data.blockHash}'></block-info>`);
 		$('#bottom .selection').append(this.nodeInfoEl);
 
@@ -2037,9 +2050,9 @@ this.simulation.alphaDecay(0.005);
 
 	}
 
-	highlightLinks(links, highlight) {
+	highlightLinks(links, highlight, node) {
 		links.forEach((link)=>{ 
-			link.highlight(highlight); 
+			link.highlight(highlight, node); 
 		});
 	}
 
