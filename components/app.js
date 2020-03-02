@@ -876,6 +876,17 @@ export class App {
 
 	}
 
+	async focusOnBlock(hash) {
+		console.log('focusing:',hash);
+		if(this.graph.nodes[hash])
+			this.graph.setFocusTargetHash(hash);
+		else {
+			let blocks = await this.fetchBlock('blockHash/'+hash);
+			let node = createBlock(blocks.shift());
+			this.graph.setFocusTargetHash(hash);
+		}
+	}
+
 	storeUndo() {
 		// console.log('storeUndo');
 		if(!this.undo || this.suspend)

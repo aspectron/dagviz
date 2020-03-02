@@ -141,7 +141,7 @@ class BlockInfo extends BaseElement{
                     </div>
                     <div class='info-advanced'>
                         <table>
-                            <tr><td>Block Hash</td><td><strong>${data.blockHash}</strong></td></tr>
+                            <tr><td>Block Hash</td><td><strong>${data.blockHash}<i @click="${this.focusOnBlock(data.blockHash)}" class='fal fa-clipboard'> </i> <i @click="${this.focusOnBlock(data.blockHash)}" class='fal fa-map-marker-alt'> </i></strong></td></tr>
                             <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                             <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
                             <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
@@ -172,6 +172,10 @@ class BlockInfo extends BaseElement{
         } else {
             $("block-info").css('display','block');
         }
+    }
+
+    focusOnBlock(hash) {
+        window.app.focusOnBlock(hash);
     }
 
     cls() {
