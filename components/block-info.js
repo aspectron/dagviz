@@ -223,7 +223,7 @@ class BlockInfo extends BaseElement{
         // e.preventDefault();
         console.log("BI is calling navigateTo...");
         this.graph.setFocusTargetHash(this.hash);
-//        this.graph.centerBy(this.hash);
+        //this.graph.centerBy(this.hash);
     }
 
     focusClick(e) {

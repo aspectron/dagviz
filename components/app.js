@@ -126,7 +126,15 @@ class GraphContext {
 			this.position = Date.now() / 1000;
 	}
 
-
+	nodeLinkCurveData(x1, y1, x2, y2){
+		if(this.direction.v){
+			let yy = y1+(y2-y1)*0.5;
+			return `M${x1},${y1} C${x1},${yy} ${x2},${yy} ${x2},${y2}`;
+		}else{
+			let xx = x1+(x2-x1)*0.5;
+			return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
+		}
+	}
 	nodePosition(node, graph, nodes) {
 
 		const { axis, sign, layoutAxis } = this.direction;

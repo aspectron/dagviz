@@ -556,7 +556,8 @@ export class GraphNodeLink{
 	buildD(x1, y1, x2, y2) {
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
-		//M100,100 C100,180 400,20 400,100
+		if(this.holder.ctx)
+			return this.holder.ctx.nodeLinkCurveData(x1, y1, x2, y2, this, this.holder);
 		let xx = x1+(x2-x1)*0.5;
 		return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
 	}
@@ -708,7 +709,7 @@ export class GraphNode{
 			// 	.text(this.data.name);
 		}
 
-//		this.el.attr("class",['block']);
+		//this.el.attr("class",['block']);
 		
 		this.el
 			//.style('opacity',0)
@@ -860,7 +861,7 @@ export class GraphNode{
 			this.data.color = `rgba(255,194,194,0.99)`;
 
 
-			/*
+		/*
 		if(this.selected) {
 			let colors = [...this.data.color.matchAll(/(\d+),(\d+),(\d+),([\.\d]+)/g)].shift();
 			//console.log('colors:',JSON.stringify(colors));
@@ -914,7 +915,7 @@ export class GraphNode{
 	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
 				opacity : 0.5,
 				pattern, patternOpacity, // : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-1' : null) : null,
-//				pattern : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null,
+				//pattern : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null,
 				strokeWidth : this.data.isChainBlock ? 7 : 1,
 				selected : this.selected
 			});
@@ -924,7 +925,7 @@ export class GraphNode{
 			this.color = this.data.color;
 			this.size = this.data.size;
 
-/*
+			/*
 			if(this.selected) {
 
 
@@ -1405,7 +1406,7 @@ export class DAGViz extends BaseElement {
 		var zoom = d3.zoom()
 			.scaleExtent([0.1,3.5])
     		.on('zoom', (e)=>{
-			//console.log(e);
+				//console.log(e);
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
@@ -1456,12 +1457,12 @@ export class DAGViz extends BaseElement {
 
 		this.simulation
 
-		// .force("y", d3.forceY().y((d) => {
-		// 	// console.log('d',d);
-		// 	if(d.data.isChainBlock)
-		// 		return 0;
-		// 	return 100;
-		// }))
+			// .force("y", d3.forceY().y((d) => {
+			// 	// console.log('d',d);
+			// 	if(d.data.isChainBlock)
+			// 		return 0;
+			// 	return 100;
+			// }))
 
 
 			//		.velocityDecay(0.45)
