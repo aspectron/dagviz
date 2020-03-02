@@ -20,6 +20,7 @@ class BlockInfo extends BaseElement{
                 background-color: rgba(255,255,255,0.9);
                 max-height: 80vh;                
             }
+            :host(.hidden){display:none}
             .panel {
                 background-color: white;
                 border: 1px solid #ccc;
@@ -175,12 +176,12 @@ class BlockInfo extends BaseElement{
     details(e) {
         e.stopPropagation();
         $(this.el).toggleClass('advanced');
-        /*if($(this.el).hasClass('advanced')) {
-            //$("block-info").css('display','none');
-            $(this).css('display','flex');
+        if($(this.el).hasClass('advanced')) {
+            $("block-info").toggleClass('hidden', true);
+            $(this).toggleClass('hidden', false);
         } else {
-            $("block-info").css('display','flex');
-        }*/
+            $("block-info").toggleClass('hidden', false);
+        }
     }
 
     focusOnBlock_(hash) {
@@ -215,7 +216,7 @@ class BlockInfo extends BaseElement{
 
         if($(this.el).hasClass('advanced')) {
             // $(this.el).toggleClass('advanced');
-            // $("block-info").css('display','block');
+            //$("block-info").toggleClass('hidden', false);
             return;
         }
         else {
@@ -306,7 +307,7 @@ class BlockInfo extends BaseElement{
     close() {
         if($(this.el).hasClass('advanced')) {
             $(this.el).toggleClass('advanced');
-            //$("block-info").css('display','block');
+            $("block-info").toggleClass('hidden', false);
         }
         else
             this.getBlock().select(false);

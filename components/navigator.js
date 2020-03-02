@@ -110,7 +110,7 @@ class AxisNavigator extends BaseElement{
 		const box = this.getBoundingClientRect();
 		const thumbWidth = 128;
 		let absolute = (e.clientX-thumbWidth/2) / (box.width-thumbWidth)
-		console.log(absolute, e.clientX, box.width, thumbWidth);
+		//console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
 		if(absolute > 1)
