@@ -29,6 +29,7 @@ export class Block extends GraphNode {
 		super(holder,data);
 
 		data.size = this.getSize(); 
+		this.x = Math.random();
 		this.y = Math.random();
 		ctx.nodePosition(this,holder, holder.nodes);
 
@@ -190,7 +191,7 @@ class GraphContext {
 		} 
 		else {
 			if(node.data.isChainBlock && this.chainBlocksCenter =='fixed')
-				node[layoutAxis] = 0;
+				node[layoutAxis] *= 0.1;
 			else
 			if(this.chainBlocksCenter =='force' && node.data.isChainBlock && node.location_init_ > ts - 512)
 				node[layoutAxis] = Math.random()-0.5;
@@ -296,6 +297,10 @@ class GraphContext {
 			} break;
 
 			case 'layout': {
+				Object.values(this.graph.nodes).forEach((node) => {
+					node.updateStyle(true);
+				})
+
 				this.restart();
 			} break;
 
