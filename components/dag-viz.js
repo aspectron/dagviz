@@ -577,8 +577,10 @@ export class GraphNodeLink{
 	highlight(color, node) {
 
 		let stroke = this.defaultColor;
+		let strokeWidth = this.defaultStrokeWidth;
 		if(color) {
 			if(this.isChainBlockLink) {
+				strokeWidth = 7;
 				if(this.source.selected && this.target.selected)
 					stroke = 'blue';
 				// else
@@ -588,8 +590,10 @@ export class GraphNodeLink{
 				// 	stroke = 'rgba(0,48,0,1)';
 			}
 			else
-			if(this.source.selected && this.target.selected)
+			if(this.source.selected && this.target.selected){
 				stroke = 'blue';
+				strokeWidth = 5;
+			}
 			else if(node.selected)
 				stroke = this.defaultColor;
 			else
@@ -601,7 +605,7 @@ export class GraphNodeLink{
 			.style('opacity', color ? 1 : this.defaultOpacity)
 			.attr('stroke', stroke)
 			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
-			.attr('stroke-width', color ? this.isChainBlockLink ? 7 : 1 : this.defaultStrokeWidth)
+			.attr('stroke-width', strokeWidth)
 	}
 }
 
@@ -1195,8 +1199,6 @@ export class GraphNode{
 	}
 
 	select(flag) {
-
-
 		if(flag === undefined)
 			this.selected = !this.selected;
 		else {
