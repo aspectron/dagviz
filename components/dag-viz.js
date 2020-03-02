@@ -303,6 +303,9 @@ D3x.shape.square = function(el, o) {
 	let selector = null;
 	
 	if(o.selected) {
+		
+		console.log('creating selector');
+
 		selector = root.append('svg:path')
 	//.attr("transform", "translate(400,200)")
 		.attr("d", d3.arc()
@@ -311,9 +314,9 @@ D3x.shape.square = function(el, o) {
 			.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
 			.endAngle( 6.29 )       // 2*Pi = 6.28 = top
 		)
-		 .attr('stroke', 'black')
-		 .attr('stroke-width',0)
-		.attr('fill', `rgba(0,0,0,0.5)`)	
+		 .attr('stroke', 'rgba(0,0,0,0.5)')
+		 .attr('stroke-width',1)
+		.attr('fill', `rgba(0,0,0,0.5)`);
 	}
 		
 /*
@@ -342,6 +345,12 @@ D3x.shape.square = function(el, o) {
 	//        .attr("height", size * 2)
 
     root.setPosition = (x, y)=>{
+
+		if(isNaN(x) || isNaN(y)) {
+			console.log('error: invalid coordinates:',x,y);
+			return root;
+		}
+
     	node
     		.attr("x", x-size)
 			.attr("y", y-size);
@@ -361,7 +370,9 @@ D3x.shape.square = function(el, o) {
 	
     root.setFill = (fn)=>{
 		// console.log('set-fill');
-    	node.attr("fill", fn())
+		node.attr("fill", fn());
+		
+		return root;
 	}
 	
 
@@ -910,7 +921,8 @@ export class GraphNode{
 //				pattern : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null,
 				strokeWidth : this.data.isChainBlock ? 7 : 1,
 				selected : this.selected
-	        });
+			});
+			console.log('o.selected:',this.selected);
 
 	        this.shape = this.data.shape;
 			this.color = this.data.color;
@@ -1214,7 +1226,7 @@ export class GraphNode{
 		// 	.attr('stroke', this.selected ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.5)')
 		// 	.attr('stroke-width', this.selected ? 5 : 1);
 
-		this.updateStyle();
+		this.updateStyle(true);
 
 		if(!this.selected) {
 			if(this.nodeInfoEl) {
