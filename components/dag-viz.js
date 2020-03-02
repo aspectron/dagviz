@@ -307,8 +307,8 @@ D3x.shape.square = function(el, o) {
 			.attr("d", d3.arc()
 				.innerRadius( o.size*2 )
 				.outerRadius( o.size*2+10 )
-				.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
-				.endAngle( 6.29 )       // 2*Pi = 6.28 = top
+				.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
+				.endAngle( 6.29 )//2*Pi = 6.28 = top
 			)
 			.attr('stroke', 'rgba(0,0,0,0.5)')
 			.attr('stroke-width',1)
@@ -1204,7 +1204,7 @@ export class GraphNode{
 				return;
 			this.selected = flag;
 		}
-//if(this.selected)
+		//if(this.selected)
 
 		if(!this.selected)
 			delete this.holder.selection[this.data.blockHash];

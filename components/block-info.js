@@ -13,8 +13,8 @@ class BlockInfo extends BaseElement{
 				font-family: "Cousine";
 				font-size: 14px;
                 z-index:4;
-                display: block;
-                float:left;
+                display:flex;
+                flex-direction:column;
                 margin: 8px;
                 padding: 0px;
                 background-color: rgba(255,255,255,0.9);
@@ -26,7 +26,7 @@ class BlockInfo extends BaseElement{
                 box-shadow: 1px 1px 2px rgba(10,10,10,0.1);
                 padding: 8px;   
             }
-            .toolbar  {
+            .toolbar {
                 display: flex;
                 flex-direction: row;
             }
@@ -57,8 +57,12 @@ class BlockInfo extends BaseElement{
             }
             #url { display: none; }
             .panel {
-                transition: all 0.2s;
-                cursor: pointer;
+                transition:all 0.2s;
+                cursor:pointer;
+                display:flex;
+                flex-direction:column;
+                flex:1;
+                overflow:hidden;
             }
             .panel:hover .blockHash {
                 border-bottom: 1px dashed #000;
@@ -73,15 +77,16 @@ class BlockInfo extends BaseElement{
                 display: none;
                 margin-top: 16px;
                 cusror: text;
-                /*overflow-y: scroll;*/
+                overflow-y:auto;
                 cursor: text;
+                flex:1;
             }
             .advanced .info-basic {
                 display: none;
             }
             .advanced .info-advanced {
-                display: block;
-                
+                display: flex;
+                flex-direction:column;
             }
             td {
                 vertical-align: top;
@@ -166,12 +171,12 @@ class BlockInfo extends BaseElement{
     details(e) {
         e.stopPropagation();
         $(this.el).toggleClass('advanced');
-        if($(this.el).hasClass('advanced')) {
-            $("block-info").css('display','none');
-            $(this).css('display','block');
+        /*if($(this.el).hasClass('advanced')) {
+            //$("block-info").css('display','none');
+            $(this).css('display','flex');
         } else {
-            $("block-info").css('display','block');
-        }
+            $("block-info").css('display','flex');
+        }*/
     }
 
     focusOnBlock_(hash) {
@@ -291,7 +296,7 @@ class BlockInfo extends BaseElement{
     close() {
         if($(this.el).hasClass('advanced')) {
             $(this.el).toggleClass('advanced');
-            $("block-info").css('display','block');
+            //$("block-info").css('display','block');
         }
         else
             this.getBlock().select(false);
