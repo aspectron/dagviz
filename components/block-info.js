@@ -128,6 +128,7 @@ class BlockInfo extends BaseElement{
                     <!--
                     <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
     -->
+    <div @click="${this.copyHashToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-hash-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy block hash ${data.blockHash.substring(0,18)+'...'} to clipboard"></div>
     <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
     <div style="flex:1;min-width:16px;"></div>
                     <div class="button close-btn" x-tooltip="Close" 
@@ -226,16 +227,13 @@ class BlockInfo extends BaseElement{
     copyLinkToClipboard(e) {
         e.stopPropagation();
         const { data } = this.getBlock();
-        let el = this.shadowRoot.getElementById('url');
         let url = new URL(window.location.href);
         url.searchParams.set('select','lseqx'+parseInt(data.lseq).toString(16));
         console.log(url.toString());
-        el.innerText = url.toString();
-        $(el).show();
-        window.app.selectText(el);
-        document.execCommand('copy');
-        $(el).hide();
+        // let el = this.shadowRoot.getElementById('url');
+        // el.innerText = url.toString();
         // console.log('copied...');
+        this.copyToClipboard(url.toString());
 
         $.notify({
             //title : 'DAGViz',
@@ -246,6 +244,31 @@ class BlockInfo extends BaseElement{
         });
 
     }
+
+    copyHashToClipboard(e) {
+        e.stopPropagation();
+        const { data } = this.getBlock();
+        this.copyToClipboard(data.blockHash);
+
+        $.notify({
+            //title : 'DAGViz',
+            text : 'Block Hash to Clipboard!',
+            className : 'yellow',
+            autoHide : true,
+            autoHideDelay : 1200
+        });
+
+    }
+
+    copyToClipboard(text) {
+        let el = this.shadowRoot.getElementById('url');
+        el.innerText = text;
+        $(el).show();
+        window.app.selectText(el);
+        document.execCommand('copy');
+        $(el).hide();
+    }
+
     close() {
         if($(this.el).hasClass('advanced')) {
             $(this.el).toggleClass('advanced');
