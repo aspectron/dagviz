@@ -1944,8 +1944,8 @@ export class DAGViz extends BaseElement {
 
 	updatePanInfo(transform) {
 		//console.log('transform:',transform);
-
-		let pos = -(transform.x / transform.k / this.ctx.unitDist);
+		const {sign, axis} = this.ctx.direction;
+		let pos = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
 
 		// let suffix = '';
 		// let sign = t > 0 ? '+' : t < 0 ? '' : '';
@@ -1986,7 +1986,7 @@ export class DAGViz extends BaseElement {
 		}
 
 		const { axis, size, sign } = this.ctx.direction;
-
+		//console.log("axis", axis, this.ctx.direction)
 		let pos = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
 		//console.log("updateRegion::transform:", pos, -transform.x, transform.k,  this.ctx.unitDist)
 		//pos = -transform.x;

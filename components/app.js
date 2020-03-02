@@ -302,7 +302,16 @@ class GraphContext {
 			} break;
 
 			case 'dir': {
+				const {sign:lastSign} = this.direction;
 				this.direction = this.directions[value];
+
+				const t = this.graph.paintEl.transform;
+				const {layoutAxis, axis, sign} = this.direction;
+				
+				t[axis] = t[layoutAxis] * sign * lastSign;
+				t[layoutAxis] = 0;
+				this.graph.setChartTransform(t);
+
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
 				})
@@ -421,7 +430,6 @@ export class App {
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
 		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation');
-
 	}
 
 	init() {
@@ -440,18 +448,27 @@ export class App {
 		}, 1000);
 
 		$(window).on('keydown', (e) => {
+			let {v, h, sign} = this.ctx.direction;
+			//console.log('keydown:pos:',this.ctx.position);
+			if( (v && ['ArrowRight', 'ArrowLeft'].includes(e.key)) ||
+				(h && ['ArrowUp', 'ArrowDown'].includes(e.key)))
+				return
+
+			//console.log('key:', e.key);
 			switch(e.key) {
-				case 'ArrowRight': {
-					console.log('ArrowRight');
-					this.ctx.position += 10;
+				case 'ArrowRight':
+				case 'ArrowDown':{
+					this.ctx.position += 10 * sign;
+					if(this.ctx.position < 0)
+						this.ctx.position = 0;
 
 					console.log('pos:',this.ctx.position);
 					this.updatePosition();
 				} break;
 
-				case 'ArrowLeft': {
-					console.log('ArrowLeft');
-					this.ctx.position -= 10;
+				case 'ArrowLeft':
+				case 'ArrowUp': {
+					this.ctx.position -= 10 * sign
 					if(this.ctx.position < 0)
 						this.ctx.position = 0;
 					console.log('pos:',this.ctx.position);
@@ -546,7 +563,8 @@ export class App {
 	async updatePosition() {
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
-		t.x = - (this.ctx.position * t.k * this.ctx.unitDist);
+		const {axis, sign} = this.ctx.direction;
+		t[axis] = - (this.ctx.position * t.k * this.ctx.unitDist) * sign;
 		this.graph.setChartTransform(t);
 	}
 
@@ -689,7 +707,7 @@ export class App {
 	initNavigator() {
 		this.navigator = document.getElementById("timenav");
 		this.navigator.app = this;
-//		this.updateRegion({pos:0, range:2});
+		//this.updateRegion({pos:0, range:2});
 	}
 
 	async initPosition() {
@@ -697,7 +715,7 @@ export class App {
 		let url = new URL(window.location.href);
 		let params = Object.fromEntries(url.searchParams.entries());
 		console.log("initializing with params:",params);
-//		if(params.pos === 'undefined')
+		//if(params.pos === 'undefined')
 		const { ctx } = this;
 		const defaults = {
 			pos : ctx.position,
@@ -737,12 +755,14 @@ export class App {
 
 		let { pos, range } = o;
 		let left = false, right = false;
+		let {sign} = this.ctx.direction;
 		if(pos > this.ctx.position)
-			right = true;
-		else
 			left = true;
+		else
+			right = true;
+
 		this.ctx.position = pos;
-		range *= this.ctx.rangeScale; //1.6;
+		range *= this.ctx.rangeScale;
 		this.ctx.range = range;
 		this.range_ = range;
 		
@@ -754,6 +774,10 @@ export class App {
 		const half_range = range / 2;
 		let from = pos - half_range;
 		let to = pos + half_range;
+
+		//console.log("from, to", from, to)
+		//if(this._done)
+		//return
 
 		this.navigator.redraw();
 		this.storeUndo();
@@ -795,6 +819,7 @@ export class App {
 
 		this.createBlocks(blocks);
 		this.graph.updateSimulation();
+		//this._done = true;
 
 		return Promise.resolve();
 	}
@@ -973,9 +998,10 @@ export class App {
 
 	getRegion() {
 		let transform = this.graph.paintEl.transform;
-		let position = -(transform.x / transform.k / this.ctx.unitDist);
+		const {sign, axis, size} = this.ctx.direction;
+		let position = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
 		const box = this.graph.graphHolder.getBoundingClientRect();
-		let range = Math.ceil(box.width / transform.k / this.ctx.unitDist) * this.ctx.rangeScale;
+		let range = Math.ceil(box[size] / transform.k / this.ctx.unitDist) * this.ctx.rangeScale;
 		let from = position - range / 2;
 		let to = position + range / 2;
 		return { position, range, from, to };
