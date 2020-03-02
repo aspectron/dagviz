@@ -103,6 +103,7 @@ class BlockInfo extends BaseElement{
             .is-regular-block {
                 border: 4px solid rgba(0,0,0,0);
             }
+            .is-link{cursor:pointer}
 		`;
 	}
 
@@ -123,6 +124,9 @@ class BlockInfo extends BaseElement{
         let ident = data.blockHash.replace(/^0+/,'').substring(0,10);
 
         return html`
+                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.min.css" />
+                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.min.css" />
+                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/regular.min.css" />
                 <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.panelClick}">
                     <div class='toolbar' style=''>
                         <!--
@@ -132,40 +136,40 @@ class BlockInfo extends BaseElement{
                     <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-info-circle:Open detailed block information"></div>
                     <!--
                     <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
-    -->
-    <div @click="${this.copyHashToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-hash-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy block hash ${data.blockHash.substring(0,18)+'...'} to clipboard"></div>
-    <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
-    <div style="flex:1;min-width:16px;"></div>
+                    -->
+                    <div @click="${this.copyHashToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-hash-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy block hash ${data.blockHash.substring(0,18)+'...'} to clipboard"></div>
+                    <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
+                    <div style="flex:1;min-width:16px;"></div>
                     <div class="button close-btn" x-tooltip="Close" 
                     style="background-image:url(/resources/images/icons/cross.png);position:relative;transform:scale(0.85) translate(14px,-8px);"></div>
                 </div>
-                    <div class='info-basic'>
-                        <span class='blockHash'>${ident}</span>
-                            &Delta;${data.blueScore} <br/>
-                            ${this.getTS(new Date(data.timestamp*1000))} 
-                    </div>
-                    <div class='info-advanced'>
-                        <table>
-                            <tr><td>Block Hash</td><td>${data.blockHash}<i @click="${this.focusOnBlock_(data.blockHash)}" class='fal fa-clipboard'> GO TO</i> <i @click="${this.copyToClipboard_(data.blockHash)}" class='fal fa-map-marker-alt'>COPY </i></td></tr>
-                            <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
-                            <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
-                            <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
-                            <tr><td>Blue Score</td><td><strong>${data.blueScore}</strong></td></tr>
-                            <tr><td>Is Chain Block</td><td><strong>${data.isChainBlock}</strong></td></tr>
-                            <tr><td>Mass</td><td><strong>${data.mass}</strong></td></tr>
-                            <tr><td>Nonce</td><td>${data.nonce}</td></tr>
-                            <tr><td>UTXO Commitment</td><td>${data.utxoCommitment}</td></tr>
-                            <tr><td>Merkle Root Hash</td><td>${data.hashMerkleRoot}</td></tr>
-                            <tr><td>Merkle Root Accepted ID</td><td>${data.acceptedIDMerkleRoot}</td></tr>
-                            <tr><td>Accepting Block Hash</td><td>${data.acceptingBlockHash}</td></tr>
-                            <tr><td>Parent Block Hashes</td><td>${(data.parentBlockHashes || []).map(v=>html`${v}<br/>`)}</td></tr>
-                            <tr><td>Child Block Hashes</td><td>${(data.childBlockHashes || []).map(v=>html`${v}<br/>`)}</td></tr>
-                        </table>
-
-                    </div>
-                    <span id="url">${this.getUrl()}</span>
+                <div class='info-basic'>
+                    <span class='blockHash'>${ident}</span>
+                        &Delta;${data.blueScore} <br/>
+                        ${this.getTS(new Date(data.timestamp*1000))} 
                 </div>
-                `;
+                <div class='info-advanced'>
+                    <table>
+                        <tr><td>Block Hash</td><td>${data.blockHash} <i @click="${this.copyHashToClipboard}" class='is-link fal fa-clipboard'></i> <i @click="${this.openLinkInNewWindow}" class='is-link fal fa-map-marker-alt'></i></td></tr>
+                        <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
+                        <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
+                        <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
+                        <tr><td>Blue Score</td><td><strong>${data.blueScore}</strong></td></tr>
+                        <tr><td>Is Chain Block</td><td><strong>${data.isChainBlock}</strong></td></tr>
+                        <tr><td>Mass</td><td><strong>${data.mass}</strong></td></tr>
+                        <tr><td>Nonce</td><td>${data.nonce}</td></tr>
+                        <tr><td>UTXO Commitment</td><td>${data.utxoCommitment}</td></tr>
+                        <tr><td>Merkle Root Hash</td><td>${data.hashMerkleRoot}</td></tr>
+                        <tr><td>Merkle Root Accepted ID</td><td>${data.acceptedIDMerkleRoot}</td></tr>
+                        <tr><td>Accepting Block Hash</td><td>${data.acceptingBlockHash}</td></tr>
+                        <tr><td>Parent Block Hashes</td><td>${(data.parentBlockHashes || []).map(v=>html`${v}<br/>`)}</td></tr>
+                        <tr><td>Child Block Hashes</td><td>${(data.childBlockHashes || []).map(v=>html`${v}<br/>`)}</td></tr>
+                    </table>
+
+                </div>
+                <span id="url">${this.getUrl()}</span>
+            </div>
+            `;
 	}
 
     details(e) {
@@ -235,12 +239,18 @@ class BlockInfo extends BaseElement{
     getUrl() {
         return window.location.toString();
     }
-    copyLinkToClipboard(e) {
-        e.stopPropagation();
+    openLinkInNewWindow(){
+        window.open(this.buildBlockUrl().toString())
+    }
+    buildBlockUrl(){
         const { data } = this.getBlock();
         let url = new URL(window.location.href);
         url.searchParams.set('select','lseqx'+parseInt(data.lseq).toString(16));
-        console.log(url.toString());
+        return url;
+    }
+    copyLinkToClipboard(e) {
+        e.stopPropagation();
+        let url = this.buildBlockUrl();
         // let el = this.shadowRoot.getElementById('url');
         // el.innerText = url.toString();
         // console.log('copied...');
