@@ -402,6 +402,8 @@ export class App {
 			'low' : 'LOW',
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
+		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation');
+
 	}
 
 	init() {
@@ -1044,7 +1046,7 @@ class MultiChoice {
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v[v]])) : choices;
+		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v,v])) : choices;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);

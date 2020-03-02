@@ -302,20 +302,20 @@ D3x.shape.square = function(el, o) {
 
 	let selector = null;
 	
-	if(o.selected) {
+	//if(o.selected) {
 		selector = root.append('svg:path')
 	//.attr("transform", "translate(400,200)")
 		.attr("d", d3.arc()
 			.innerRadius( o.size*2 )
 			.outerRadius( o.size*2+10 )
 			.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
-			.endAngle( 6.28 )       // 2*Pi = 6.28 = top
+			.endAngle( 6.27 )       // 2*Pi = 6.28 = top
 		)
-		.attr('stroke', 'black')
-		.attr('stroke-width',5);
-//		.attr('fill', o.rgba);	
+		// .attr('stroke', 'black')
+		// .attr('stroke-width',5)
+		.attr('fill', `rgba(0,0,0,0.5)`)	
 	
-	}
+	//}
 
 	// node
 	//  		.transition()
@@ -903,7 +903,7 @@ export class GraphNode{
 			this.color = this.data.color;
 			this.size = this.data.size;
 
-
+/*
 			if(this.selected) {
 
 
@@ -919,7 +919,7 @@ export class GraphNode{
 				.attr('stroke', 'black')
 				.attr('fill', '#69b3a2');
 
-			}
+			}*/
 
 			const textColor = this.data.textColor || '#000';
 
