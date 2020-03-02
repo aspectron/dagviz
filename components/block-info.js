@@ -47,10 +47,10 @@ class BlockInfo extends BaseElement{
                 transform: scale(1.15);
             }
             .red { background-color: rgba(255,194,194,0.49); }
-            .green { background-color: rgba(194,255,204,0.49); }
+            /*.green { background-color: rgba(194,255,204,0.49); }*/
             .blue { background-color: rgba(194,244,255,0.49); }
             .red:hover, .focus .red { background-color: rgba(255,194,194,0.79); }
-            .green:hover, .focus .green { background-color: rgba(194,255,204,0.79); }
+            /*.green:hover, .focus .green { background-color: rgba(194,255,204,0.79); }*/
             .blue:hover, .focus .blue  { background-color: rgba(194,244,255,0.79); }
             .info {
                 cursor: pointer;
@@ -91,6 +91,13 @@ class BlockInfo extends BaseElement{
                 font-weight: normal;
                 color: #000;
             }
+            .is-chain-block {
+                border: 4px solid rgba(0,0,0,0.5);
+            }
+
+            .is-regular-block {
+                border: 4px solid rgba(0,0,0,0);
+            }
 		`;
 	}
 
@@ -113,12 +120,16 @@ class BlockInfo extends BaseElement{
         return html`
                 <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.panelClick}">
                     <div class='toolbar' style=''>
+                        <!--
                         <div  class="button" style="background-image:url(/resources/images/icons/filled-box.png);transform:scale(1.5);margin-right:8px;" x-tooltip="Navigate to"></div>
                         <div style="flex:1;max-width:12px;"></div>
-                        <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-info-circle:Open detailed block information"></div>
+                    -->
+                    <div @click="${this.details}" class="button" style="background-image:url(/resources/images/icons/info.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-info-circle:Open detailed block information"></div>
+                    <!--
                         <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
-                        <div style="flex:1;min-width:16px;"></div>
-                        <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
+                    -->
+                    <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
+                    <div style="flex:1;min-width:16px;"></div>
                         <div @click="${this.close}" class="button" x-tooltip="Close" 
                             style="background-image:url(/resources/images/icons/cross.png);position:relative;transform:scale(0.85) translate(14px,-8px);"></div>
                     </div>
@@ -163,12 +174,19 @@ class BlockInfo extends BaseElement{
     }
 
     cls() {
+        const cls = [];
         const { data } = this.getBlock();
         if(data.isChainBlock)
-            return `green`;
+            cls.push('is-chain-block');
+        else
+            cls.push('is-regular-block');
         if(!data.acceptingBlockHash)
-            return 'red';
-        return `blue`;
+            cls.push('red');
+        else
+            cls.push('blue');
+        // return `blue ${cls}`;
+
+        return cls.join(' ');
 
     }
 
@@ -237,6 +255,10 @@ class BlockInfo extends BaseElement{
 	firstUpdated() {
         this.el = this.shadowRoot.getElementById('info-panel');
         window.app.generateTooltips(this.el);
+
+        $(window).on('keydown', (e) => {
+            console.log(e);
+        });
 
 		// if(window.ResizeObserver){
 		// 	this.resizeObserver = new ResizeObserver(e => {
