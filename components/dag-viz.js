@@ -2094,7 +2094,8 @@ export class DAGViz extends BaseElement {
 	
 	setFocusTargetHash(hash) {
 		this.focusTargetHash = hash;
-		this.simulation.restart();
+		//this.simulation.restart();
+		this.restartSimulation();
 		window.app.enableUndo(false);
 	}
 }
