@@ -63,6 +63,7 @@ D3x.shape.hexagonA = function(el, o) {
         .y(d=>d.y)
 
     var node = el.append('svg:g')
+    	.attr("class", "hexagon-a")
 		//.attr("transform", function(o) { return "rotate(30)"; })
 
     //if(o.opacity)
@@ -244,91 +245,86 @@ D3x.shape.square = function(el, o) {
 	let root = null;
 	let node = null;
 
-	if(!o.pattern) {
-		node = el.append('svg:rect');
-		root = node;
-	} else {
+	//if(!o.pattern) {
+	//	node = el.append('svg:rect');
+	//	root = node;
+	//} else {
 		root = el.append('svg:g');
 		node = root.append('svg:rect');
 		node.attr('opacity',1);
-	}
+	//}
 
 	root.attr('opacity',1);
-
-
 		//.attr('', 0)//Math.random() * 25 + 25)
 	node
         .attr('x',-size)
         .attr('y',-size)
         .attr('width', size*2)
         .attr('height', size*2)
-        //.attr('height', 0)// size*2)
-//        .attr('opacity',0)
-	//        .attr('opacity',0.85)
+		//.attr('height', 0)// size*2)
+		//.attr('opacity',0)
+		//.attr('opacity',0.85)
         //.attr('fill', o.rgba)//D3x.rgba(o.rgba))
         //.attr('fill', o.pattern ) // D3x.rgba(o.rgba))
         .attr('fill', o.rgba) // D3x.rgba(o.rgba))
-//        .attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
-//        .attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
-//        .attr('fill', o.rgba) // D3x.rgba(o.rgba))
+		//.attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
+		//.attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
+		//.attr('fill', o.rgba) // D3x.rgba(o.rgba))
         .attr("stroke", D3x.rgba([0,0,0], 0.5))
 		//.attr("stroke-width", 1)
-//		.attr('class',['block'])
+		//.attr('class',['block'])
 
 	if(o.strokeWidth)
-		node.attr('stroke-width',o.strokeWidth);
+		node.attr('stroke-width', o.strokeWidth);
 
 
 	let pattern = null;
 
-	 if(o.pattern) {
-		 pattern = root.append('svg:rect')
-		 //.attr('', 0)//Math.random() * 25 + 25)
-		 .attr('x',-size)
-		 .attr('y',-size)
-		 .attr('width', size*2)
-		 .attr('height', size*2)
-		 //.attr('height', 0)// size*2)
-		 //.attr('opacity',0.125)
-		 .attr('opacity',o.patternOpacity || 0.125)
-//		 .attr('opacity',0.075)
-         .attr('fill', `url(#${o.pattern})`)
-//		 .attr('class',['block'])
-
-		 // console.log(o.pattern);
-	 }
-	// 	node.attr('fill')
+	if(o.pattern) {
+		pattern = root.append('svg:rect')
+		//.attr('', 0)//Math.random() * 25 + 25)
+		.attr('x',-size)
+		.attr('y',-size)
+		.attr('width', size*2)
+		.attr('height', size*2)
+		//.attr('height', 0)// size*2)
+		//.attr('opacity',0.125)
+		.attr('opacity',o.patternOpacity || 0.125)
+		//.attr('opacity',0.075)
+		.attr('fill', `url(#${o.pattern})`)
+		//.attr('class',['block'])
+		// console.log(o.pattern);
+	}
+	//node.attr('fill')
 
 
 	let selector = null;
 	
 	if(o.selected) {
-		
 		console.log('creating selector');
-
 		selector = root.append('svg:path')
-	//.attr("transform", "translate(400,200)")
-		.attr("d", d3.arc()
-			.innerRadius( o.size*2 )
-			.outerRadius( o.size*2+10 )
-			.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
-			.endAngle( 6.29 )       // 2*Pi = 6.28 = top
-		)
-		 .attr('stroke', 'rgba(0,0,0,0.5)')
-		 .attr('stroke-width',1)
-		.attr('fill', `rgba(0,0,0,0.5)`);
+			//.attr("transform", "translate(400,200)")
+			.attr("d", d3.arc()
+				.innerRadius( o.size*2 )
+				.outerRadius( o.size*2+10 )
+				.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
+				.endAngle( 6.29 )       // 2*Pi = 6.28 = top
+			)
+			.attr('stroke', 'rgba(0,0,0,0.5)')
+			.attr('stroke-width',1)
+			.attr('fill', `rgba(0,0,0,0.5)`);
 	}
 		
-/*
-	if(o.selected) {
-		selector = el.append('svg:circle')
-			.attr('r', o.size * 2)//Math.random() * 25 + 25)
-			.attr('opacity',0.5)
-			//.attr('fill', D3x.rgba(o.rgba))
-			.attr('stroke', `rgba(0,0,0,0.5)`)	
-			.attr('stroke-width',10)
-	}
-*/
+	/*
+		if(o.selected) {
+			selector = el.append('svg:circle')
+				.attr('r', o.size * 2)//Math.random() * 25 + 25)
+				.attr('opacity',0.5)
+				//.attr('fill', D3x.rgba(o.rgba))
+				.attr('stroke', `rgba(0,0,0,0.5)`)	
+				.attr('stroke-width',10)
+		}
+	*/
 	//}
 
 	// node
@@ -597,7 +593,7 @@ export class GraphNodeLink{
 				stroke = this.defaultColor;
 			else
 				stroke = color;
-}
+		}
 
 		this.el.transition()
 			.duration(200)
@@ -1102,7 +1098,7 @@ export class GraphNode{
 			return
 		this.holder.onNodeClick(this, d3.event);
 
-//		this.holder.select(this);
+		//this.holder.select(this);
 	}
 	onNodeHover(){
 		// this.holder.showNodeInfo(this.data, this);
@@ -1208,7 +1204,7 @@ export class GraphNode{
 				return;
 			this.selected = flag;
 		}
-//		if(this.selected)
+//if(this.selected)
 
 		if(!this.selected)
 			delete this.holder.selection[this.data.blockHash];
@@ -1409,7 +1405,7 @@ export class DAGViz extends BaseElement {
 		var zoom = d3.zoom()
 			.scaleExtent([0.1,3.5])
     		.on('zoom', (e)=>{
-//console.log(e);
+			//console.log(e);
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
@@ -1468,7 +1464,7 @@ export class DAGViz extends BaseElement {
 		// }))
 
 
-//		.velocityDecay(0.45)
+			//		.velocityDecay(0.45)
 			// .force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius((d) => {
 				//console.log("d.size", d)
@@ -1689,7 +1685,7 @@ export class DAGViz extends BaseElement {
 		}
 
 		this.restartSimulation();
-//		this.simulation.restart();
+		//		this.simulation.restart();
 	}
 
 	restartSimulation() {
@@ -1715,20 +1711,20 @@ export class DAGViz extends BaseElement {
 		} catch(ex) {
 			console.log(ex);
 		}
-// console.log('update simulation..');
+		// console.log('update simulation..');
 		if(1) {
 			this.simulation.alpha(0.005);
-//			this.simulation.alphaTarget(0.005);
-this.simulation.alphaDecay(0.005);
-//this.simulation.alphaDecay(0.525);
+			//			this.simulation.alphaTarget(0.005);
+			this.simulation.alphaDecay(0.005);
+			//this.simulation.alphaDecay(0.525);
 			
 		} else {
 			this.simulation.alpha(0.0045);
-	//		this.simulation.alphaTarget(0.005);
+			//this.simulation.alphaTarget(0.005);
 			this.simulation.alphaDecay(0.001);
 		}
-		//		this.simulation.alpha(0.005);
-		//		this.simulation.alpha(0.01);
+		//this.simulation.alpha(0.005);
+		//this.simulation.alpha(0.01);
 
 		if(Date.now() - this.simulationTimeoutTS > 10 * 1000) {
 			this.simulation.stop();
