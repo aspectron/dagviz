@@ -14,6 +14,7 @@ export class Block extends GraphNode {
 	constructor(holder,data, ctx) {
 
 		data.id = data.blockHash;
+		data.detsalt = parseInt(data.blockHash.substring(64-4), 16) / 0xffff;
 		data.name = data.id.replace(/^\s*0+/,'').substring(0,6);
 		data.xMargin = 0; // 500 + ((Date.now()/1000 - data.timestamp))*50;
 		data.timestmp = data.timestamp;// / 1000;
@@ -71,8 +72,9 @@ class GraphContext {
 		this.curves = true;
 		this.initZoom = 0.5; // initial zoom
 		this.rangeScale = 1.4;  // fog of war vs viewport window coefficient (default)
-		this.chainBlocksDistinct = true;
-		this.chainBlocksCenter = true;
+		this.chainBlocksDistinct = 'border';
+		this.chainBlocksCenter = 'force';
+		this.selectionMode = 'linking';
 		this.track = false;
 		this.shape = 'square';
 		this.layout = 'determ';
@@ -159,20 +161,21 @@ class GraphContext {
 
 			if(!node.layout_ctx_ || node.layout_ctx_.clusterSize != clusterSize || needsToRun) {
 				const clusterIdx = cluster && cluster.length ? cluster.indexOf(node) : 0;
-				const detPos = parseInt(node.data.blockHash.substring(64-4), 16) / 0xffff * clusterSize;
+				//const detPos = parseInt(node.data.blockHash.substring(64-4), 16) / 0xffff * clusterSize;
+				const detPos = node.detsalt * clusterSize;
 				node.layout_ctx_ = {
 					enable : true
 				};
 				
-				if(node.data.isChainBlock && this.chainBlocksCenter) {
+				if(node.data.isChainBlock && (this.chainBlocksCenter == 'force' || this.isChainBlocksCenter == 'fixed')) {
 					node.layout_ctx_.pos = 0;
 				} else { 
 					switch(this.layout) {
 						case 'determ': {
-							node.layout_ctx_.pos = ((0 - clusterSize/2) + detPos) * this.unitDist * 2.5;
+							node.layout_ctx_.pos = ((0 - clusterSize/2) + detPos) * this.unitDist * 1.5;
 						} break;
 						case 'random': {
-							node.layout_ctx_.pos = ((0 - clusterSize/2) + clusterIdx) * this.unitDist * 2.5;
+							node.layout_ctx_.pos = ((0 - clusterSize/2) + clusterIdx) * this.unitDist * 1.5;
 						} break;
 						case 'free': 
 						default: {
@@ -186,7 +189,10 @@ class GraphContext {
 				node[layoutAxis] = node.layout_ctx_.pos;
 		} 
 		else {
-			if(node.data.isChainBlock && this.chainBlocksCenter && node.location_init_ > ts - 512)
+			if(node.data.isChainBlock && this.chainBlocksCenter =='fixed')
+				node[layoutAxis] = 0;
+			else
+			if(this.chainBlocksCenter =='force' && node.data.isChainBlock && node.location_init_ > ts - 512)
 				node[layoutAxis] = Math.random()-0.5;
 
 			if(this.layout_pos_ctx_)
@@ -371,8 +377,18 @@ export class App {
 		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks');
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
 		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
-		new Toggle(this.ctx,'chainBlocksDistinct','CHAIN BLOCKS','fal fa-highlighter:Highlight chain blocks');
-		new Toggle(this.ctx,'chainBlocksCenter','CENTER','fa fa-compress-alt:Chain block position is biased toward center');
+		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
+		// 	'border' : 'BORDER',
+		// 	'green' : 'GREEN',
+		// 	'none' : 'NO',
+		// 	'yellow' : 'YELLOW',
+		// 	'cyan' : 'CYAN'
+		// },'CHAIN BLOCKS DISTINCT','fal fa-highlighter:Highlight chain blocks');
+		new MultiChoice(this.ctx,'chainBlocksCenter',{
+			'disable':'OFF',
+			'force':"FORCE",
+			'fixed' : "FIXED"
+		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center');
 
 		new MultiChoice(this.ctx,'layout',{
 			'determ' : 'DETERMINISTIC',
@@ -493,7 +509,6 @@ export class App {
 			icon = parts.shift();
 			tooltip = parts.join(':');
 		}
-		console.log(icon);
 		this.$info.html(`<span class='tooltip'><i class="fa ${icon}"></i> <span class='text'>${tooltip}</span></span>`);
 	}
 
@@ -722,7 +737,7 @@ export class App {
 
 		this.navigator.redraw();
 		this.storeUndo();
-		const eraseMargin = this.ctx.quality == 'high' ? half_range : 0;
+		const eraseMargin = this.ctx.quality == 'high' ? half_range : half_range/2;
 		let max, min;
 		Object.values(this.graph.nodes).forEach((node) => {
 			if(node.selected)
@@ -804,17 +819,17 @@ export class App {
 					let type = args.shift();
 					if(type == 'lseq') {
 						args = args.map(v=>parseInt(v,16)).filter(v=>!isNaN(v)&&v!==undefined&&v>=0).map(v=>v.toString(16));
-						console.log('args:',args);
+						// console.log('args:',args);
 						if(args.length) {
 							let blocks = await this.fetchBlock('lseq/'+args.join('x'));
 							//console.log('got blocks array:', blocks);
 							let selection = { }
-							console.log('requesting:',blocks);
+							// console.log('requesting:',blocks);
 							let nodes = blocks.map((block) => {
 								// if(this.graph.nodes[block.blockHash])
 								// 	return null;
 								let node = this.createBlock(block);
-								console.log('selecting',node.data.lseq)
+								// console.log('selecting',node.data.lseq)
 								node.select(true);
 
 								selection[node.data.blockHash] = node;
