@@ -275,6 +275,9 @@ D3x.shape.square = function(el, o) {
 		//.attr("stroke-width", 1)
 //		.attr('class',['block'])
 
+	if(o.strokeWidth)
+		node.attr('stroke-width',o.strokeWidth);
+
 
 	let pattern = null;
 
@@ -295,6 +298,24 @@ D3x.shape.square = function(el, o) {
 		 // console.log(o.pattern);
 	 }
 	// 	node.attr('fill')
+
+
+	let selector = null;
+	
+	if(o.selected) {
+		selector = root.append('svg:path')
+	//.attr("transform", "translate(400,200)")
+		.attr("d", d3.arc()
+			.innerRadius( o.size*2 )
+			.outerRadius( o.size*2+10 )
+			.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
+			.endAngle( 6.28 )       // 2*Pi = 6.28 = top
+		)
+		.attr('stroke', 'black')
+		.attr('stroke-width',5);
+//		.attr('fill', o.rgba);	
+	
+	}
 
 	// node
 	//  		.transition()
@@ -318,6 +339,10 @@ D3x.shape.square = function(el, o) {
 			pattern
 				.attr("x", x-size)
 				.attr("y", y-size);
+		}
+
+		if(selector) {
+			selector.attr('transform',`translate(${x},${y})`);
 		}
 
     	return root;
@@ -391,6 +416,66 @@ D3x.createShape = function(el, type, data) {
 }
 
 
+/* accepts parameters
+ * h  Object = {h:x, s:y, v:z}
+ * OR 
+ * h, s, v
+*/
+function HSVtoRGB(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
+}
+
+/* accepts parameters
+ * r  Object = {r:x, g:y, b:z}
+ * OR 
+ * r, g, b
+*/
+function RGBtoHSV(r, g, b) {
+    if (arguments.length === 1) {
+        g = r.g, b = r.b, r = r.r;
+    }
+    var max = Math.max(r, g, b), min = Math.min(r, g, b),
+        d = max - min,
+        h,
+        s = (max === 0 ? 0 : d / max),
+        v = max / 255;
+
+    switch (max) {
+        case min: h = 0; break;
+        case r: h = (g - b) + d * (g < b ? 6: 0); h /= 6 * d; break;
+        case g: h = (b - r) + d * 2; h /= 6 * d; break;
+        case b: h = (r - g) + d * 4; h /= 6 * d; break;
+    }
+
+    return {
+        h: h,
+        s: s,
+        v: v
+    };
+}
+
+
 export class GraphNodeLink{
 	constructor(holder, data){
 		this.holder = holder;
@@ -406,9 +491,10 @@ export class GraphNodeLink{
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
 			this.defaultColor = 'rgba(0,32,64,1)';
-			this.defaultStrokeWidth = 7;
+			this.defaultStrokeWidth = 1;
 			this.defaultOpacity = 0.95;
-		} else {
+		} else 
+		{
 			this.defaultColor = 'black';
 			this.defaultStrokeWidth = 1;
 			this.defaultOpacity = 0.65;
@@ -443,7 +529,8 @@ export class GraphNodeLink{
 					this.source.y,
 					this.target.x,
 					this.target.y
-				));
+				))
+				.attr('stroke-width', this.isChainBlockLink ? 7 : 1);
 		}
 
 		//this.el.transition().duration(1000).style('opacity', 1);
@@ -493,7 +580,7 @@ export class GraphNodeLink{
 			.style('opacity', color ? 1 : this.defaultOpacity)
 			.attr('stroke', stroke)
 			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
-			.attr('stroke-width', color ? this.isChainBlockLink ? 7 : 5 : this.defaultStrokeWidth)
+			.attr('stroke-width', color ? this.isChainBlockLink ? 7 : 1 : this.defaultStrokeWidth)
 	}
 }
 
@@ -741,14 +828,46 @@ export class GraphNode{
 
 		let shapeConfig = this.getShapeConfig();
 
+		const isBlue = !!this.data.acceptingBlockHash;
+		const isRed = !isBlue;
 
-		if(this.data.isChainBlock && this.holder.ctx.chainBlocksDistinct)
-			this.data.color = `rgba(194,255,204,0.99)`;
-		else if(!this.data.acceptingBlockHash)
-			this.data.color = `rgba(255,194,194,0.99)`;
-		else
+		// if(this.data.isChainBlock && this.holder.ctx.chainBlocksDistinct)
+		// 	this.data.color = `rgba(194,255,204,0.99)`;
+		// else 
+		if(isBlue)
 			this.data.color = `rgba(194,244,255,0.99)`;
+		else
+			this.data.color = `rgba(255,194,194,0.99)`;
 
+
+			
+		if(this.selected) {
+			let colors = [...this.data.color.matchAll(/(\d+),(\d+),(\d+),([\.\d]+)/g)].shift();
+			//console.log('colors:',JSON.stringify(colors));
+			colors.shift();
+			const a = colors.pop();
+			//console.log('a:',a);
+			const [r_,g_,b_] = colors.map(v=>parseInt(v)); //v.map(v=>Math.round(parseInt(v)/2));
+			let {h,s,v} = RGBtoHSV(r_,g_,b_);
+			v = 0.9;
+			s = 0.75;
+
+			// h -= 0.2;
+			// if(h < 0)
+			// 	h = 0;
+			// if(h > 1)
+			// 	h = 1;
+			//s *= 1.3;
+			v = v > 1 ? 1 : v < 0 ? 0 : v;
+			s = s > 1 ? 1 : s < 0 ? 0 : s;
+
+			
+			let {r,g,b} = HSVtoRGB(h,s,v);
+			//console.log(h,s,v,r,g,b);
+
+			this.data.color = `rgba(${r},${g},${b},${a})`;
+			//console.log(this.data.color);
+		}
 
 		if(force || this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size || this.quality != this.holder.ctx.quality) {
 			this.removeElEvents();
@@ -760,13 +879,13 @@ export class GraphNode{
 			let pattern = null;
 			let patternOpacity = 0.125;
 			if(this.holder.ctx.quality == 'high') {
-				if(!this.data.acceptingBlockHash) {
-					pattern = 'crosshatch';
-					patternOpacity = 0.225;
-				}
-				if(this.holder.ctx.chainBlocksDistinct && this.data.isChainBlock) {
+				if(isRed) {
+					//pattern = 'crosshatch';
 					pattern = 'diagonal-stripe-1';
+					patternOpacity = 0.125;
 				}
+				// if(this.holder.ctx.chainBlocksDistinct && this.data.isChainBlock) {
+				// }
 			}
 			
 
@@ -774,15 +893,33 @@ export class GraphNode{
 	            size : this.data.size,
 	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
 				opacity : 0.5,
-				pattern, patternOpacity // : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-1' : null) : null,
+				pattern, patternOpacity, // : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-1' : null) : null,
 //				pattern : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null,
+				strokeWidth : this.data.isChainBlock ? 7 : 1,
+				selected : this.selected
 	        });
 
 	        this.shape = this.data.shape;
 			this.color = this.data.color;
 			this.size = this.data.size;
 
-			// if(this.selected)			
+
+			if(this.selected) {
+
+
+				this.el.append("path")
+
+				//.attr("transform", "translate(400,200)")
+				.attr("d", d3.arc()
+					.innerRadius( 100 )
+					.outerRadius( 150 )
+					.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
+					.endAngle( 6.28 )       // 2*Pi = 6.28 = top
+					)
+				.attr('stroke', 'black')
+				.attr('fill', '#69b3a2');
+
+			}
 
 			const textColor = this.data.textColor || '#000';
 
@@ -921,8 +1058,8 @@ export class GraphNode{
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
 
-		if(this.selected)
-			this.highlightLinks(true);
+		// if(this.selected)
+		// 	this.highlightLinks(true);
 	}
 	addParentLink(parentLink){
 		this.parentLinks[parentLink.data.child] = parentLink;
@@ -1059,11 +1196,12 @@ export class GraphNode{
 		// 	this.updateStyle(true);
 		// });
 
-		this.el.transition()
-			.duration(200)
-			.attr('stroke', this.selected ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.5)')
-			.attr('stroke-width', this.selected ? 5 : 1);
+		// this.el.transition()
+		// 	.duration(200)
+		// 	.attr('stroke', this.selected ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.5)')
+		// 	.attr('stroke-width', this.selected ? 5 : 1);
 
+		this.updateStyle();
 
 		if(!this.selected) {
 			if(this.nodeInfoEl) {
@@ -1910,6 +2048,10 @@ this.simulation.alphaDecay(0.005);
 		if(!this.locationIdx[idx])
 			this.locationIdx[idx] = [ ]
 		this.locationIdx[idx].push(node);
+
+		this.locationIdx[idx].sort((a,b) => {
+			return a.detsalt - b.detsalt;
+		})
 	}
 
 	removeIdx(node) {
