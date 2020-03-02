@@ -669,7 +669,8 @@ export class App {
 		this.graph.ctx = this.ctx;
 
 		this.ctx.init(this, this.graph);
-		this.graph.registerRegionUpdateSink(this.updateRegion.bind(this));
+		this._updateRegion = _.debounce(this.updateRegion.bind(this), 50)
+		this.graph.registerRegionUpdateSink(this._updateRegion);
 	}
 
 	initIO() {
@@ -754,12 +755,12 @@ export class App {
 			return Promise.resolve();
 
 		let { pos, range } = o;
-		let left = false, right = false;
+		let forward = false, reverse = false;
 		let {sign} = this.ctx.direction;
 		if(pos > this.ctx.position)
-			left = true;
+			forward = true;
 		else
-			right = true;
+			reverse = true;
 
 		this.ctx.position = pos;
 		range *= this.ctx.rangeScale;
@@ -782,7 +783,7 @@ export class App {
 		this.navigator.redraw();
 		this.storeUndo();
 		const eraseMargin = this.ctx.quality == 'high' ? half_range : half_range/2;
-		let max, min;
+		let max=0, min = -1;
 		Object.values(this.graph.nodes).forEach((node) => {
 			if(node.selected)
 				return;
@@ -791,31 +792,42 @@ export class App {
 			if(node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin)) {
 				node.purge();
 			} else {
-				max = min = node.data[this.ctx.unit];
+				if(min<0 || min > node.data[this.ctx.unit])
+					min = node.data[this.ctx.unit];
+				if(max < node.data[this.ctx.unit])
+					max = node.data[this.ctx.unit];
+
 			}
 		})
 
+		
+
 		if(!this.fullFetch) {
-			if(right && max) {
-				from = max;
-			} else if(left && min) {
-				to = min;
+			if(forward && min) {
+				from = min;
+			} else if(reverse && max) {
+				to = max;
 			}
 		}
 		else
 			this.fullFetch = false;
 		
+
+		//console.log("max, min", this.fullFetch, {forward, reverse, max, min, from, to})
 		let { blocks, max : max_ } = await this.fetch({ from, to });
 		this.ctx.updateMax(max_);
 
 		let region = this.getRegion();
-		// console.log("xxxxx",this.ctx.position, region.position, range, region.range);
-
+		//console.log("xxxxx",this.ctx.position, region.position, range, region.range);
+		//console.log("region.from, region.to", region.from-half_range, region.to+half_range)
+		//let l1 = blocks.length;
 		blocks = blocks.filter((block) => {
 			if(block[this.ctx.unit] < (region.from-half_range) || block[this.ctx.unit] > (region.to+half_range))
 				return false;
 			return true;
 		});
+
+		//console.log("blocks", blocks.length, l1, blocks)
 
 		this.createBlocks(blocks);
 		this.graph.updateSimulation();
