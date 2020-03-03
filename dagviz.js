@@ -585,7 +585,7 @@ class DAGViz {
         let type = args.length > 1 ? args.shift() : 'blockHash';
 
         args = args.shift().split('x')
-        console.log('getBlock type:',type,'args:',args);
+        // console.log('getBlock type:',type,'args:',args);
         if(!['blockHash','lseq','block'].includes(type))
             return Promise.reject('invalid getBlock() type');
 
