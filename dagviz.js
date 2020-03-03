@@ -65,7 +65,7 @@ class DAGViz {
                     }, (err) => {
                         console.log('error:',err);
                         res.writeHead(500, {'Content-Type': 'application/json'});
-                        res.write(`{ "dagviz-api-error":"${err.toString()}"}`);
+                        res.write(`{ "error":"${err.toString()}"}`);
                         res.end();
                     });
                 }
@@ -80,7 +80,23 @@ class DAGViz {
                     }, (err) => {
                         console.log('error:',err);
                         res.writeHead(500, {'Content-Type': 'application/json'});
-                        res.write(`{ "dagviz-api-error":"${err.toString()}"}`);
+                        res.write(`{ "error":"${err.toString()}"}`);
+                        res.end();
+                    });
+                }
+                else
+                if(req.url.startsWith('/search?q=')) {
+                    let args = req.url.substring(10);
+                    console.log("getting query for:",args);
+                    this.doSearch(args).then((data) => {
+                        console.log('resp:',data);
+                        res.writeHead(200, {'Content-Type': 'application/json'});
+                        res.write(JSON.stringify(data));
+                        res.end();
+                    }, (err) => {
+                        console.log('error:',err);
+                        res.writeHead(500, {'Content-Type': 'application/json'});
+                        res.write(`{ "error":"${err.toString()}"}`);
                         res.end();
                     });
                 }
@@ -597,13 +613,32 @@ class DAGViz {
         // if(!blocks.length)
         //     return null;
 
-        blocks.forEach(block => {
-            block.lseq = block.id;
-            block.parentBlockHashes = block.parentBlockHashes.split(',');
-            block.childBlockHashes = block.childBlockHashes.split(',');
-        })
+        blocks.forEach(block => this.deserealizeBlock(block));
         // console.log("responding:",blocks);
         return Promise.resolve(blocks);
+    }
+
+    deserealizeBlock(block) {
+        block.lseq = block.id;
+        block.parentBlockHashes = block.parentBlockHashes.split(',');
+        block.childBlockHashes = block.childBlockHashes.split(',');
+    }
+
+    async doSearch(text) {
+
+  //      console.log('text length:',text.length);
+        //! WARNING - TODO: THE INPUT IS NOT SANITIZED!
+        if(text.length == 64) {
+            let blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=?`,text);
+//console.log(blocks);
+            blocks.forEach(block => this.deserealizeBlock(block));
+            // console.log("responding:",blocks);
+            return Promise.resolve({blocks});
+        }
+
+
+        return Promise.reject('Not Found');
+
     }
 
     sleep(t) {
