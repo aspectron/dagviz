@@ -138,7 +138,7 @@ class BlockInfo extends BaseElement{
                     <!--
                     <div @click="${this.focusClick}" class="button" style="background-image:url(/resources/images/icons/geo-fence.png);transform:scale(1.1); opacity:0.75;" tooltip="fal fa-map-marker-alt:Go to block ${data.blockHash.substring(0,18)+'...'}"></div>
                     -->
-                    <div @click="${this.copyHashToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-hash-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy block hash ${data.blockHash.substring(0,18)+'...'} to clipboard"></div>
+                    <div @click="${this.copyHashToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-hash-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-clipboard:Copy block hash ${data.blockHash.substring(0,18)+'...'} to clipboard"></div>
                     <div @click="${this.copyLinkToClipboard}" class="button" style="background-image:url(/resources/images/icons/copy-link-2.png);transform:scale(1.1);opacity:0.75;" tooltip="fa-link:Copy link to clipboard (for block ${data.blockHash.substring(0,18)+'...'} only)"></div>
                     <div style="flex:1;min-width:16px;"></div>
                     <div class="button close-btn" x-tooltip="Close" 
@@ -274,7 +274,7 @@ class BlockInfo extends BaseElement{
 
         $.notify({
             //title : 'DAGViz',
-            text : 'Block Hash to Clipboard!',
+            text : 'Block Hash Copied to Clipboard!',
             className : 'yellow',
             autoHide : true,
             autoHideDelay : 1200
@@ -317,9 +317,9 @@ class BlockInfo extends BaseElement{
         this.el = this.shadowRoot.getElementById('info-panel');
         window.app.generateTooltips(this.el);
 
-        $(window).on('keydown', (e) => {
-            console.log(e);
-        });
+        // $(window).on('keydown', (e) => {
+        //     console.log(e);
+        // });
 
 		// if(window.ResizeObserver){
 		// 	this.resizeObserver = new ResizeObserver(e => {

@@ -185,10 +185,10 @@ class GraphContext {
 					node.layout_ctx_.pos = 0;
 				} else { 
 					switch(this.layout) {
+						// case 'determ': {
+						// 	node.layout_ctx_.pos = ((0 - clusterSize/2) + detPos) * this.unitDist * 1.5;
+						// } break;
 						case 'determ': {
-							node.layout_ctx_.pos = ((0 - clusterSize/2) + detPos) * this.unitDist * 1.5;
-						} break;
-						case 'random': {
 							node.layout_ctx_.pos = ((0 - clusterSize/2) + clusterIdx) * this.unitDist * 1.5;
 						} break;
 						case 'free': 
@@ -315,6 +315,9 @@ class GraphContext {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
 				})
+				
+				this.updateRangeScale();
+
 				this.graph.restartSimulation();
 			} break;
 
@@ -327,13 +330,18 @@ class GraphContext {
 			} break;
 
 			case 'quality': {
-				this.rangeScale = this.quality == 'high' ? 1.4 : 1;
+				//this.rangeScale = this.quality == 'high' ? 1.4 : 1;
+				this.updateRangeScale();
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
 				})
 
 			} break;
 		}
+	}
+
+	updateRangeScale() {
+		this.rangeScale = this.quality == 'high' || this.direction.v ? 1.4 : 1;
 	}
 
 	restart() {
@@ -399,7 +407,7 @@ export class App {
 	}
 
 	initCtls() {
-		this.ctls = [];
+		this.ctls = { };
 		
 		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks');
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
@@ -419,7 +427,7 @@ export class App {
 
 		new MultiChoice(this.ctx,'layout',{
 			'determ' : 'DETERMINISTIC',
-			'random' : 'RANDOM',
+			// 'random' : 'RANDOM',
 			'free' : 'FREE',
 		},'LAYOUT', 'fal fa-bring-front:Block layout');
 
@@ -429,7 +437,13 @@ export class App {
 			'low' : 'LOW',
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
-		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation');
+		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation', {
+			update : (v) => {
+				const $orientationImg = $('#orientation > img');
+				$orientationImg.removeClass('orient-N orient-E orient-S orient-W');
+				$orientationImg.addClass(`orient-${v}`);
+			}
+		});
 	}
 
 	init() {
@@ -521,10 +535,141 @@ export class App {
 			this.ctx.reposition(0);
 		});
 
+		let metrics = document.getElementById('metrics');
+		let searchEl = document.getElementById('search');
+		const $searchBtn = $('.search-btn');
+		const $search = $(searchEl);
+		$search.on('keyup', (e) => {
+			console.log(e);
+			const v = $search.val();
+			metrics.innerHTML = v;
+
+			let left = searchEl.offsetLeft;
+			let width = Math.max(200,metrics.clientWidth+40);
+			let max = window.innerWidth - left - 128;
+			width = Math.min(width,max);
+			console.log(width);
+			$search.css('width',width+'px');
+			$searchBtn.css('opacity',v?0.9:0);
+			//console.log(v);
+
+			if(e.key == 'Enter') {
+				$search.val('');
+				$search.css('width','320px');
+				$searchBtn.css('opacity',0);
+				this.search(v);
+			}
+
+		});
+
+		$('#search-execute').on('click', () => {
+			const v = $search.val();
+			$search.val('');
+			if(v)
+				this.search(v);
+			$searchBtn.css('opacity',0);
+		});
+
+		$('#search-clear').on('click', () => {
+			$search.val('');
+			$searchBtn.css('opacity',0);
+		});
+
+		const $orientationImg = $('#orientation > img');
+		$orientationImg.addClass(`orient-${this.ctx.dir}`);
+		$orientationImg.click((e) => {
+
+			this.ctls.dir.toggle();
+
+			let v = this.ctls.dir.getValue();
+			console.log(v);
+			// $orientationImg.removeClass('orient-N orient-E orient-S orient-W');
+			// $orientationImg.addClass(`orient-${v}`);
+		});
+
+
+		$(window).on('keydown', (e) => {
+			if(e.key == 'Escape') {
+				let els = document.querySelectorAll('block-info');
+				[...els].forEach(el => {
+					if($('#info-panel',el.renderRoot).hasClass('advanced'))
+						el.close();
+				});
+				
+				//console.log(els);
+				//$('block-info').
+			}
+		});
+
 		if(!this.$info)
-			this.$info = $("#top .info");
+			this.$info = $("#info");
 		
 		this.generateTooltips();
+	}
+
+	search(v_) {
+
+		let v = v_+'';
+
+		if(/^\d+$/.test(v)) {
+			v = parseInt(v);
+			if(!isNaN(v) && v >= 0 && v < this.ctx.max) {
+				this.ctx.position = v;
+				this.updatePosition();
+			} else {
+				this.userErrorNotify(`Invalid value ${v_}`);
+			}
+
+		} else {
+
+			this.fetchSearch(v).then((result) => {
+				console.log(result);
+				if(result && result.blocks && result.blocks.length)
+					this.createAndSelectBlocks(result.blocks);
+			}, (error) => {
+				// console.log('error:', error);
+
+				this.userErrorNotify(error);
+			});
+		}
+	}
+
+	userErrorNotify(text) {
+		$.notify({
+			//title : 'DAGViz',
+			text,
+			class : 'error',
+			autoHide : true,
+			autoHideDelay : 1000
+		});
+
+	}
+
+	createAndSelectBlocks(blocks, clear) {
+
+		let selection = { }
+		// console.log('requesting:',blocks);
+		let nodes = blocks.map((block) => {
+			// if(this.graph.nodes[block.blockHash])
+			// 	return null;
+			let node = this.createBlock(block);
+			// console.log('selecting',node.data.lseq)
+			node.select(true);
+
+			selection[node.data.blockHash] = node;
+			return node;
+		}).filter(v=>v);
+
+		if(clear) {
+			Object.values(this.graph.selection).forEach((node) => {
+				if(!selection[node.data.blockHash])
+					node.select(false);
+			});
+		}
+
+		let first = Object.values(this.graph.selection).shift();
+		if(first)
+			this.graph.setFocusTargetHash(first.data.blockHash);
 	}
 
 	generateTooltips(root) {
@@ -546,7 +691,7 @@ export class App {
 			icon = parts.shift();
 			tooltip = parts.join(':');
 		}
-		this.$info.html(`<span class='tooltip'><i class="fa ${icon}"></i> <span class='text'>${tooltip}</span></span>`);
+		this.$info.html(`<span class='tooltip'><i class="fal ${icon}"></i> <span class='text'>${tooltip}</span></span>`);
 	}
 
 	clearTooltip(text) {
@@ -913,8 +1058,8 @@ export class App {
 		// else
 		// 	state.select = null;
 
-		let ctls = {};
-		this.ctls.forEach((ctl)=>{
+		//let ctls = {};
+		Object.values(this.ctls).forEach((ctl)=>{
 			const { ident } = ctl;
 			if(state[ident] !== undefined)
 				ctl.setValue(state[ident]);
@@ -949,7 +1094,7 @@ export class App {
 		// console.log('storeUndo starting...');
 
 		const state = { }
-		this.ctls.map(ctl=>state[ctl.ident] = ctl.getValue(true));
+		Object.values(this.ctls).forEach(ctl=>state[ctl.ident] = ctl.getValue(true));
 
 		const pos = Math.round(this.ctx.position);
 		const k = (this.graph.paintEl.transform.k).toFixed(4);
@@ -1029,7 +1174,29 @@ export class App {
 				},
 				error: (jqXhr, textStatus, errorMessage) => {
 					console.log(textStatus,errorMessage,jqXhr);
-					reject(errorMessage);
+					if(jqXhr.responseJSON && jqXhr.responseJSON.error)
+						reject(jqXhr.responseJSON.error);
+					else
+						reject(errorMessage);
+				}
+			});
+		});
+	}
+
+	fetchSearch(v) {
+		return new Promise((resolve,reject) => {
+			$.ajax('/search?q='+(v+'').trim(), {
+				dataType: 'json',
+				// timeout: 500,     // timeout milliseconds
+				success: (data,status,xhr) => {
+					resolve(data);
+				},
+				error: (jqXhr, textStatus, errorMessage) => {
+					console.log(textStatus,errorMessage,jqXhr);
+					if(jqXhr.responseJSON && jqXhr.responseJSON.error)
+						reject(jqXhr.responseJSON.error);
+					else
+						reject(errorMessage);
 				}
 			});
 		});
@@ -1061,7 +1228,7 @@ export class App {
 
 class Toggle {
 	constructor(target, ident, caption, tooltip) {
-		window.app.ctls.push(this);
+		window.app.ctls[ident] = this;
 		this.type = 'toggle';
 		this.target = target;
 		this.ident = ident;
@@ -1069,7 +1236,7 @@ class Toggle {
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip}></span>`);
-		$("#top .ctl").append(this.el);
+		$("menu-panel").append(this.el);
 
 		// let url = new URL(window.location.href);
 		// let params = url.searchParams;
@@ -1103,34 +1270,39 @@ class Toggle {
 	}
 
 	update() {
-		this.el.html(`${this.caption}: ${this.target[this.ident] ? 'ON' : 'OFF' }`);
+		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${this.target[this.ident] ? 'ON' : 'OFF' }</span>`);
 	}
 }
 
 class MultiChoice {
-	constructor(target, ident, choices, caption, tooltip) {
-		window.app.ctls.push(this);
+	constructor(target, ident, choices, caption, tooltip, options) {
+		window.app.ctls[ident] = this;
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
+		this.options = options;
 		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v,v])) : choices;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
-		$("#top .ctl").append(this.el);
+		$("menu-panel").append(this.el);
 
 		$(this.el).on('click', () => {
-		 	const choices = Object.keys(this.choices);
-			let value = this.target[this.ident];
-			let idx = choices.indexOf(value);
-			idx++;
-			if(idx > choices.length-1)
-				idx = 0;
-			value = choices[idx];
-			this.setValue(value);
-			window.app.storeUndo();
-		})
+			this.toggle();
+		});
 		this.update();
+	}
+
+	toggle() {
+		const choices = Object.keys(this.choices);
+		let value = this.target[this.ident];
+		let idx = choices.indexOf(value);
+		idx++;
+		if(idx > choices.length-1)
+			idx = 0;
+		value = choices[idx];
+		this.setValue(value);
+		window.app.storeUndo();
 	}
 
 	getValue() {
@@ -1150,6 +1322,10 @@ class MultiChoice {
 	}
 
 	update() {
-		this.el.html(`${this.caption}: ${this.choices[this.target[this.ident]] }`);
+		const value = this.choices[this.target[this.ident]];
+		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${ value }</span>`);
+
+		if(this.options && this.options.update)
+			this.options.update(value);
 	}
 }

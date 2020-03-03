@@ -11,7 +11,14 @@ $.notify.addStyle('dagviz', {
 	classes: {
 		yellow: {
 			"color": "#000 !important",
-			"background-color": "rgba(255,255,230,0.975)",
+			"background-color": "rgba(204,255,214,0.99)",
+			"border": "1px solid #edeb79",
+			"font-family": "Exo 2",
+			"font-weight": "bold"
+		},
+		error: {
+			"color": "#000 !important",
+			"background-color": "rgba(255,204,204,0.99)",
 			"border": "1px solid #edeb79",
 			"font-family": "Exo 2",
 			"font-weight": "bold"

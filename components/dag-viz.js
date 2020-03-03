@@ -301,7 +301,7 @@ D3x.shape.square = function(el, o) {
 	let selector = null;
 	
 	if(o.selected) {
-		console.log('creating selector');
+		// console.log('creating selector');
 		selector = root.append('svg:path')
 			//.attr("transform", "translate(400,200)")
 			.attr("d", d3.arc()
@@ -923,7 +923,7 @@ export class GraphNode{
 				strokeWidth : this.data.isChainBlock ? 7 : 1,
 				selected : this.selected
 			});
-			console.log('o.selected:',this.selected);
+			// console.log('o.selected:',this.selected);
 
 	        this.shape = this.data.shape;
 			this.color = this.data.color;
@@ -1113,8 +1113,29 @@ export class GraphNode{
 		const { data } = this;
 
 		if(!this.$info)
-			this.$info = $("#top .info");
-		this.$info.html(`<i class="fa fal fa-cube"></i> ${data.blockHash} &Delta;${data.blueScore} [${(data.parentBlockHashes||[]).length}]->[${(data.childBlockHashes||[]).length}] - ${this.getTS(new Date(data.timestamp*1000))}`);
+			this.$info = $("#info");
+		this.$info.html(`
+		<table class='block-info-tip'>
+			<tr>
+				<td>
+					<i class="fa fal fa-cube"></i> 
+				</td>
+				<td>
+				<span class="caption">Block Hash:</span> <span class="value">${data.blockHash}</span><br/>
+				<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(data.timestamp*1000))}</span>&nbsp;
+				<span class="caption">Version:</span> <span class="value">${data.version}</span>&nbsp;
+				<span class="caption">Bits:</span> <span class="value">${data.bits}</span><br/>
+				<span class="caption">Blue Score:</span> <span class="value">${data.blueScore}</span>&nbsp;
+				<span class="caption">Mass:</span> <span class="value">${data.mass}</span>&nbsp;
+				<span class="caption">Nonce:</span> <span class="value">${data.nonce}</span>&nbsp;
+				<span class="caption">SPC:</span> <span class="value">${data.isChainBlock}</span>
+		
+				</td>
+			</tr>
+		</table>
+		`);
+
+		//${data.blockHash} &Delta;${data.blueScore} [${(data.parentBlockHashes||[]).length}]->[${(data.childBlockHashes||[]).length}] - ${this.getTS(new Date(data.timestamp*1000))}
 
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.addClass('focus');
@@ -1967,9 +1988,9 @@ export class DAGViz extends BaseElement {
 
 		// t = `${sign}${t} ${suffix}`;
 
-		if(!this.$position)
-			this.$position = $("#top .position");
-		this.$position.html(`Pos: ${pos.toFixed(1)}`);
+		// if(!this.$position)
+		// 	this.$position = $("#info");
+		// this.$position.html(`Pos: ${pos.toFixed(1)}`);
 	}
 
 	registerRegionUpdateSink(fn) {
@@ -2050,9 +2071,14 @@ export class DAGViz extends BaseElement {
 				if(X_ < 1e-1 && Y_ < 1e-1) {
 					delete this.focusTargetHash;
 					window.app.enableUndo(true);
+					window.app.updatePosition();
 				}
 
 				let delta = 0.45;
+				if(X_ < 7 && Y_ < 7) {
+					delta = 0.3;
+				}
+				
 				t.x += v.cX * delta; //0.0075;// * delta;
 				t.y += v.cY * delta; //0.0075;// * delta;
 			}, offsetX : 0 } );
@@ -2070,12 +2096,27 @@ export class DAGViz extends BaseElement {
 	createIdx(node) {
 		const idx = this.ctx.getIdx(node);
 		if(!this.locationIdx[idx])
-			this.locationIdx[idx] = [ ]
-		this.locationIdx[idx].push(node);
+			this.locationIdx[idx] = [ ];
+		const l = this.locationIdx[idx];
+		l.push(node);
 
-		this.locationIdx[idx].sort((a,b) => {
+		l.sort((a,b) => {
 			return a.detsalt - b.detsalt;
-		})
+		});
+
+		if(l.length > 2) {
+			let t = Math.round(l.length/2);
+			for(let i = 0; i < l.length; i++)
+				if(l[i].data.isChainBlock) {
+					if(t == i)
+						break;
+					// console.log(i,'->',t,'/',l.length);
+					let v = l[t];
+					l[t] = l[i];
+					l[i] = v;
+					break;
+				}
+		}
 	}
 
 	removeIdx(node) {

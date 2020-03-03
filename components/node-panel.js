@@ -479,10 +479,10 @@ class NodePanel extends BaseElement{
 			this.resizeObserver.observe(this);
 		}
 
-		['mousedown','mouseup','mousemove','click'].forEach((event) => {
-			e.stopEventPropagation();
-//			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
-		})
+// 		['mousedown','mouseup','mousemove','click'].forEach((event) => {
+// 			event.stopEventPropagation();
+// //			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
+// 		})
 
 
 	}
