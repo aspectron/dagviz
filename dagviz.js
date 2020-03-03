@@ -87,7 +87,7 @@ class DAGViz {
                 else
                 if(req.url.startsWith('/search?q=')) {
                     let args = req.url.substring(10);
-                    console.log("getting query for:",args);
+                    // console.log("getting query for:",args);
                     this.doSearch(args).then((data) => {
                         console.log('resp:',data);
                         res.writeHead(200, {'Content-Type': 'application/json'});
