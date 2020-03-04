@@ -505,11 +505,6 @@ export class GraphNodeLink{
 				strokeWidth = 7;
 				if(this.source.selected && this.target.selected)
 					stroke = 'blue';
-				// else
-				// if(color == 'red')
-				// 	stroke = 'rgba(92,0,0,1)';
-				// else
-				// 	stroke = 'rgba(0,48,0,1)';
 			}
 			else
 			if(this.source.selected && this.target.selected){
@@ -668,6 +663,8 @@ export class GraphNode{
 			}
 			return new GraphNodeLink(this.holder, {child:this.id, parent});
 		}).filter(nl=>nl);
+		if(this.selected)
+			this.highlightLinks(true);
 	}
 	removeLinks(filter){
 		if(this.linkNodes){
@@ -795,6 +792,9 @@ export class GraphNode{
 			.transition()
 			.duration(500)
 			.style('opacity', 1);
+
+		if(this.selected)
+			this.highlightLinks(true);
 	}
 	updateStyle(force){
 		//if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
@@ -1798,7 +1798,7 @@ export class DAGViz extends BaseElement {
 	}
 
 	highlightLinks(links, highlight, node) {
-		links.forEach((link)=>{ 
+		links.forEach((link)=>{
 			link.highlight(highlight, node); 
 		});
 	}
