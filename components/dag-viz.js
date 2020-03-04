@@ -455,7 +455,10 @@ export class GraphNodeLink{
 			//console.log("this.source", this.data.child)
 			return
 		}
-		if(!isNaN(this.source.x) && !isNaN(this.source.y) && !isNaN(this.target.x) && !isNaN(this.target.y)) {
+		//if(isNaN(this.target.x)){
+		//	console.log("this.target", this.target.data.blockHash, this.target.x)
+		//}
+		//if(!isNaN(this.source.x) && !isNaN(this.source.y) && !isNaN(this.target.x) && !isNaN(this.target.y)) {
 			this.el
 				//.transition('o')
 				//.duration(2000)
@@ -466,7 +469,7 @@ export class GraphNodeLink{
 					this.target.y
 				))
 				//.attr('stroke-width', this.isChainBlockLink ? 7 : 1);
-		}
+		//}
 
 		//this.el.transition().duration(1000).style('opacity', 1);
 	}
@@ -537,10 +540,49 @@ export class GraphNode{
 		holder.nodes[this.id] = this;
 		this.parentLinks = {};
 		this.selected = false;
+		this.x = 0;
+		this.y = 0;
 
 		this.holder.createIdx(this);
 		this.attachNode();
 	}
+	set x(value){
+		if(isNaN(value))
+			throw new Error("isNaN isNaN isNaN isNaN isNaN isNaN")
+		this._x = value;
+	}
+	get x(){
+		return this._x;
+	}
+
+	set y(value){
+		if(isNaN(value))
+			throw new Error("isNaN isNaN isNaN isNaN isNaN isNaN")
+		this._y = value;
+	}
+	get y(){
+		return this._y;
+	}
+
+	set vx(value){
+		if(isNaN(value))
+			throw new Error("isNaN isNaN isNaN isNaN isNaN isNaN")
+		this._vx = value;
+	}
+	get vx(){
+		return this._vx;
+	}
+
+	set vy(value){
+		if(isNaN(value))
+			throw new Error("isNaN isNaN isNaN isNaN isNaN isNaN")
+		this._vy = value;
+	}
+	get vy(){
+		return this._vy;
+	}
+
+	
 	setData(data){
 		this.data = data;
 		this.buildLinks();
@@ -755,10 +797,10 @@ export class GraphNode{
 			.style('opacity', 1);
 	}
 	updateStyle(force){
-		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
+		//if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
 			// console.log("aborting updateStyle (lack of data) for:",this);
-			return
-		}
+		//	return
+		//}
 
 		/*
 		const typeColors = {
@@ -1143,7 +1185,7 @@ export class DAGViz extends BaseElement {
 		this.simulation = d3.forceSimulation();
 		//let firstNode = new GraphNode(this, {x:1000, y:0 });
 		this.simulationNodes = []
-		this.simulation.nodes(this.simulationNodes)
+		//this.simulation.nodes(this.simulationNodes)
 		this.simulationNodes = this.simulation.nodes();
 
 
@@ -1162,7 +1204,7 @@ export class DAGViz extends BaseElement {
 			// }))
 
 
-			//		.velocityDecay(0.45)
+			//.velocityDecay(0.45)
 			// .force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius((d) => {
 				//console.log("d.size", d)
@@ -1391,12 +1433,6 @@ export class DAGViz extends BaseElement {
 		this.simulation.alpha(0.01);
 		this.simulation.restart();
 	}
-
-	// createLink(parent, child) {
-	// 	let link = new GraphNodeLink(this, {parent, child});
-	// 	this.links[parent+child] = link;
-	// 	return link;
-	// }
 
 	updateSimulationLinks() {
 		if(this.simulation.force('link'))

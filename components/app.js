@@ -31,6 +31,8 @@ export class Block extends GraphNode {
 		data.size = this.getSize(); 
 		this.x = Math.random();
 		this.y = Math.random();
+		this.vx = 0;
+		this.vy = 0;
 		ctx.nodePosition(this,holder, holder.nodes);
 
 		this.buildLinks();
@@ -225,7 +227,6 @@ class GraphContext {
 		} else {
 			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
 		}
-
 	}
 
 	reposition(x, skipUpdate) {
@@ -901,7 +902,6 @@ export class App {
 			select : 'none'
 		}
 		params = Object.assign(defaults, params);
-				
 		this.initContext(params);
 	}
 
@@ -1056,6 +1056,7 @@ export class App {
 								// 	return null;
 								let node = this.createBlock(block);
 								// console.log('selecting',node.data.lseq)
+								//console.log("node.x", node.data.blockHash, node.x, node.linkNodes, node.parentLinks)
 								node.select(true);
 
 								selection[node.data.blockHash] = node;
