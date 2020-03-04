@@ -1,15 +1,44 @@
-import { html, BaseElement, css } from './base-element.js';
+import { html, BaseElement, css, render} from './base-element.js';
+const menuPanelStyle = document.createElement('style');
+menuPanelStyle.innerHTML = `
+    menu-panel{
+        position: absolute;
+        width: 280px;
+        /*height: 240px;*/
+        padding: 12px;
+        /*border: 1px solid #333;*/
+        display: none;
+        font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
+        font-size: 17px;
+        background-color: rgba(255,255,255,0.9);
+        box-shadow: 1px 1px 2px rgba(10,10,10,0.1);
+        box-shadow: 0 2px 2px 0 rgba(0,0,0,.14),
+            0 3px 1px -2px rgba(0,0,0,.2),
+            0 1px 5px 0 rgba(0,0,0,.12);
+        transition: all 0.3s;
+        opacity:0;
+    }
+    menu-panel .close-menu {
+        position: absolute;
+        top : 4px;
+        right : 4px;
+        /*border: 1px solid pink;*/
+        display: block;
+        width: 17px;
+    }
+`;
+
+document.head.appendChild(menuPanelStyle);
 
 class MenuPanel extends BaseElement{
 
 	static get properties() {
 		return {
-			hash:{type:String},
+			hash:{type:String}
 		};
 	}
 	static get styles(){
-		return css `
-		`;
+		return css ``;
 	}
 
 	constructor() {
@@ -27,35 +56,7 @@ class MenuPanel extends BaseElement{
     }
 
 	render(){
-
-        return html`
-            <style>
-                menu-panel {
-                    position: absolute;
-                    width: 280px;
-                    /*height: 240px;*/
-                    padding: 12px;
-                    border: 1px solid #333;
-                    
-                    display: none;
-                    font-family: 'Exo 2', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
-                    background-color: rgba(255,255,255,0.9);
-                    box-shadow: 1px 1px 2px rgba(10,10,10,0.1);
-                    transition: all 0.3s;
-                    opacity:0;
-                }
-                .close-menu {
-                    position: absolute;
-                    top : 4px;
-                    right : 4px;
-                    /*border: 1px solid pink;*/
-                    display: block;
-                    width: 17px;
-                }
-                
-            </style>
-            <i class="close-menu fal fa-times"></i>
-            `;
+        return html`<i class="close-menu fal fa-times"></i>`;
 	}
 
     toggle() {
