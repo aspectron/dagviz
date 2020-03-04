@@ -407,7 +407,7 @@ class GraphContext {
 			const k = layoutSize/max;
 			console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
 			//if(k < t.k){
-				t.k = k;
+				//t.k = k;
 			//}
 			this[this.dir+"_transformed"]++;
 		}

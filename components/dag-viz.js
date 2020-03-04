@@ -64,20 +64,11 @@ D3x.shape.hexagonA = function(el, o) {
 
     var node = el.append('svg:g')
     	.attr("class", "hexagon-a")
-		//.attr("transform", function(o) { return "rotate(30)"; })
-
-    //if(o.opacity)
-    //    node.attr('opacity', o.opacity);
 
     var path = node.append("path")
         .attr("d", hexagon(data(0, 0)))
-		//        .attr("stroke", D3x.rgba(o.rgba, 0.9))
 		.attr("stroke", D3x.rgba([0,0,0], 0.5))
-		//.attr("stroke", D3x.rgba(o.rgba, 0.9))
-        // .attr("stroke-dasharray","20,5")
-        
-        .attr("fill", D3x.rgba(o.rgba)) //"rgba(255,0,0,0.4)");
-        //.attr("stroke-width", 1);
+        .attr("fill", D3x.rgba(o.rgba))
 
     node.setPosition = (x, y)=>{
     	path.attr("d", hexagon(data(x, y)))
@@ -94,9 +85,6 @@ D3x.shape.hexagonA = function(el, o) {
 }
 
 D3x.shape.hexagonB = function(el, o) {
-    // o.r o.xPos o.o.yPosos
-
-    //o.originX = o.originY = 0;
     if(!o.size)
     	o.size = 50;
 
@@ -120,19 +108,11 @@ D3x.shape.hexagonB = function(el, o) {
 
     var node = el.append('svg:g')
     	.attr("class", "hexagon-b")
-        //.attr("transform", function(o) { return "rotate(30)"; })
-
-
-    //if(o.opacity)
-    //    node.attr('opacity', o.opacity);
 
     var path = node.append("path")
         .attr("d", hexagon(data(0, 0)))
         .attr("stroke", D3x.rgba(o.rgba, 0.9))
-        // .attr("stroke-dasharray","20,5")
-        
-        .attr("fill", o.rgba)// D3x.rgba(o.rgba)) //"rgba(255,0,0,0.4)");
-        //.attr("stroke-width", 1);
+        .attr("fill", o.rgba)
 
     node.setPosition = (x, y)=>{
     	path.attr("d", hexagon(data(x, y)))
@@ -238,24 +218,13 @@ D3x.shape.circle = function(el, o) {
 
 D3x.shape.square = function(el, o) {
 
-	// node = el.append('svg:g')
-
 	let size = o.size;
-	
-	let root = null;
 	let node = null;
-
-	//if(!o.pattern) {
-	//	node = el.append('svg:rect');
-	//	root = node;
-	//} else {
-		root = el.append('svg:g');
-		node = root.append('svg:rect');
-		node.attr('opacity',1);
-	//}
-
+	let root = el.append('svg:g');
+	node = root.append('svg:rect');
+	node.attr('opacity',1);
 	root.attr('opacity',1);
-		//.attr('', 0)//Math.random() * 25 + 25)
+
 	node
         .attr('x',-size)
         .attr('y',-size)
@@ -282,28 +251,18 @@ D3x.shape.square = function(el, o) {
 
 	if(o.pattern) {
 		pattern = root.append('svg:rect')
-		//.attr('', 0)//Math.random() * 25 + 25)
-		.attr('x',-size)
-		.attr('y',-size)
-		.attr('width', size*2)
-		.attr('height', size*2)
-		//.attr('height', 0)// size*2)
-		//.attr('opacity',0.125)
-		.attr('opacity',o.patternOpacity || 0.125)
-		//.attr('opacity',0.075)
-		.attr('fill', `url(#${o.pattern})`)
-		//.attr('class',['block'])
-		// console.log(o.pattern);
+			.attr('x',-size)
+			.attr('y',-size)
+			.attr('width', size*2)
+			.attr('height', size*2)
+			.attr('opacity',o.patternOpacity || 0.125)
+			.attr('fill', `url(#${o.pattern})`)
 	}
-	//node.attr('fill')
-
 
 	let selector = null;
 	
 	if(o.selected) {
-		// console.log('creating selector');
 		selector = root.append('svg:path')
-			//.attr("transform", "translate(400,200)")
 			.attr("d", d3.arc()
 				.innerRadius( o.size*2 )
 				.outerRadius( o.size*2+10 )
@@ -314,31 +273,7 @@ D3x.shape.square = function(el, o) {
 			.attr('stroke-width',1)
 			.attr('fill', `rgba(0,0,0,0.5)`);
 	}
-		
-	/*
-		if(o.selected) {
-			selector = el.append('svg:circle')
-				.attr('r', o.size * 2)//Math.random() * 25 + 25)
-				.attr('opacity',0.5)
-				//.attr('fill', D3x.rgba(o.rgba))
-				.attr('stroke', `rgba(0,0,0,0.5)`)	
-				.attr('stroke-width',10)
-		}
-	*/
-	//}
 
-	// node
-	//  		.transition()
-	// 	    //.ease('in-out')	// d3x
-    // //     //.duration(1000)
-	//  		.duration(1000)
-	// 		 //.attr('opacity',0.85);
-	// 		 .style("opacity", 1);
-
-	//        .transition("c")
-	        //.ease('in-out') // d3x
-	//        .duration(1000)
-	//        .attr("height", size * 2)
 
     root.setPosition = (x, y)=>{
 
@@ -347,6 +282,7 @@ D3x.shape.square = function(el, o) {
 			return root;
 		}
 
+    	/*
     	node
     		.attr("x", x-size)
 			.attr("y", y-size);
@@ -357,17 +293,15 @@ D3x.shape.square = function(el, o) {
 				.attr("y", y-size);
 		}
 
-		if(selector) {
+		if(selector)
 			selector.attr('transform',`translate(${x},${y})`);
-		}
+		*/
 
     	return root;
 	}
 	
     root.setFill = (fn)=>{
-		// console.log('set-fill');
 		node.attr("fill", fn());
-		
 		return root;
 	}
 	
@@ -500,7 +434,8 @@ export class GraphNodeLink{
 		this.curves = holder.curves;
 		this.data = data;
 		this.el = holder.linksEl.append("path");
-		this.el.style('opacity',0).style('fill', 'none');
+		this.el.style('opacity', 0).style('fill', 'none');
+		//this.el.attr("marker-end", "url(#endarrow)");
 		this.source = holder.nodes[data.child];
 		this.target = holder.nodes[data.parent];
 		this.target.addParentLink(this);
@@ -525,7 +460,6 @@ export class GraphNodeLink{
 			.attr('stroke', this.defaultColor)
 			.attr('stroke-width', this.defaultStrokeWidth)
 			.style('opacity', this.defaultOpacity);
-
 	}
 	remove(){
 		this.el.remove();
@@ -554,6 +488,8 @@ export class GraphNodeLink{
 		//this.el.transition().duration(1000).style('opacity', 1);
 	}
 	buildD(x1, y1, x2, y2) {
+		x1 -= 22;
+		x2 += 35;
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
 		if(this.holder.ctx)
@@ -686,40 +622,22 @@ export class GraphNode{
 
 		const CUSTOM_SHAPES = true;
 
-		if(CUSTOM_SHAPES) {
-
+		if(CUSTOM_SHAPES){
 			let shapeConfig = this.getShapeConfig();
-			// console.log("shapeConfig",this.data.type,shapeConfig);
-			//this.el = this.holder.nodesEl.append("circle");
-			//this.el = this.holder.nodesEl.append("g");
-
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
 	            size : this.data.size || 100,
-	            rgba : shapeConfig.color,//shapeConfig.rgba,
+	            rgba : shapeConfig.color,
 				opacity : 0.5,
 				pattern : this.holder.ctx.quality == 'high' ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null
 	        });
-
-	        //this.el.transform = d3.zoomIdentity.translate(0, 0).scale(0.5);
-			// this.textEl = this.holder.nodesEl.append("text")
-			// 	.attr("fill", "#000")
-			// 	.attr("class", ["node-name",this.data.type].join(' '))
-			// 	.text(this.data.name);
-	    } else {
+	    }else{
 			this.el = this.holder.nodesEl.append("circle");
-			// this.textEl = this.holder.nodesEl.append("text")
-			// 	.attr("fill", "#000")
-			// 	.attr("class", ["node-name",this.data.type].join(' '))
-			// 	.text(this.data.name);
 		}
-
-		//this.el.attr("class",['block']);
 		
 		this.el
-			//.style('opacity',0)
 			.transition()
 			.duration(500)
-			.style('opacity',0.75);
+			.style('opacity', 0.75);
 
 		if(this.textEl)
 			this.textEl = this.holder.nodesEl.append("text")
@@ -745,42 +663,26 @@ export class GraphNode{
 	}
 	buildLinks(){
 		let {data, holder} = this;
-		//console.log("data", data, holder.nodes[data.parent])
 		if(!data.parentBlockHashes || !data.parentBlockHashes.length){
 			this.removeLinks();
-		}else 
-		// if(holder.nodes[data.acceptingBlockHash])
-		{
-				this.createLinks(data.parentBlockHashes);
-			// else
-			// 	console.warning(`Block not present during linkage: ${data.parent}`);
-			// if(holder.nodes[data.parent].data.timestamp == data.timestamp)
-			// 	data.timestamp -= 0.5;
-				//holder.nodes[data.parent].data.timestamp;
+		}else{
+			this.createLinks(data.parentBlockHashes);
 		}
-		//if(data.parent)
-		//	console.log("data.parent", data.parent, this.linkNode)
 		return this.linkNodes;
 	}
 	createLinks(parents){
 		if(this.partialLinks) {
 			this.removeLinks();
-		}
-		else
-		if(this.linkNodes)
+		}else if(this.linkNodes)
 			return;
 
 		this.partialLinks = false; 
-		this.linkNodes = parents.map((parent) => {
-
-			if(!this.holder.nodes[parent]) {
-				// console.log('no parent is present, ignoring links...');
+		this.linkNodes = parents.map(parent => {
+			if(!this.holder.nodes[parent]){
 				this.partialLinks = true;
 				return null;
 			}
-
 			return new GraphNodeLink(this.holder, {child:this.id, parent});
-			//return this.createLink(this.id, parent);
 		}).filter(nl=>nl);
 	}
 	removeLinks(filter){
@@ -792,11 +694,10 @@ export class GraphNode{
 				}
 				link.remove();
 				return null;
-			}).filter(v=>v); // .remove();
+			}).filter(v=>v);
 
 			if(!this.linkNodes.length)
 				delete this.linkNodes;
-			//delete this.linkNodes;
 		}
 	}
 	remove(){
@@ -818,7 +719,7 @@ export class GraphNode{
 	initPosition(){
 		let {x, y} = this;
 		this.el.setPosition(x, y);
-		//this.el.setStaticPosition(x, y);
+		/*
 		if(this.textEl){
 			this.textEl
 				.attr("x", x)
@@ -829,6 +730,7 @@ export class GraphNode{
 				.attr("x", x)
 				.attr("y", y-0.25)
 		}
+		*/
 		if(this.linkNodes)
 			this.linkNodes.forEach(node => node.setStaticPosition(x, y));
 				
@@ -839,10 +741,6 @@ export class GraphNode{
 			return
 		}
 
-		//console.log("this.x", this.x, this.y)
-		let host = null//app.identToHost(this.data.host);
-		//console.log("GraphNode: host", this.data.name,  host)
-
 		const typeColors = {
 			'kaspad' : "#b3ffc1",
 			'simulator' : "#feffb3",
@@ -852,54 +750,26 @@ export class GraphNode{
 		}
 
 		let shapeConfig = this.getShapeConfig();
+		let zoom = this.holder.paintEl.transform.k
 
 		const isBlue = !!this.data.acceptingBlockHash;
 		const isRed = !isBlue;
+		const data = this.data;
 
-		// if(this.data.isChainBlock && this.holder.ctx.chainBlocksDistinct)
-		// 	this.data.color = `rgba(194,255,204,0.99)`;
-		// else 
+
 		if(isBlue)
-			this.data.color = `rgba(194,244,255,0.99)`;
+			data.color = `rgba(194,244,255,0.99)`;
 		else
-			this.data.color = `rgba(255,194,194,0.99)`;
+			data.color = `rgba(255,194,194,0.99)`;
 
-
-		/*
-		if(this.selected) {
-			let colors = [...this.data.color.matchAll(/(\d+),(\d+),(\d+),([\.\d]+)/g)].shift();
-			//console.log('colors:',JSON.stringify(colors));
-			colors.shift();
-			const a = colors.pop();
-			//console.log('a:',a);
-			const [r_,g_,b_] = colors.map(v=>parseInt(v)); //v.map(v=>Math.round(parseInt(v)/2));
-			let {h,s,v} = RGBtoHSV(r_,g_,b_);
-			v = 0.9;
-			s = 0.75;
-
-			// h -= 0.2;
-			// if(h < 0)
-			// 	h = 0;
-			// if(h > 1)
-			// 	h = 1;
-			//s *= 1.3;
-			v = v > 1 ? 1 : v < 0 ? 0 : v;
-			s = s > 1 ? 1 : s < 0 ? 0 : s;
-
-			
-			let {r,g,b} = HSVtoRGB(h,s,v);
-			//console.log(h,s,v,r,g,b);
-
-			this.data.color = `rgba(${r},${g},${b},${a})`;
-			//console.log(this.data.color);
-		}*/
-
-		if(force || this.data.shape != this.shape || this.data.color != this.color || this.data.size != this.size || this.quality != this.holder.ctx.quality) {
-			this.removeElEvents();
-			// console.log("DATA CHANGE",this);
-			this.el.remove();
-
+		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
+			this.shape = data.shape;
+			this.color = data.color;
+			this.size = data.size;
 			this.quality = this.holder.ctx.quality;
+
+			this.removeElEvents();
+			this.el.remove();
 
 			let pattern = null;
 			let patternOpacity = 0.125;
@@ -909,79 +779,56 @@ export class GraphNode{
 					pattern = 'diagonal-stripe-1';
 					patternOpacity = 0.125;
 				}
-				// if(this.holder.ctx.chainBlocksDistinct && this.data.isChainBlock) {
-				// }
 			}
 			
 
 	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : this.data.size,
-	            rgba : this.data.color || shapeConfig.color,//shapeConfig.rgba,
+	            size : data.size,
+	            rgba : data.color || shapeConfig.color,
 				opacity : 0.5,
-				pattern, patternOpacity, // : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-1' : null) : null,
-				//pattern : this.holder.ctx.isChainBlock ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null,
-				strokeWidth : this.data.isChainBlock ? 7 : 1,
+				pattern, patternOpacity,
+				strokeWidth : data.isChainBlock ? 7 : 1,
 				selected : this.selected
 			});
-			// console.log('o.selected:',this.selected);
 
-	        this.shape = this.data.shape;
-			this.color = this.data.color;
-			this.size = this.data.size;
-
-			/*
-			if(this.selected) {
-
-
-				this.el.append("path")
-
-				//.attr("transform", "translate(400,200)")
-				.attr("d", d3.arc()
-					.innerRadius( 100 )
-					.outerRadius( 150 )
-					.startAngle( 0 )     // It's in radian, so Pi = 3.14 = bottom.
-					.endAngle( 6.28 )       // 2*Pi = 6.28 = top
-					)
-				.attr('stroke', 'black')
-				.attr('fill', '#69b3a2');
-
-			}*/
-
-			const textColor = this.data.textColor || '#000';
+			const textColor = data.textColor || '#000';
 
 			if(this.textEl)
 		        this.textEl.remove();
 
-
 			if(this.quality != 'low') {
-				this.textEl = this.holder.nodesEl.append("text")
-		    	.attr("class", "node-text")
-				.style('opacity',0)
-				.attr("fill", textColor)
-				.attr("class", ["node-name",this.data.type].join(' '))
-				//.attr("class", )
-				.text(this.data.name);
-			}
+				this.textEl = this.el.append("text")
+			    	.attr("class", "node-text")
+					.style('opacity',0)
+					.attr("fill", textColor)
+					.attr("class", ["node-name", this.data.type].join(' '))
+					.text(data.name);
 
-			//this.textEl.__box = this.textEl.node().getBoundingClientRect();
+				let textBox = this.textEl.node().getBoundingClientRect();
+				this.textEl
+					.attr("x", -textBox.width/zoom/2)
+					.attr("y", -8)
+					.attr("opacity", 1)
+			}
 
 			if(this.heightEl)
 				this.heightEl.remove();
 
 			if(this.quality == 'high') {
-				this.heightEl = this.holder.nodesEl.append("text")
+				this.heightEl = this.el.append("text")
 					.attr("class", "node-text")
 					.style('opacity',0)
 					.attr("fill", textColor)
-					.attr("class", ["node-name",this.data.type].join(' '))
-					//.attr("class", )
-					.text(this.data.blueScore+'');
-			}
-			else {
+					.attr("class", ["node-name", this.data.type].join(' '))
+					.text(data.blueScore+'');
+				let textBox = this.heightEl.node().getBoundingClientRect();
+				this.heightEl
+					.attr("x", -textBox.width/zoom/2)
+					.attr("y", 14)
+					.attr("opacity", 1)
+			}else{
 				delete this.heightEl;
 			}
-
-			//this.heightEl.__box = this.heightEl.node().getBoundingClientRect();
 
 			this.bindElEvents();
 
@@ -998,71 +845,28 @@ export class GraphNode{
 				this.heightEl.transition()
 					.duration(500)
 					.style("opacity", 1);
-
-			// this.rebuildLinks();
-
 	    }
 
-		//console.log("EL:", Date.now()/1000, this.data.timestamp)
-		if(this.holder.maxTS < this.data.timestamp) {
-			if(this.holder.maxTS) {
-				if(!this.holder.delta)
-					this.holder.delta = 0;
-				this.holder.delta
-			}
-			this.holder.maxTS = this.data.timestamp;
-		}
-
-		//		const ts = Date.now();
-
-				// let tDelta = this.holder.maxTS - this.tOffset;
-		//		this.tOffset = this.holder.maxTS;
-		//		let offset = (Date.now()-this.holder.startTS) / 1000;
-		//		let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
-		//let x = this.holder.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist;//*Math.random()*100;
-		//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*this.holder.tdist + 256;//*Math.random()*100;
-		//let x = this.data.xMargin-((Date.now()/1000 - this.data.timestamp))*50 + 256;//*Math.random()*100;
-		//let x = -((this.holder.maxTS - this.data.timestamp))*50 - 256;//*Math.random()*100;
-		//let x = -((this.tOffset - this.data.timestamp))* 100 - 256 ;//*Math.random()*100;
-		//console.log(x);
-
-		// x = Date.now() - (this.data.timestamp) * this.holder.unitDist;
-		//console.log(x);
-
-		//		this.x = x;
 		if(this.holder.ctx)
 			this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
 
 
 		this.el
-			.setPosition(this.x, this.y)
+			.style('transform', `translate(${this.x}px, ${this.y}px)`)
 			.setFill(()=>{
-
-				// if(this.data.isChainBlock)
-				// 	return `url(#diagonal-stripe-1)`;
-
-				if(this.data.color) {
+				if(this.data.color)
 					return this.data.color;
-				} 
-				// else {
-				// 	return host && host.online ? "#b3e2ff" : "#ffb3b3";
-				// }
 			})
-		// if(this.data.isChainBlock)
-		// 	this.el.setPattern('diagonal-stripe-1');
-		let zoom = this.holder.paintEl.transform.k
+		
 
-		if(this.textEl) {
+		/*if(this.textEl) {
 			let textBox = this.textEl.node().getBoundingClientRect();
 			let textBoxWidth = textBox.width / zoom;
 			let textBoxHeight = textBox.height / zoom;
 
 			this.textEl
-				//.transition('o')
-				//.duration(2000)
 				.attr("x", Math.round(this.x-textBoxWidth/2))
 				.attr("y", Math.round((this.y-12)-0.25))
-				//.attr("y", (this.y+height/3)-0.75)
 				.attr("opacity", 1)
 		}
 		
@@ -1071,21 +875,14 @@ export class GraphNode{
 			let infoBoxWidth = infoBox.width / zoom;
 			let infoBoxHeight = infoBox.height / zoom;
 			this.heightEl
-				//.transition('o')
-				//.duration(2000)
 				.attr("x", Math.round(this.x-infoBoxWidth/2))
 				.attr("y", Math.round((this.y+20)-0.25))
-				//.attr("y", (this.y+height/3)-0.25)
 				.attr("opacity", 1);
 		}
-
-
+		*/
 			
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
-
-		// if(this.selected)
-		// 	this.highlightLinks(true);
 	}
 	addParentLink(parentLink){
 		this.parentLinks[parentLink.data.child] = parentLink;
@@ -1102,11 +899,8 @@ export class GraphNode{
 		if (d3.event.defaultPrevented)
 			return
 		this.holder.onNodeClick(this, d3.event);
-
-		//this.holder.select(this);
 	}
 	onNodeHover(){
-		// this.holder.showNodeInfo(this.data, this);
 		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
 		this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
 
@@ -1134,9 +928,6 @@ export class GraphNode{
 			</tr>
 		</table>
 		`);
-
-		//${data.blockHash} &Delta;${data.blueScore} [${(data.parentBlockHashes||[]).length}]->[${(data.childBlockHashes||[]).length}] - ${this.getTS(new Date(data.timestamp*1000))}
-
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.addClass('focus');
 
@@ -1146,17 +937,12 @@ export class GraphNode{
 		if(highlight) {
 			this.holder.highlightLinks(this.linkNodes || [], 'green', this);
 			this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
-	
-		}
-		else {
+		}else {
 			this.holder.highlightLinks(this.getLinks(), null, this);
-
 		}
 	}
 
 	onNodeOut(){
-		// this.holder.hideNodeInfo(this.data, this);
-
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.removeClass('focus');
 
@@ -1164,26 +950,6 @@ export class GraphNode{
 
 		if(!this.selected)
 			this.holder.highlightLinks(this.getLinks(), null, this);
-
-
-		/*
-		let box = this.el.node().getBoundingClientRect();
-		let {x, y} = d3.event;
-		if(x<box.left || x>box.right || y<box.top || y>box.bottom){
-			//console.log("d3.event.target", d3.event, box)
-			this.holder.hideNodeInfo(this.data, this);
-			return
-		}
-		let r = box.width /2
-		let cx = box.left + r;
-		let cy = box.top + r;
-		let X = x>cx? x-cx : cx-x;
-		let Y = y>cy? y-cy : cy-y;
-		if(Math.sqrt(X*X + Y*Y) > r)
-			this.holder.hideNodeInfo(this.data, this);
-
-		//console.log("rrrr", r, Math.sqrt(X*X + Y*Y) < r)
-		*/
 	}
 
 
@@ -1206,17 +972,14 @@ export class GraphNode{
 		return this.el.node().getBoundingClientRect();
 	}
 	purge(){
-
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.remove();
 
 		delete this.holder.nodes[this.data.id];
-		// TODO - css animate opacity
 		this.remove();
 		let index = this.holder.simulationNodes.indexOf(this);
-		if(index > -1){
+		if(index > -1)
 			this.holder.simulationNodes.splice(index, 1);
-		}
 	}
 
 	select(flag) {
@@ -1228,7 +991,6 @@ export class GraphNode{
 				return;
 			this.selected = flag;
 		}
-		//if(this.selected)
 
 		if(!this.selected)
 			delete this.holder.selection[this.data.blockHash];
@@ -1236,15 +998,6 @@ export class GraphNode{
 			this.holder.selection[this.data.blockHash] = this;
 
 		this.holder.ctx.onSelectionUpdate(this.holder.selection);
-
-		// dpc(()=>{
-		// 	this.updateStyle(true);
-		// });
-
-		// this.el.transition()
-		// 	.duration(200)
-		// 	.attr('stroke', this.selected ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.5)')
-		// 	.attr('stroke-width', this.selected ? 5 : 1);
 
 		this.updateStyle(true);
 
@@ -1385,6 +1138,18 @@ export class DAGViz extends BaseElement {
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="smalldot" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgo8cmVjdCB3aWR0aD0nNScgaGVpZ2h0PSc1JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyNjY2MnLz4KPC9zdmc+" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="circles-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSJ3aGl0ZSIgLz4KICA8Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIgZmlsbD0iYmxhY2siLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>						
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100">
+			<defs>
+			    <marker id="startarrow" markerWidth="10" markerHeight="7" 
+			    refX="10" refY="3.5" orient="auto">
+			      <polygon points="10 0, 10 7, 0 3.5" fill="red" />
+			    </marker>
+			    <symbol id="endarrow" width="12" height="12" 
+			    	viewBox="0 0 2 2">
+			        <polygon points="0 0, 12 6, 0 12" fill="red" />
+			    </symbol>
+		  </defs>
+		</svg>
 		</div>
 		`;
 	}
