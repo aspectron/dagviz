@@ -132,8 +132,7 @@ D3x.shape.triangle = function(el, o) {
     if(!o.size)
     	o.size = 100;
 
-	//    var h = (Math.sqrt(3)/2);
-	const size = o.size;// * 1.25;
+	const size = o.size;
 	const offsetY = -2;
     var data = (originX, originY)=>{
 		return [
@@ -151,19 +150,11 @@ D3x.shape.triangle = function(el, o) {
 
     var node = el.append('svg:g')
     	.attr("class", "triangle")
-        //.attr("transform", function(o) { return "rotate(30)"; })
-
-
-    //if(o.opacity)
-    //    node.attr('opacity', o.opacity);
 
     var path = node.append("path")
         .attr("d", hexagon(data(0, 0)))
         .attr("stroke", D3x.rgba(o.rgba, 0.9))
-        // .attr("stroke-dasharray","20,5")
-        
-        .attr("fill", o.rgba)// D3x.rgba(o.rgba)) //"rgba(255,0,0,0.4)");
-        //.attr("stroke-width", 1);
+        .attr("fill", o.rgba)
 
     node.setPosition = (x, y)=>{
     	path.attr("d", hexagon(data(x, y)))
@@ -219,13 +210,10 @@ D3x.shape.circle = function(el, o) {
 D3x.shape.square = function(el, o) {
 
 	let size = o.size;
-	let node = null;
-	let root = el.append('svg:g');
-	node = root.append('svg:rect');
-	node.attr('opacity',1);
-	root.attr('opacity',1);
-
-	node
+	let root = el.append('svg:g')
+				.attr('opacity',1)
+	let node = root.append('svg:rect')
+		.attr('opacity',1)
         .attr('x',-size)
         .attr('y',-size)
         .attr('width', size*2)
@@ -255,46 +243,17 @@ D3x.shape.square = function(el, o) {
 			.attr('y',-size)
 			.attr('width', size*2)
 			.attr('height', size*2)
-			.attr('opacity',o.patternOpacity || 0.125)
+			.attr('opacity', o.patternOpacity || 0.125)
 			.attr('fill', `url(#${o.pattern})`)
 	}
 
-	let selector = null;
-	
-	if(o.selected) {
-		selector = root.append('svg:path')
-			.attr("d", d3.arc()
-				.innerRadius( o.size*2 )
-				.outerRadius( o.size*2+10 )
-				.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
-				.endAngle( 6.29 )//2*Pi = 6.28 = top
-			)
-			.attr('stroke', 'rgba(0,0,0,0.5)')
-			.attr('stroke-width',1)
-			.attr('fill', `rgba(0,0,0,0.5)`);
-	}
-
-
     root.setPosition = (x, y)=>{
 
+		/*
 		if(isNaN(x) || isNaN(y)) {
 			console.log('error: invalid coordinates:',x,y);
 			return root;
 		}
-
-    	/*
-    	node
-    		.attr("x", x-size)
-			.attr("y", y-size);
-
-		if(pattern) {
-			pattern
-				.attr("x", x-size)
-				.attr("y", y-size);
-		}
-
-		if(selector)
-			selector.attr('transform',`translate(${x},${y})`);
 		*/
 
     	return root;
@@ -304,6 +263,30 @@ D3x.shape.square = function(el, o) {
 		node.attr("fill", fn());
 		return root;
 	}
+
+	root.setSelected = (selected)=>{
+		if(!selected){
+			if(root.selector){
+				root.selector.remove();
+				delete root.selector;
+			}
+			return
+		}
+		if(root.selector)
+			return
+		root.selector = root.append('svg:path')
+			.attr("d", d3.arc()
+				.innerRadius( size*2 )
+				.outerRadius( size*2+10 )
+				.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
+				.endAngle( 6.29 )//2*Pi = 6.28 = top
+			)
+			.attr('stroke', 'rgba(0,0,0,0.5)')
+			.attr('stroke-width', 1)
+			.attr('fill', `rgba(0,0,0,0.5)`);
+	}
+
+	root.setSelected(o.selected);
 	
 
     return root;
@@ -444,7 +427,7 @@ export class GraphNodeLink{
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
 			this.defaultColor = 'rgba(0,32,64,1)';
-			this.defaultStrokeWidth = 1;
+			this.defaultStrokeWidth = 7;
 			this.defaultOpacity = 0.95;
 		} else 
 		{
@@ -482,7 +465,7 @@ export class GraphNodeLink{
 					this.target.x,
 					this.target.y
 				))
-				.attr('stroke-width', this.isChainBlockLink ? 7 : 1);
+				//.attr('stroke-width', this.isChainBlockLink ? 7 : 1);
 		}
 
 		//this.el.transition().duration(1000).style('opacity', 1);
@@ -609,51 +592,10 @@ export class GraphNode{
 			this.holder.nodesEl.append(()=>{
 				return this.el.node()
 			});
-			if(this.textEl)
-				this.holder.nodesEl.append(()=>{
-					return this.textEl.node()
-				});
-			if(this.heightEl)
-				this.holder.nodesEl.append(()=>{
-					return this.heightEl.node()
-				});
 			return this.bindElEvents();
 		}
 
-		const CUSTOM_SHAPES = true;
-
-		if(CUSTOM_SHAPES){
-			let shapeConfig = this.getShapeConfig();
-	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : this.data.size || 100,
-	            rgba : shapeConfig.color,
-				opacity : 0.5,
-				pattern : this.holder.ctx.quality == 'high' ? (this.data.isChainBlock ? 'diagonal-stripe-2' : null) : null
-	        });
-	    }else{
-			this.el = this.holder.nodesEl.append("circle");
-		}
-		
-		this.el
-			.transition()
-			.duration(500)
-			.style('opacity', 0.75);
-
-		if(this.textEl)
-			this.textEl = this.holder.nodesEl.append("text")
-				.attr("fill", "#000")
-				.attr("class", ["node-name",this.data.type].join(' '))
-				.text(this.data.name);
-
-		if(this.heightEl)
-			this.heightEl = this.holder.nodesEl.append("text")
-				.attr("fill", "#000")
-				.attr("class", ["node-name",this.data.type].join(' '))
-				.text(this.data.blueScore+'');
-
-
-		this.bindElEvents();
-		
+		this.initElements();
 		return this;
 
 	}
@@ -704,9 +646,9 @@ export class GraphNode{
 		this.removeElEvents();
 		this.el.remove();
 		if(this.textEl)
-			this.textEl.remove();
+			delete this.textEl;
 		if(this.heightEl)
-			this.heightEl.remove();
+			delete this.heightEl;
 		this.removeLinks();
 
 		_.each(this.parentLinks, (link, parent)=>{
@@ -719,21 +661,98 @@ export class GraphNode{
 	initPosition(){
 		let {x, y} = this;
 		this.el.setPosition(x, y);
-		/*
-		if(this.textEl){
-			this.textEl
-				.attr("x", x)
-				.attr("y", y-0.75)
-		}
-		if(this.heightEl){
-			this.heightEl
-				.attr("x", x)
-				.attr("y", y-0.25)
-		}
-		*/
 		if(this.linkNodes)
-			this.linkNodes.forEach(node => node.setStaticPosition(x, y));
-				
+			this.linkNodes.forEach(node => node.setStaticPosition(x, y));	
+	}
+	initElements(){
+		let shapeConfig = this.getShapeConfig();
+		let zoom = this.holder.paintEl.transform.k
+		const data = this.data;
+		const isBlue = !!data.acceptingBlockHash;
+		const isRed = !isBlue;
+		if(isBlue)
+			data.color = `rgba(194,244,255,0.99)`;
+		else
+			data.color = `rgba(255,194,194,0.99)`;
+
+		this.shape 	= data.shape;
+		this.color 	= data.color;
+		this.size 	= data.size;
+		this.quality = this.holder.ctx.quality;
+
+		this.removeElEvents();
+		if(this.el)
+			this.el.remove();
+
+		let pattern = null;
+		let patternOpacity = 0.125;
+		if(this.holder.ctx.quality == 'high') {
+			if(isRed) {
+				//pattern = 'crosshatch';
+				pattern = 'diagonal-stripe-1';
+				patternOpacity = 0.125;
+			}
+		}
+		
+
+        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
+            size : data.size || 50,
+            rgba : data.color || shapeConfig.color,
+			opacity : 0.5,
+			pattern, patternOpacity,
+			strokeWidth : data.isChainBlock ? 7 : 1,
+			selected : this.selected
+		})
+
+		this.el.setFill(()=>{
+			return this.data.color;
+		})
+
+		const textColor = data.textColor || '#000';
+
+		if(this.textEl)
+	        this.textEl.remove();
+
+		if(this.quality != 'low') {
+			this.textEl = this.el.append("text")
+		    	.attr("class", "node-text")
+				.attr("fill", textColor)
+				.attr("class", ["node-name", this.data.type].join(' '))
+				.text(data.name);
+
+			let textBox = this.textEl.node().getBoundingClientRect();
+			this.textEl
+				.attr("x", -textBox.width/zoom/2)
+				.attr("y", -8)
+				.attr("opacity", 1)
+		}else{
+			delete this.textEl;
+		}
+
+		if(this.heightEl)
+			this.heightEl.remove();
+
+		if(this.quality == 'high') {
+			this.heightEl = this.el.append("text")
+				.attr("class", "node-text")
+				.attr("fill", textColor)
+				.attr("class", ["node-name", this.data.type].join(' '))
+				.text(data.blueScore+'');
+			let textBox = this.heightEl.node().getBoundingClientRect();
+			this.heightEl
+				.attr("x", -textBox.width/zoom/2)
+				.attr("y", 14)
+		}else{
+			delete this.heightEl;
+		}
+
+		this.bindElEvents();
+
+		this.el
+			.style('opacity', 0)
+			.transition()
+			.duration(500)
+			.style('opacity', 1);
 	}
 	updateStyle(force){
 		if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
@@ -741,6 +760,7 @@ export class GraphNode{
 			return
 		}
 
+		/*
 		const typeColors = {
 			'kaspad' : "#b3ffc1",
 			'simulator' : "#feffb3",
@@ -748,14 +768,10 @@ export class GraphNode{
 			'server' : "#b3fffc",
 			'syncd' : "#b3ffb3"
 		}
-
-		let shapeConfig = this.getShapeConfig();
-		let zoom = this.holder.paintEl.transform.k
+		*/
 
 		const isBlue = !!this.data.acceptingBlockHash;
-		const isRed = !isBlue;
 		const data = this.data;
-
 
 		if(isBlue)
 			data.color = `rgba(194,244,255,0.99)`;
@@ -763,123 +779,14 @@ export class GraphNode{
 			data.color = `rgba(255,194,194,0.99)`;
 
 		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
-			this.shape = data.shape;
-			this.color = data.color;
-			this.size = data.size;
-			this.quality = this.holder.ctx.quality;
-
-			this.removeElEvents();
-			this.el.remove();
-
-			let pattern = null;
-			let patternOpacity = 0.125;
-			if(this.holder.ctx.quality == 'high') {
-				if(isRed) {
-					//pattern = 'crosshatch';
-					pattern = 'diagonal-stripe-1';
-					patternOpacity = 0.125;
-				}
-			}
-			
-
-	        this.el = D3x.createShape(this.holder.nodesEl, shapeConfig.shape, {
-	            size : data.size,
-	            rgba : data.color || shapeConfig.color,
-				opacity : 0.5,
-				pattern, patternOpacity,
-				strokeWidth : data.isChainBlock ? 7 : 1,
-				selected : this.selected
-			});
-
-			const textColor = data.textColor || '#000';
-
-			if(this.textEl)
-		        this.textEl.remove();
-
-			if(this.quality != 'low') {
-				this.textEl = this.el.append("text")
-			    	.attr("class", "node-text")
-					.style('opacity',0)
-					.attr("fill", textColor)
-					.attr("class", ["node-name", this.data.type].join(' '))
-					.text(data.name);
-
-				let textBox = this.textEl.node().getBoundingClientRect();
-				this.textEl
-					.attr("x", -textBox.width/zoom/2)
-					.attr("y", -8)
-					.attr("opacity", 1)
-			}
-
-			if(this.heightEl)
-				this.heightEl.remove();
-
-			if(this.quality == 'high') {
-				this.heightEl = this.el.append("text")
-					.attr("class", "node-text")
-					.style('opacity',0)
-					.attr("fill", textColor)
-					.attr("class", ["node-name", this.data.type].join(' '))
-					.text(data.blueScore+'');
-				let textBox = this.heightEl.node().getBoundingClientRect();
-				this.heightEl
-					.attr("x", -textBox.width/zoom/2)
-					.attr("y", 14)
-					.attr("opacity", 1)
-			}else{
-				delete this.heightEl;
-			}
-
-			this.bindElEvents();
-
-			this.el.transition()
-				.duration(500)
-				.style('opacity', 1);
-
-			if(this.textEl)
-				this.textEl.transition()
-					.duration(500)
-					.style("opacity", 1);
-
-			if(this.heightEl)
-				this.heightEl.transition()
-					.duration(500)
-					.style("opacity", 1);
+			this.initElements();
 	    }
 
 		if(this.holder.ctx)
 			this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
 
-
 		this.el
 			.style('transform', `translate(${this.x}px, ${this.y}px)`)
-			.setFill(()=>{
-				if(this.data.color)
-					return this.data.color;
-			})
-		
-
-		/*if(this.textEl) {
-			let textBox = this.textEl.node().getBoundingClientRect();
-			let textBoxWidth = textBox.width / zoom;
-			let textBoxHeight = textBox.height / zoom;
-
-			this.textEl
-				.attr("x", Math.round(this.x-textBoxWidth/2))
-				.attr("y", Math.round((this.y-12)-0.25))
-				.attr("opacity", 1)
-		}
-		
-		if(this.heightEl) {
-			let infoBox = this.heightEl.node().getBoundingClientRect();
-			let infoBoxWidth = infoBox.width / zoom;
-			let infoBoxHeight = infoBox.height / zoom;
-			this.heightEl
-				.attr("x", Math.round(this.x-infoBoxWidth/2))
-				.attr("y", Math.round((this.y+20)-0.25))
-				.attr("opacity", 1);
-		}
-		*/
 			
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
@@ -998,8 +905,7 @@ export class GraphNode{
 			this.holder.selection[this.data.blockHash] = this;
 
 		this.holder.ctx.onSelectionUpdate(this.holder.selection);
-
-		this.updateStyle(true);
+		this.el.setSelected(this.selected);
 
 		if(!this.selected) {
 			if(this.nodeInfoEl) {
