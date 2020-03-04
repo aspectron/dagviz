@@ -1056,7 +1056,6 @@ export class App {
 								// 	return null;
 								let node = this.createBlock(block);
 								// console.log('selecting',node.data.lseq)
-								//console.log("node.x", node.data.blockHash, node.x, node.linkNodes, node.parentLinks)
 								node.select(true);
 
 								selection[node.data.blockHash] = node;

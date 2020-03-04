@@ -474,8 +474,14 @@ export class GraphNodeLink{
 		//this.el.transition().duration(1000).style('opacity', 1);
 	}
 	buildD(x1, y1, x2, y2) {
-		x1 -= 22;
-		x2 += 35;
+		const {h, sign} = this.holder.ctx.direction;
+		if(h){
+			x1 -= 26 * sign
+			x2 += 40 * sign
+		}else{
+			y1 -= 26 * sign
+			y2 += 40 * sign
+		}
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
 		if(this.holder.ctx)
@@ -634,7 +640,6 @@ export class GraphNode{
 
 		this.initElements();
 		return this;
-
 	}
 	rebuildLinks() {
 		this.removeLinks();
@@ -695,6 +700,7 @@ export class GraphNode{
 			delete this.parentLinks[parent];
 		});
 
+		this.removeArrowHead();
 		this.holder.removeIdx(this);
 	}
 	initPosition(){
@@ -832,12 +838,40 @@ export class GraphNode{
 			
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
+
+		this.updateArrowHead();
 	}
 	addParentLink(parentLink){
 		this.parentLinks[parentLink.data.child] = parentLink;
+		this.updateArrowHead();
 	}
 	removeParentLinks(parentLink){
 		delete this.parentLinks[parentLink.data.child];
+		this.updateArrowHead();
+	}
+
+	updateArrowHead(){
+		if(!Object.keys(this.parentLinks).length)
+			return this.removeArrowHead();
+		if(!this.el.arrow)
+			this.el.arrow = this.el.append('polygon')
+						.attr("fill", "red");
+		if(this.el.arrow._dir == this.holder.ctx.dir)
+			return
+		let arrow = this.el.arrow;
+		arrow._dir = this.holder.ctx.dir;
+		const {h, sign} = this.holder.ctx.direction;
+		if(h){
+			arrow.attr("points", `${(this.data.size+(this.data.isChainBlock?4:1))*sign} 0, ${40*sign} -8, ${40*sign} 8`);
+		}else{
+			arrow.attr("points", `0 ${(this.data.size+(this.data.isChainBlock?4:1))*sign}, -8 ${40*sign}, 8 ${40*sign}`);
+		}
+	}
+	removeArrowHead(){
+		if(this.el.arrow){
+			this.el.arrow.remove();
+			delete this.el.arrow
+		}
 	}
 
 	getLinks() {
