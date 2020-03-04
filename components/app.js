@@ -307,18 +307,11 @@ class GraphContext {
 
 				const t = this.graph.paintEl.transform;
 				const {layoutAxis, axis, sign} = this.direction;
-				
 				t[axis] = t[layoutAxis] * sign * lastSign;
 				t[layoutAxis] = 0;
-				this.graph.setChartTransform(t);
+				this[this.dir+"_transformed"] = 0;
+				this.updateViewportTransform(t, true);
 
-				Object.values(this.graph.nodes).forEach((node) => {
-					node.updateStyle();
-				})
-				
-				this.updateRangeScale();
-
-				this.graph.restartSimulation();
 			} break;
 
 			case 'layout': {
@@ -388,6 +381,44 @@ class GraphContext {
 		}
 
 		this.app.storeUndo();
+	}
+
+	updateViewportTransform(t, force){
+		if(this[this.dir+"_transformed"]>1)
+			return
+
+		let max = 0;
+		t = t || this.graph.paintEl.transform;
+		const {v} = this.direction;
+		const locationIdx = this.graph.locationIdx, unitDist = this.unitDist;
+		const box = this.graph.getBoundingClientRect();
+		let layoutSize = v?box.width:box.height;
+		layoutSize *= 0.70;
+
+		//console.log("this.graph.locationIdx", locationIdx, layoutSize)
+		Object.values(locationIdx).forEach(list=>{
+			max = Math.max(max, list.length * unitDist * 1.5);
+		})
+
+		if(max<1 || (!force && this._viewportMax == max))
+			return;
+		if(max>0){
+			this._viewportMax = max;
+			const k = layoutSize/max;
+			console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
+			//if(k < t.k){
+				t.k = k;
+			//}
+			this[this.dir+"_transformed"]++;
+		}
+		this.graph.setChartTransform(t);
+
+		Object.values(this.graph.nodes).forEach((node) => {
+			node.updateStyle();
+		})
+		
+		this.updateRangeScale();
+		this.graph.restartSimulation();
 	}
 }
 
@@ -578,13 +609,7 @@ export class App {
 		const $orientationImg = $('#orientation > img');
 		$orientationImg.addClass(`orient-${this.ctx.dir}`);
 		$orientationImg.click((e) => {
-
 			this.ctls.dir.toggle();
-
-			let v = this.ctls.dir.getValue();
-			console.log(v);
-			// $orientationImg.removeClass('orient-N orient-E orient-S orient-W');
-			// $orientationImg.addClass(`orient-${v}`);
 		});
 
 
@@ -945,14 +970,13 @@ export class App {
 			}
 		})
 
-		
-
 		if(!this.fullFetch) {
 			if(forward && min) {
 				from = min;
 			} else if(reverse && max) {
 				to = max;
 			}
+			this.ctx[this.ctx.dir+"_transformed"] = 10;
 		}
 		else
 			this.fullFetch = false;
@@ -976,7 +1000,7 @@ export class App {
 
 		this.createBlocks(blocks);
 		this.graph.updateSimulation();
-		//this._done = true;
+		this.ctx.updateViewportTransform()
 
 		return Promise.resolve();
 	}
@@ -1310,7 +1334,7 @@ class MultiChoice {
 	}	
 
 	setValue(value){
-//console.log(value);
+		//console.log(value);
 		const choices = Object.keys(this.choices);
 		if(!choices.includes(value))
 			value = choices[0];
