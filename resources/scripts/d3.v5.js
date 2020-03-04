@@ -6864,7 +6864,11 @@ function simulation(nodes) {
 
       for (i = 0; i < n; ++i) {
         node = nodes[i];
-        if (node.fx == null) node.x += node.vx *= velocityDecay;
+        if (node.fx == null){
+          //if(isNaN(node.vx) || isNaN(velocityDecay))
+          //  console.log("velocityDecayvelocityDecay", node.vx, velocityDecay)
+          node.x += node.vx *= velocityDecay;
+        }
         else node.x = node.fx, node.vx = 0;
         if (node.fy == null) node.y += node.vy *= velocityDecay;
         else node.y = node.fy, node.vy = 0;
@@ -7021,6 +7025,8 @@ function manyBody() {
         w = x2 - x1,
         l = x * x + y * y;
 
+      
+
     // Apply the Barnes-Hut approximation if possible.
     // Limit forces for very close nodes; randomize direction if coincident.
     if (w * w / theta2 < l) {
@@ -7029,7 +7035,13 @@ function manyBody() {
         if (y === 0) y = jiggle(), l += y * y;
         if (l < distanceMin2) l = Math.sqrt(distanceMin2 * l);
         node.vx += x * quad.value * alpha / l;
+        //if(isNaN(y) || isNaN(quad.value) || isNaN(alpha) || isNaN(l)){
+        //  console.log("eeeeeewwwww", node.vy, y , quad.value , alpha , l)
+        //}
+        //if(!node.vy)
+        //console.log("node.vy", node.vy)
         node.vy += y * quad.value * alpha / l;
+
       }
       return true;
     }
@@ -7046,6 +7058,9 @@ function manyBody() {
 
     do if (quad.data !== node) {
       w = strengths[quad.data.index] * alpha / l;
+      //if(isNaN(w) || isNaN(x)){
+      //  console.log("wwwww", alpha, l)
+      //}
       node.vx += x * w;
       node.vy += y * w;
     } while (quad = quad.next);

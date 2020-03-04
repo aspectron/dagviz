@@ -31,6 +31,8 @@ export class Block extends GraphNode {
 		data.size = this.getSize(); 
 		this.x = Math.random();
 		this.y = Math.random();
+		this.vx = 0;
+		this.vy = 0;
 		ctx.nodePosition(this,holder, holder.nodes);
 
 		this.buildLinks();
@@ -225,7 +227,6 @@ class GraphContext {
 		} else {
 			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
 		}
-
 	}
 
 	reposition(x, skipUpdate) {
@@ -407,7 +408,7 @@ class GraphContext {
 			const k = layoutSize/max;
 			console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
 			//if(k < t.k){
-				t.k = k;
+				//t.k = k;
 			//}
 			this[this.dir+"_transformed"]++;
 		}
@@ -901,7 +902,6 @@ export class App {
 			select : 'none'
 		}
 		params = Object.assign(defaults, params);
-				
 		this.initContext(params);
 	}
 

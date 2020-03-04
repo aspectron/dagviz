@@ -129,7 +129,7 @@ class DAGViz {
 
             this.io.on('connection', (socket) => {
               //  console.log('connected',socket);
-              // this.socket = socket;
+              this.socket = socket;
 
               if(this.lastBlock)
                   socket.emit('last-block-data', this.lastBlock);
@@ -245,8 +245,7 @@ class DAGViz {
         
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
-        this.lastTotal = result.shift().total;
-        this.skip = this.lastTotal;
+        this.skip = result.shift().total;
         console.log(`SELECT COUNT(*) AS total FROM blocks => ${this.skip}`);
         if(this.skip) {
             let blocks = await this.sql('SELECT * FROM blocks ORDER BY id DESC LIMIT 1');
@@ -300,22 +299,11 @@ class DAGViz {
         this.verbose && process.stdout.write(` ...${skip}... `);
         // console.log(`fetching: ${skip}`);
         this.fetch({ skip, limit, order }).then(async (data) => {
-
-
-            if(this.lastTotal !== undefined && this.lastTotal > data.total+1e4) {
-                console.log(`incloming total block count ${data.total}+1e4 is less than previous total ${this.lastTotal}`);
-                console.log(`initiating database purge...`);
-                await this.sql(`TRUNCATE TABLE blocks`);
-                await this.sql(`TRUNCATE TABLE block_relations`);
-                this.lastTotal = data.total;
-                this.skip = 0;
-                this.io.emit('chain-reset');
-                dpc(1000, () => {
-                    this.sync();
-                })
-                return;
-            }
-
+            // let seq = skip;
+            // data.forEach(o => {
+            //     o.seq = seq++;
+            // });
+            // console.log("DATA:",data);
             if(data.total && data.total != this.lastTotal)
                 this.lastTotal = data.total;
 
@@ -348,7 +336,7 @@ class DAGViz {
         this.lastBlock = blocks[blocks.length-1];
         // console.log('posting blocks...',blocks.length);
         if(blocks.length < 100)
-            this.io.emit('blocks',blocks);
+            this.socket.emit('blocks',blocks);
 
         return new Promise(async (resolve,reject)=>{
             //console.log("DOING POST") // 'acceptingBlockTimestamp',

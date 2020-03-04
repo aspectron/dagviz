@@ -1,13 +1,8 @@
 const mqtt = require('mqtt');
 
-const client = mqtt.connect("mqtt://kasparov-dev-auxiliary-open-devnet.daglabs.com:1883",{
-	clientId:"mqtt_"+(Date.now()*Math.random()).toString(16),
-	username:'user',
-	password:'pass'
-});
+const client = mqtt.connect("ws://finland.aspectron.com:7351",{clientId:"mqttjs01"});
 
 client.subscribe("dag/selected-tip",{qos:1});
-client.subscribe("dag/selected-parent-chain",{qos:1});
 client.on("connect",function() {
     console.log("connected");
 })
