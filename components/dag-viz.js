@@ -247,13 +247,6 @@ D3x.shape.square = function(el, o) {
 
     root.setPosition = (x, y)=>{
 
-		/*
-		if(isNaN(x) || isNaN(y)) {
-			console.log('error: invalid coordinates:',x,y);
-			return root;
-		}
-		*/
-
     	return root;
 	}
 	
@@ -453,31 +446,20 @@ export class GraphNodeLink{
 	updateStyle(){
 		const { source, target } = this;
 		if(!source || !target){
-			//console.log("this.source", this.data.child)
 			return
 		}
-		//if(isNaN(this.target.x)){
-		//	console.log("this.target", this.target.data.blockHash, this.target.x)
-		//}
-		//if(!isNaN(this.source.x) && !isNaN(this.source.y) && !isNaN(this.target.x) && !isNaN(this.target.y)) {
-			this.el.path
-				//.transition('o')
-				//.duration(2000)
-				.attr("d", this.buildD(
-					source.x,
-					source.y,
-					target.x,
-					target.y
-				))
-				//.attr('stroke-width', this.isChainBlockLink ? 7 : 1);
-		//}
+		this.el.path
+			.attr("d", this.buildD(
+				source.x,
+				source.y,
+				target.x,
+				target.y
+			))
 
-		//this.el.transition().duration(1000).style('opacity', 1);
-
-		if(this.arrowType == this.holder.ctx.arrows+this.holder.ctx.dir)
+		if(this.arrowType == this.holder.ctx._arrows+this.holder.ctx.dir)
 			return
-		this.arrowType = this.holder.ctx.arrows+this.holder.ctx.dir;
-		if(this.holder.ctx.arrows == 'multi') {
+		this.arrowType = this.holder.ctx._arrows+this.holder.ctx.dir;
+		if(this.holder.ctx._arrows == 'multi') {
 			this.updateArrow();
 		}else{
 			this.removeArrow();
@@ -494,7 +476,7 @@ export class GraphNodeLink{
 	}
 	buildD(x1, y1, x2, y2) {
 		const {h, sign} = this.holder.ctx.direction;
-		const {arrows} = this.holder.ctx;
+		const {_arrows:arrows} = this.holder.ctx;
 		if(arrows != 'off') {
 			let tSize = this.target.data.size+(this.target.data.isChainBlock?9:6)
 			const sSize = this.source.data.size
@@ -509,10 +491,8 @@ export class GraphNodeLink{
 			if(h){
 				x1 -= sSize * sign
 				x2 += tSize * sign
-				if(arrows=="multi"){
-					//console.log("this.linkIndex", this.linkIndex, this.el.node())
+				if(arrows=="multi")
 					y2 += (this.linkIndex * margin) - boxHSize + margin;
-				}
 			}else{
 				y1 -= sSize * sign
 				y2 += tSize * sign
@@ -840,20 +820,6 @@ export class GraphNode{
 			this.highlightLinks(true);
 	}
 	updateStyle(force){
-		//if(isNaN(this.x) || isNaN(this.y) || !this.data.timestamp) {
-			// console.log("aborting updateStyle (lack of data) for:",this);
-		//	return
-		//}
-
-		/*
-		const typeColors = {
-			'kaspad' : "#b3ffc1",
-			'simulator' : "#feffb3",
-			'txgen' : "#fbb3ff",
-			'server' : "#b3fffc",
-			'syncd' : "#b3ffb3"
-		}
-		*/
 
 		const isBlue = !!this.data.acceptingBlockHash;
 		const data = this.data;
@@ -872,24 +838,34 @@ export class GraphNode{
 
 		this.el
 			.style('transform', `translate(${this.x}px, ${this.y}px)`)
-		if(this.holder.ctx.arrows == "multi")
+		if(this.holder.ctx._arrows == "multi")
 			this.updateLinkIndexes();
 		this.updateArrowHead();	
 		if(this.linkNodes)
-			this.linkNodes.forEach(node=>node.updateStyle());
+			this.linkNodes.forEach(node=>{
+				if(this.holder.ctx._arrows == "multi")
+					node.target.updateLinkIndexes();
+				node.updateStyle()
+			});
 		this.parentLinks.forEach(link=>link.updateStyle())
 	}
 	addParentLink(link){
-		if(this.parentLinks.indexOf(link)<0){
+		let index = this.parentLinks.findIndex(l=>l.data.child == link.data.child)
+		if(index<0){
 			this.parentLinks.push(link);
 			this.updateArrowHead();
+			this.updateLinkIndexes();
+		}else{
+			this.parentLinks.splice(index, 1, link);
+			this.updateLinkIndexes();
 		}
 	}
 	removeParentLinks(link){
-		let index = this.parentLinks.indexOf(link)
+		let index = this.parentLinks.findIndex(l=>l.data.child == link.data.child)
 		if(index>-1){
 			this.parentLinks.splice(index, 1);
 			this.updateArrowHead();
+			this.updateLinkIndexes();
 		}
 	}
 
@@ -908,7 +884,7 @@ export class GraphNode{
 		})
 	}
 	updateArrowHead(){
-		const {arrows, dir} = this.holder.ctx;
+		const {_arrows:arrows, dir} = this.holder.ctx;
 		if(!this.parentLinks.length || arrows != 'single')
 			return this.removeArrowHead();
 
@@ -1180,10 +1156,10 @@ export class DAGViz extends BaseElement {
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="smalldot" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgo8cmVjdCB3aWR0aD0nNScgaGVpZ2h0PSc1JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyNjY2MnLz4KPC9zdmc+" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="circles-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSJ3aGl0ZSIgLz4KICA8Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIgZmlsbD0iYmxhY2siLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>						
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100" fill="#000">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100" fill="#000" id="markers">
 			<defs>
 			    <marker id="startarrow" markerWidth="10" markerHeight="7" 
-			    	refX="10" refY="3.5" orient="auto">
+			    	refX="10" refY="3.5">
 			      <polygon points="10 0, 10 7, 0 3.5"/>
 			    </marker>
 			    <marker id="endarrow-e" markerWidth="6" markerHeight="6" 
@@ -1223,6 +1199,10 @@ export class DAGViz extends BaseElement {
 		</div>
 		`;
 	}
+	setArrowsOrient(orient){
+		d3.select(this.renderRoot.getElementById('markers'))
+			.selectAll('marker').attr('orient', orient)
+	}
 	firstUpdated() {
 		this.graphHolder = this.renderRoot.getElementById('graph');
 		this.nodeInfoEl = this.renderRoot.getElementById('nodeInfo')
@@ -1238,7 +1218,6 @@ export class DAGViz extends BaseElement {
 		});
 		this.nodeInfoEl.addEventListener('transitionstart', (e)=>{
 			this.nodeInfoEl.style.pointerEvents = 'none';
-			//console.log("transitionstart")
 		});
 		this.nodeInfoEl.addEventListener('transitionend', (e)=>{
 			this.debounce("nodeInfoEl-ts", ()=>{
@@ -1247,14 +1226,12 @@ export class DAGViz extends BaseElement {
 		});
 		
 		this.graphHolder.addEventListener('click', ()=>{
-			// this.hideNodeInfo(true)
 			
 		})
 		this.initChart();
 	}
 	updated(changedProperties) {
 		changedProperties.forEach((oldValue, propName) => {
-			//console.log(`${propName} changed. oldValue: ${oldValue}`);
 			if(propName == "data")
 				this.updateGraph(this.data);
 		});
@@ -1267,15 +1244,11 @@ export class DAGViz extends BaseElement {
 		var zoom = d3.zoom()
 			.scaleExtent([0.1,3.5])
     		.on('zoom', (e)=>{
-				//console.log(e);
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
     			this.nodesEl.attr("stroke", 'rgba(0,0,0,0.5)');
 				this.linksEl.attr("stroke-width", w);
-				// d3.select('node-text').attr("stroke-width", 0.5);
-				//this.updatePanInfo(this.paintEl.transform);
-				//this.updateRegion(this.paintEl.transform);
 			})
 			.on('start', (e)=>{
 				window.app.enableUndo(false);
@@ -1305,46 +1278,22 @@ export class DAGViz extends BaseElement {
 			.attr("stroke-width", 1)
 		this.svgNode = this.nodesEl.selectAll("circle")
 		this.simulation = d3.forceSimulation();
-		//let firstNode = new GraphNode(this, {x:1000, y:0 });
 		this.simulationNodes = []
-		//this.simulation.nodes(this.simulationNodes)
 		this.simulationNodes = this.simulation.nodes();
 
 
 		this.simulationLinkForce = d3.forceLink([]).id(d=>d.id).distance(200).strength(0.5)
 		this.simulationLinks = this.simulationLinkForce.links();
 
-		//console.log("this.simulationNodes", this.simulationNodes)
-
 		this.simulation
-
-			// .force("y", d3.forceY().y((d) => {
-			// 	// console.log('d',d);
-			// 	if(d.data.isChainBlock)
-			// 		return 0;
-			// 	return 100;
-			// }))
-
-
-			//.velocityDecay(0.45)
-			// .force("link", this.simulationLinkForce)
 			.force('collision', d3.forceCollide().radius((d) => {
-				//console.log("d.size", d)
-
 				return this.ctx.mass ? d.data.size * 2 : 75;
-
-			 	//return d.data.size * 3;// * 2//d.radius
 			}))
 			.force("charge", d3.forceManyBody().strength(-200))
-			//.force("charge", d3.forceManyBody().strength(350))
-			//.force("charge", d3.forceManyBody().strength(150))
-			//.force("y", d3.forceY())
 
 
 		this.simulation.on("tick", () => {
-			//console.log('tick');
 			let nodes = this.simulationNodes;
-			//console.log("nodes", nodes.length)
 			for(let i=0, l=nodes.length; i<l; ++i){
 				nodes[i].updateStyle();
 			}
@@ -1352,44 +1301,12 @@ export class DAGViz extends BaseElement {
 			this._updateNodeInfoPosition();
 
 			this.updateTracking();
-
-			// if(this.ctx.track)
-			// 	this.simulation.restart();
-
 		});
-
-		//this.simulation.restart();
-		/*this.tipLine = this.svg.append('line')
-            .attr('class','tipline')
-            .attr('stroke', 'rgba(0,0,0,0.5)')
-            .attr('stroke-width', 1)
-            .attr('fill', 'none');*/
-        
-
-        // this.svg.append('svg:defs').append('svg:marker')
-        // 	.attr('id', 'tipArrow')
-        // 	.attr('orient', 'auto')
-        // 	.attr('markerWidth', '10')
-        // 	.attr('markerHeight', '10')
-        // 	.attr('refX', '1')
-        // 	.attr('refY', '3')
-        // 	.append('svg:path')
-        // 		.attr('d', 'M0,0 V6 L3,3 Z')
-        // 		.attr('fill', 'rgba(0,0,0,0.5)')
-       this.tipLine2 = this.svg.append('path')
+       	this.tipLine2 = this.svg.append('path')
         	.attr('stroke', 'rgba(0,0,0,0.5)')
             .attr('stroke-width', 1)
             .attr('class', 'tip-line')
             .attr('marker-end', 'url(#tipArrow)')
-            //.attr('d', 'M100 100 L 10 10')
-
-
-		// this.tAxis = this.paintEl.append('path')
-		// 	.attr('stroke', 'rgba(0,0,0,1.0)')
-		// 	.attr('stroke-width', 1)
-		// 	.attr('class', 'tip-line')
-		// 	//.attr('marker-end', 'url(#tipArrow)')
-		// 	.attr('d', `M${this.xMargin} -1000 L ${this.xMargin} 1000`)
 	
 		this.tAxis = [];
 
@@ -1398,7 +1315,6 @@ export class DAGViz extends BaseElement {
 				.attr('stroke', 'rgba(0,0,0,0.1)')
 				.attr('stroke-width', 1)
 				.attr('class', 'tip-line')
-				//.attr('marker-end', 'url(#tipArrow)')
 				.attr('d', `M${this.xMargin-(60*i*this.tdist)} -1000 L ${this.xMargin-(60*i*this.tdist)} 1000`)
 		}
 
@@ -1411,7 +1327,6 @@ export class DAGViz extends BaseElement {
 			return false;
 	
 		let t = this.paintEl.transform;
-		// let 
 
 		let pBox = this.getBoundingClientRect();
 		let centerX = pBox.left + pBox.width/2;
@@ -1419,7 +1334,6 @@ export class DAGViz extends BaseElement {
 			centerX += options.offsetX * pBox.width;
 		let centerY = pBox.top + pBox.height/2;
 		let box = node.getBoundingClientRect();
-		//console.log("box", pBox, box)
 		let cX = box.left + box.width/2;
 		let cY = box.top + box.height/2;
 		cX = centerX-cX;
@@ -1434,32 +1348,16 @@ export class DAGViz extends BaseElement {
 	}
 
 	translate(x,y, options) {
-		console.log("doing translate...");
 		let pBox = this.getBoundingClientRect();
 		let centerX = pBox.left + pBox.width/2;
 		if(options && options.offsetX)
 			centerX += options.offsetX * pBox.width;
 		let centerY = pBox.top + pBox.height/2;
-		// let box = node.getBoundingClientRect();
-		// //console.log("box", pBox, box)
-		// let cX = box.left + box.width/2;
-		// let cY = box.top + box.height/2;
-		// let cX = centerX-x;
-		// let cY = centerY-y;
-		// let cX = centerX-x;
-		// let cY = centerY-y;
 
 		let t = this.paintEl.transform;
 
 		t.x = -(x * t.k);
 		t.y = -y;
-
-		// if(options && options.filter) {
-		// 	options.filter(t,{ cX, cY });
-		// } else {
-			// t.x += cX;// * 0.01;
-			// t.y += cY;// * 0.01;
-		//}
 
 		this.setChartTransform(this.paintEl.transform);
 
@@ -1513,13 +1411,6 @@ export class DAGViz extends BaseElement {
 			this.lastNodeAdded = node;
 			this.lastNodeAddedTS = Date.now();
 		}
-		//console.log("max:",this.max);
-		// while(this.simulationNodes.length > this.max) {
-		// 	let discarded = this.simulationNodes.shift();
-		// 	discarded.purge();
-		// }
-
-
 
 		let linksUpdated = false;
 		let links = node.buildLinks();
@@ -1538,8 +1429,6 @@ export class DAGViz extends BaseElement {
 			}
 		})
 
-		
-		//console.log("node", node.data)
 		if(linksUpdated){
 			this.updateSimulationLinks();
 			//this.simulationLinkForce.links(this.simulationLinks);
@@ -1547,7 +1436,6 @@ export class DAGViz extends BaseElement {
 		}
 
 		this.restartSimulation();
-		//		this.simulation.restart();
 	}
 
 	restartSimulation() {
@@ -1567,30 +1455,17 @@ export class DAGViz extends BaseElement {
 		} catch(ex) {
 			console.log(ex);
 		}
-		// console.log('update simulation..');
 		if(1) {
 			this.simulation.alpha(0.005);
-			//			this.simulation.alphaTarget(0.005);
 			this.simulation.alphaDecay(0.005);
-			//this.simulation.alphaDecay(0.525);
-			
 		} else {
 			this.simulation.alpha(0.0045);
-			//this.simulation.alphaTarget(0.005);
 			this.simulation.alphaDecay(0.001);
 		}
-		//this.simulation.alpha(0.005);
-		//this.simulation.alpha(0.01);
 
 		if(Date.now() - this.simulationTimeoutTS > 10 * 1000) {
 			this.simulation.stop();
-			//console.log('setting simulation alphaDecay to 0.1')
-			//this.simulation.alphaDecay(0.1);
-			//this.simulation.
 		}
-
-
-		//		this.updateNodeInfoPosition();
 	}
 
 	UID(){
@@ -1650,13 +1525,11 @@ export class DAGViz extends BaseElement {
 		let {width, height} = this.graphHolder.getBoundingClientRect();
 		let {width:iW, height:iH} = this.nodeInfoEl.getBoundingClientRect();
 		let nodeBox = this._node.getBoundingClientRect();
-		//console.log("iW", iW, iH)
 		if(!iW)
 			return
 
 		iH *= 1.1;
 		iW *= 1.1;
-		//let tipOffset = 4 * this.paintEl.transform.k;
 
 		let x1 = nodeBox.left + nodeBox.width/2;
 		let y1 = nodeBox.top + nodeBox.height/2;
@@ -1736,19 +1609,9 @@ export class DAGViz extends BaseElement {
 		x2 = x2-hW+iW/2;
 		y2 = y2-hH+iH/2;
 
-
-
 		this.tipLine2
             .attr('d', `M${f(x2)} ${f(y2)} L${f(x1)} ${f(y1)}` )
             .attr('opacity', 1);
-
-    	/*this.tipLine
-            .attr('x1',()=>{ return this.tip.x1-width/2; })
-            .attr('y1',()=>{ return this.tip.y1-height/2; })
-            .attr('x2',()=>{ return this.tip.x2-width/2; })
-            .attr('y2',()=>{ return this.tip.y2-height/2; })
-            .attr('opacity', 1);
-            */
         this.debounce("nodeInfoEl-ts", ()=>{
 			this.nodeInfoEl.style.pointerEvents = 'inherit';
 		}, 100)
@@ -1784,7 +1647,6 @@ export class DAGViz extends BaseElement {
 	}
 	updateSVGSize(){
 		var box = this.graphHolder.getBoundingClientRect();
-		//console.log("graphHolder:box",box)
 		this._width = box.width;
 		this._height = box.height;
 		this.svg.attr("viewBox", [
@@ -1796,7 +1658,6 @@ export class DAGViz extends BaseElement {
 	}
 
 	updatePanInfo(transform) {
-		//console.log('transform:',transform);
 		const {sign, axis} = this.ctx.direction;
 		let pos = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
 
@@ -1839,17 +1700,13 @@ export class DAGViz extends BaseElement {
 		}
 
 		const { axis, size, sign } = this.ctx.direction;
-		//console.log("axis", axis, this.ctx.direction)
 		let pos = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
-		//console.log("updateRegion::transform:", pos, -transform.x, transform.k,  this.ctx.unitDist)
-		//pos = -transform.x;
 		var box = this.graphHolder.getBoundingClientRect();
 		let range = Math.ceil(box[size] / transform.k / this.ctx.unitDist);
 
 		//if(Math.round(this._last_pos/3) != Math.round(pos/3) || this._last_range != range) {
 			this._last_pos = pos;
 			this._last_range = range;
-			// console.log("regionUpdateSink_", pos)
 			this.regionUpdateSink_({pos, range, transform,box});
 		//}
 	}
@@ -1879,17 +1736,11 @@ export class DAGViz extends BaseElement {
 				if(X_ > 256 || Y_ > 256)
 					delta = 0.75;
 				else
-				// if(X_ > 16 || Y_ > 16)
-				// 	delta = 0.05;
-				// else
 				if(X_ > 16 || Y_ > 16)
 					delta = 0.05;
-
-				//let n = 1/k;
-				//delta *= n*n*1.5; console.log(k,delta);
 			
-				t.x += v.cX * delta; //0.0075;// * delta;
-				t.y += v.cY * delta; //0.0075;// * delta;
+				t.x += v.cX * delta;
+				t.y += v.cY * delta;
 			}, offsetX : 0.1 } );
 		}
 		else if(this.focusTargetHash) {
@@ -1899,7 +1750,6 @@ export class DAGViz extends BaseElement {
 			let { k } = this.paintEl.transform;
 
 			this.centerBy(this.focusTargetHash, { filter : (t,v) => {
-				// console.log('???',v.cX,k,t.x,t.y);
 				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
 				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
 				if(X_ < 1e-1 && Y_ < 1e-1) {
@@ -1944,7 +1794,6 @@ export class DAGViz extends BaseElement {
 				if(l[i].data.isChainBlock) {
 					if(t == i)
 						break;
-					// console.log(i,'->',t,'/',l.length);
 					let v = l[t];
 					l[t] = l[i];
 					l[i] = v;
