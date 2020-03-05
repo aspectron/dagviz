@@ -29,8 +29,8 @@ class DAGViz {
 
         this.verbose = this.args.verbose ? true : false;
 
-        this.pcbs = [ ];
-        this.pcbsMap = { };
+        this.rtbs = [ ];
+        this.rtbsMap = { };
     }
 
 
@@ -80,8 +80,11 @@ class DAGViz {
 
     }
 
-    "dag/blocks"(message) {
+    "dag/blocks"(block) {
         console.log('received: dag/blocks');
+        this.io.emit("dag/blocks",[block]);
+
+        this.postRTB(block);
     }
 
     async "dag/selected-parent-chain"(args) {
@@ -89,10 +92,10 @@ class DAGViz {
         this.io.emit("dag/selected-parent-chain",args);
 
         const { addedChainBlocks, removedBlockHashes } = args;
-        if(addedChainBlocks) {
+        if(addedChainBlocks && addedChainBlocks.length) {
             let addedHashes = addedChainBlocks.map(v=>v.hash);
             console.log('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
-            this.sql('UPDATE blocks SET blocks.isChainBlock=1 WHERE blocks.blockHash IN ?', addedHashes);
+            this.sql('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
             // console.log('UPDATE blocks SET isChainBlock=1 WHERE blockHash IN ?', [addedHashes]);
             addedChainBlocks.forEach((instr) => {
                 const { hash, acceptedBlockHashes } = instr;
@@ -100,8 +103,17 @@ class DAGViz {
                 this.sql(`UPDATE blocks SET parentBlockHashes = '${acceptedBlockHashes.join(',')}' WHERE (blocks.blockHash) IN (?)`, [acceptedBlockHashes], [hash]);
             })
         }
-        if(removedBlockHashes)
-            this.sql('UPDATE blocks SET isChainBlock=0 WHERE (blockHash) IN (?)', [removedBlockHashes]);
+        if(removedBlockHashes && removedBlockHashes.length)
+            this.sql('UPDATE blocks SET blocks.isChainBlock=0 WHERE (blocks.blockHash) IN (?)', removedBlockHashes);
+    }
+
+    postRTB(block) {
+        this.rtbs.push(block.blockHash);    // parent chain block notifications
+        this.rtbsMap[block.blockHash] = true;
+        while(this.rtbs.length > 1024)
+            delete this.rtbsMap[this.rtbs.shift()];
+
+        await this.post([block]);
     }
 
     async "dag/selected-tip"(message) {
@@ -114,12 +126,8 @@ console.log("dag/selected-tip");
         const block = message;
         this.io.emit("dag/selected-tip", block);
 
-        this.pcbs.push(block.blockHash);    // parent chain block notifications
-        this.pcbsMap[block.blockHash] = true;
-        while(this.pcbs.length > 1024)
-            delete this.pcbsMap[this.pcbs.shift()];
-
-        await this.post([block]);
+        this.postRTB(block);
+        // "real-time" blocks - data received at runtime...
 
         // let blocks = [message].map(block => DAGViz.DB_TABLE_BLOCKS_ORDER.map(field => block[field]));
 
@@ -442,8 +450,10 @@ console.log("dag/selected-tip");
     
                 this.skip += data.blocks.length;
 
-                const blocks = data.blocks.filter(block=>!this.pcbsMap[block.blockHash]);
-                await this.post(blocks);
+                const blocks = data.blocks.filter(block=>!this.rtbsMap[block.blockHash]);
+                if(blocks.length) {
+                    await this.post(blocks);
+                }
             }
             const wait = (!data || !data.blocks || data.blocks.length != 100) ? 1000 : 0;
             //(data.blocks && data.blocks.length != 100) ? 1000 : 0;
@@ -464,7 +474,7 @@ console.log("dag/selected-tip");
 
     }
 
-    post(blocks, excludeMap) {
+    post(blocks) {
         // console.log("DATA:",data);
 
         this.lastBlock = blocks[blocks.length-1];

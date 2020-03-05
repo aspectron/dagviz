@@ -85,6 +85,7 @@ class GraphContext {
 		this.quality = 'high';
 		this.spacingFactor = 1;
 		this.arrows = 'single';
+		this.childShift = 1;
 
 		this.dir = 'E';
 		this.directions = {
@@ -221,7 +222,7 @@ class GraphContext {
 			// 	delete this.layout_post_ctx_;
 		}
 
-		if(node.data.parentBlockHashes) {
+		if(node.data.parentBlockHashes && this.childShift) {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
 			node.data.parentBlockHashes.forEach((hash) => {
 				let parent = graph.nodes[hash];
@@ -490,6 +491,8 @@ export class App {
 			}
 		});
 
+		new Toggle(this.ctx,'childShift','CHILD SHIFT','Child Shift');
+
 		new MultiChoice(this.ctx, 'arrows', {
 			'off' : 'OFF',
 			'single' : 'SINGLE',
@@ -511,6 +514,7 @@ export class App {
 				});
 			}
 		});
+
 
 	}
 
@@ -883,10 +887,10 @@ export class App {
 	initIO() {
 		this.io = io();
 
-		this.io.on('blocks', (blocks) => {
+		this.io.on('dag/blocks', (blocks) => {
 			// console.log('blocks:', blocks);
-			this.ctx.lastBlockData = blocks[blocks.length-1];
-			this.ctx.lastBlockDataTS = Date.now();
+			// this.ctx.lastBlockData = blocks[blocks.length-1];
+			// this.ctx.lastBlockDataTS = Date.now();
 
 			if(!this.ctx.track) {
 				let region = this.getRegion();
@@ -912,7 +916,11 @@ export class App {
 		// });
 
 		this.io.on('dag/selected-tip', (data) => {
-			// console.log('last block:', data);
+			console.log('dag/selected-tip:', data);
+
+			this.ctx.lastBlockData = data;
+			this.ctx.lastBlockDataTS = Date.now();
+
 			let v = data[this.ctx.unit];
 			if(v)
 				this.ctx.updateMax(v);
