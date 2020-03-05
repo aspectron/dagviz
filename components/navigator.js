@@ -5,6 +5,7 @@ class AxisNavigator extends BaseElement{
 	static get properties() {
 		return {
 			v:{type:Number},
+			vertical:{type:Boolean, value:false}
 		};
 	}
 	static get styles(){
@@ -134,10 +135,76 @@ class AxisNavigator extends BaseElement{
 	}
 
 	redraw() {
+		if(this.vertical)
+			return this.redrawV();
+		this.redrawH();
+	}
+
+	redrawV(){
 		const { ctx } = this;
 		if(!this.app || !this.app.ctx.max)
 			return
+		let parentBox = this.getBoundingClientRect();
+		let canvasBox = this.canvas.getBoundingClientRect();
+		let { width, height } = canvasBox;
+		width *= this.scale;
+		height *= this.scale;
+		
+		ctx.clearRect(0, 0, width, height);
+		ctx.lineWidth = 1;
+		let absolute = this.app.ctx.position / this.app.ctx.max;
+		const thumbHeight = (54/2)*this.scale;
+		ctx.lineWidth = 1;
+		ctx.fillStyle = 'rgba(0,0,0,1.0)';
+		ctx.strokeStyle = 'rgba(0,0,0,1.0)';
+		ctx.font = `${Math.round(36/2*this.scale)}px "Exo 2"`;
+		ctx.textBaseline = "top";
+		let text = Math.round(this.app.ctx.position)+'';
+		let textMetrics = ctx.measureText(text);
+		const textWidth = textMetrics.width;
+		const textHeight = 36/2*this.scale;
+		let thumbWidth = textWidth+32;
+		if(thumbWidth < 128*this.scale)
+			thumbWidth = 128*this.scale;
 
+		let x = (width-thumbWidth) * absolute + thumbWidth/2;
+
+		ctx.beginPath();
+		ctx.fillStyle = 'rgba(255,255,255,1)';
+		ctx.fillRect(x-thumbWidth/2, height/2-thumbHeight/2, thumbWidth, thumbHeight);
+		ctx.stroke();
+		
+		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.moveTo(x, 0);
+		ctx.lineTo(x, height/2-thumbWidth/2);
+		ctx.stroke();
+		
+		ctx.beginPath();
+		ctx.moveTo(x, height);
+		ctx.lineTo(x, height/2+thumbWidth/2);
+		ctx.stroke();
+		
+		
+		/////////////////////
+		
+		let offset = 0.5;
+
+		ctx.fillStyle = `rgba(0,0,0,1.0)`;
+		ctx.fillText(text, x-textWidth/2+offset, height/2-textHeight/2+offset);
+
+		ctx.strokeStyle = `rgba(0,0,0,0.25)`;
+		ctx.fillStyle = `rgba(0,0,0,0.325)`;
+		ctx.fillText('0', 4, height/2-textHeight/2+offset);
+		let max_text = this.app.ctx.max+'';
+		let maxMetrics = ctx.measureText(max_text);
+		ctx.fillText(max_text, width-4-maxMetrics.width, height/2-textHeight/2+offset);
+	}
+	redrawH(){
+		const { ctx } = this;
+		if(!this.app || !this.app.ctx.max)
+			return
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
 		let { width, height } = canvasBox;
@@ -160,7 +227,6 @@ class AxisNavigator extends BaseElement{
 		let thumbWidth = textWidth+32;
 		if(thumbWidth < 128*this.scale)
 			thumbWidth = 128*this.scale;
-
 
 		let x = (width-thumbWidth) * absolute + thumbWidth/2;
 
@@ -195,8 +261,6 @@ class AxisNavigator extends BaseElement{
 		let max_text = this.app.ctx.max+'';
 		let maxMetrics = ctx.measureText(max_text);
 		ctx.fillText(max_text, width-4-maxMetrics.width, height/2-textHeight/2+offset);
-
-
 	}
 
 	getTS(src_date) {
