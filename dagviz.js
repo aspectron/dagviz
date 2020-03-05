@@ -91,8 +91,8 @@ class DAGViz {
         const { addedChainBlocks, removedBlockHashes } = args;
         if(addedChainBlocks) {
             let addedHashes = addedChainBlocks.map(v=>v.hash);
-            console.log('UPDATE blocks SET isChainBlock=1 WHERE (blocks.blockHash) IN (?)', [addedHashes]);
-            this.sql('UPDATE blocks SET isChainBlock=1 WHERE (blocks.blockHash) IN (?)', [addedHashes]);
+            console.log('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
+            this.sql('UPDATE blocks SET blocks.isChainBlock=1 WHERE blocks.blockHash IN ?', addedHashes);
             // console.log('UPDATE blocks SET isChainBlock=1 WHERE blockHash IN ?', [addedHashes]);
             addedChainBlocks.forEach((instr) => {
                 const { hash, acceptedBlockHashes } = instr;
@@ -267,8 +267,13 @@ console.log("dag/selected-tip");
 
                             connection.query(sql, args, (err, rows) => {
                                 connection.release();
-                                if(err)
+                                if(err) {
+                                    console.log(`Error processing SQL query:`);
+                                    console.log(sql);
+                                    console.log(args);
+                                    console.log(`SQL Error is: ${err.toString()}`)
                                     return reject(err);
+                                }
                                     // console.log("SELECT GOT ROWS:",rows);
                                 resolve(rows);
                             });
