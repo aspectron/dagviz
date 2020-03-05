@@ -499,7 +499,7 @@ export class App {
 			update : (v) => {
 
 				Object.values(this.graph.nodes).forEach(node => {
-					node.rebuildLinks();
+					//node.rebuildLinks();
 					node.updateStyle();
 
 				});

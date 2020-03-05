@@ -494,36 +494,37 @@ export class GraphNodeLink{
 	}
 	buildD(x1, y1, x2, y2) {
 		const {h, sign} = this.holder.ctx.direction;
-		if(this.holder.ctx.arrows != 'off') {
+		const {arrows} = this.holder.ctx;
+		if(arrows != 'off') {
 			let tSize = this.target.data.size+(this.target.data.isChainBlock?9:6)
 			const sSize = this.source.data.size
 			let boxHSize = tSize;
-			const margin = (boxHSize*2)/(Object.keys(this.target.parentLinks).length+1);
+			const margin = (boxHSize*2)/(this.target.parentLinks.length+1);
 				
-			if(this.holder.ctx.arrows=="single")
+			if(arrows=="single")
 				tSize += 15;
 			else if(this.isChainBlockLink)
 				tSize += 1;
 
-
 			if(h){
 				x1 -= sSize * sign
 				x2 += tSize * sign
-				if(this.holder.ctx.arrows=="multi")
+				if(arrows=="multi"){
+					//console.log("this.linkIndex", this.linkIndex, this.el.node())
 					y2 += (this.linkIndex * margin) - boxHSize + margin;
+				}
 			}else{
 				y1 -= sSize * sign
 				y2 += tSize * sign
-				if(this.holder.ctx.arrows=="multi")
+				if(arrows=="multi")
 					x2 += (this.linkIndex * margin) - boxHSize + margin;
 			}
 		}
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
-		if(this.holder.ctx)
-			return this.holder.ctx.nodeLinkCurveData(x1, y1, x2, y2, this, this.holder);
-		let xx = x1+(x2-x1)*0.5;
-		return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
+		return this.holder.ctx.nodeLinkCurveData(x1, y1, x2, y2, this, this.holder);
+		//let xx = x1+(x2-x1)*0.5;
+		//return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
 	}
 	setStaticPosition(x, y, x2, y2){
 		if(typeof(x2) == 'undefined' || typeof(y2) == 'undefined'){
@@ -577,7 +578,7 @@ export class GraphNode{
 		this.id 	= data.id || data.name;
 		this.tOffset = 0;
 		holder.nodes[this.id] = this;
-		this.parentLinks = {};
+		this.parentLinks = [];
 		this.selected = false;
 		this.x = 0;
 		this.y = 0;
@@ -733,10 +734,8 @@ export class GraphNode{
 			delete this.heightEl;
 		this.removeLinks();
 
-		_.each(this.parentLinks, (link, parent)=>{
-			link.remove();
-			delete this.parentLinks[parent];
-		});
+		this.parentLinks.forEach(link=>link.remove());
+		this.parentLinks=[];
 
 		this.removeArrowHead();
 		this.holder.removeIdx(this);
@@ -873,25 +872,29 @@ export class GraphNode{
 
 		this.el
 			.style('transform', `translate(${this.x}px, ${this.y}px)`)
-		this.updateLinkIndexes();	
+		if(this.holder.ctx.arrows == "multi")
+			this.updateLinkIndexes();
+		this.updateArrowHead();	
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
-
-		this.updateArrowHead();
+		this.parentLinks.forEach(link=>link.updateStyle())
 	}
-	addParentLink(parentLink){
-		this.parentLinks[parentLink.data.child] = parentLink;
-		//this.updateLinkIndexes();
-		this.updateArrowHead();
+	addParentLink(link){
+		if(this.parentLinks.indexOf(link)<0){
+			this.parentLinks.push(link);
+			this.updateArrowHead();
+		}
 	}
-	removeParentLinks(parentLink){
-		delete this.parentLinks[parentLink.data.child];
-		//this.updateLinkIndexes();
-		this.updateArrowHead();
+	removeParentLinks(link){
+		let index = this.parentLinks.indexOf(link)
+		if(index>-1){
+			this.parentLinks.splice(index, 1);
+			this.updateArrowHead();
+		}
 	}
 
 	updateLinkIndexes(){
-		let links = Object.values(this.parentLinks);
+		let links = this.parentLinks;
 		if(this.holder.ctx.direction.h)
 			links = links.sort((a, b)=>{
 				return a.source.y-b.source.y;
@@ -904,34 +907,20 @@ export class GraphNode{
 			link.linkIndex = index;
 		})
 	}
-	/*
-	updateSortedIndex(){
-		let links = Object.values(this.parentLinks);
-		if(this.holder.ctx.direction.h)
-			links = links.sort((a, b)=>{
-				return a.source.y-b.source.y;
-			})
-		else
-			links = links.sort((a, b)=>{
-				return a.source.x-b.source.x;
-			})
-		links.forEach((link, index)=>{
-			link.linkIndex = index;
-		})
-	}
-	*/
-
 	updateArrowHead(){
-		if(!Object.keys(this.parentLinks).length || this.holder.ctx.arrows != 'single')
+		const {arrows, dir} = this.holder.ctx;
+		if(!this.parentLinks.length || arrows != 'single')
 			return this.removeArrowHead();
-		const color = "#000";
-		if(!this.el.arrow)
+
+		if(!this.el.arrow){
 			this.el.arrow = this.el.append('polygon')
-						.attr("fill", color).attr('stroke',color);
-		if(this.el.arrow._dir == this.holder.ctx.dir)
-			return
+				.attr("fill", "#000").attr('stroke', "#000");
+		}
 		let arrow = this.el.arrow;
-		arrow._dir = this.holder.ctx.dir;
+		if(arrow._type == arrows+dir)
+			return
+		
+		arrow._type = arrows+dir
 		const {h, sign} = this.holder.ctx.direction;
 		let dist = (this.data.size+(this.data.isChainBlock?4:1))*sign;
 		if(h){
@@ -948,7 +937,7 @@ export class GraphNode{
 	}
 
 	getLinks() {
-		return (this.linkNodes || []).concat(Object.values(this.parentLinks));
+		return (this.linkNodes || []).concat(this.parentLinks);
 	}
 
 	onNodeClick(e) {
@@ -958,7 +947,7 @@ export class GraphNode{
 	}
 	onNodeHover(){
 		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
-		this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
+		this.holder.highlightLinks(this.parentLinks, 'red', this);
 
 		const { data } = this;
 
@@ -992,7 +981,7 @@ export class GraphNode{
 	highlightLinks(highlight = true) {
 		if(highlight) {
 			this.holder.highlightLinks(this.linkNodes || [], 'green', this);
-			this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
+			this.holder.highlightLinks(this.parentLinks, 'red', this);
 		}else {
 			this.holder.highlightLinks(this.getLinks(), null, this);
 		}
