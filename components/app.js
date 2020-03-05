@@ -73,7 +73,7 @@ class GraphContext {
 		this.app = app;
 
 		this.unitScale = 1.0;
-		this.unitDist = 100;
+		this.unitDist = 120;
 		this.position = 10;
 		this.max = 0;
 		this.mass = true;
@@ -453,7 +453,14 @@ export class App {
 	initCtls() {
 		this.ctls = { };
 		
-		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks');
+		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks', {
+			update : (v) => {
+				if(v)
+					$("#tracking").css('opacity',1);
+				else
+					$("#tracking").css('opacity',0.25);
+			}
+		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
 		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
 		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
@@ -655,6 +662,12 @@ export class App {
 		$orientationImg.addClass(`orient-${this.ctx.dir}`);
 		$orientationImg.click((e) => {
 			this.ctls.dir.toggle();
+		});
+
+		const $trackingImg = $('#tracking > img');
+		// $trackingImg.addClass(`orient-${this.ctx.dir}`);
+		$trackingImg.click((e) => {
+			this.ctls.track.toggle();
 		});
 
 
@@ -892,7 +905,7 @@ export class App {
 		this.io = io();
 
 		this.io.on('dag/blocks', (blocks) => {
-			// console.log('blocks:', blocks);
+			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
 
@@ -907,8 +920,14 @@ export class App {
 			}
 	
 			if(blocks.length) {
+
+				blocks.forEach(block=>block.isChainBlock = false);
+
 				this.createBlocks(blocks);
 				this.graph.updateSimulation();
+
+				this.ctx.lastBlockData = blocks[blocks.length-1];
+				this.ctx.lastBlockDataTS = Date.now();
 			}
 		});
 
@@ -920,7 +939,7 @@ export class App {
 		// });
 
 		this.io.on('dag/selected-tip', (data) => {
-			console.log('dag/selected-tip:', data);
+			this.verbose && console.log('dag/selected-tip:', data);
 
 			this.ctx.lastBlockData = data;
 			this.ctx.lastBlockDataTS = Date.now();
@@ -934,19 +953,32 @@ export class App {
 		});
 
 		this.io.on('dag/selected-parent-chain', (args) => {
-			console.log('dag/selected-parent-chain', args);
+			this.verbose && console.log('dag/selected-parent-chain', args);
 
 			const { addedChainBlocks, removedBlockHashes } = args;
 			const { nodes } = this.graph;
-			addedChainBlocks.forEach((instr) => {
+			const updateMap = { };
+			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
 				const { hash, acceptedBlockHashes } = instr;
-				const node = nodes[hash]
-				if(node) {
-					node.data.isChainBlock = true;
-					node.data.parentBlockHashes = acceptedBlockHashes;
+
+				const ref = nodes[hash];
+				if(ref) {
+					ref.data.isChainBlock = true;
+					updateMap[ref.data.blockHash] = ref;
+				}
+
+				acceptedBlockHashes.forEach((target) => {
+
+					const node = nodes[target];
+					if(node) {
+						node.data.acceptingBlockHash = hash;
+						updateMap[node.data.blockHash] = node;
+					}
+				});
+				Object.values(updateMap).forEach((node) => {
 					node.updateStyle();
 					node.rebuildLinks();
-				}
+				});
 			});
 
 			removedBlockHashes.forEach((hash) => {
@@ -1340,7 +1372,7 @@ export class App {
 }
 
 class Toggle {
-	constructor(target, ident, caption, tooltip) {
+	constructor(target, ident, caption, tooltip, options) {
 		window.app.ctls[ident] = this;
 		this.type = 'toggle';
 		this.target = target;
@@ -1382,8 +1414,15 @@ class Toggle {
 		return  storage ? (v ? 1 : 0) : v;
 	}
 
+	toggle() {
+		this.setValue(!this.getValue());
+	}
+
 	update() {
 		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${this.target[this.ident] ? 'ON' : 'OFF' }</span>`);
+
+		if(this.options && this.options.update)
+			this.options.update(value);
 	}
 }
 

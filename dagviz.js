@@ -51,7 +51,7 @@ class DAGViz {
     async initMQTT() {
 
         const client = mqtt.connect(this.mqtt.address,{
-            clientId:"mqtt_"+(Date.now()*Math.random()).toString(16),
+            clientId:"mqtt_"+Math.round(Date.now()*Math.random()).toString(16),
             username: this.mqtt.username, //'user',
             password: this.mqtt.password //'pass'
         });
@@ -80,11 +80,11 @@ class DAGViz {
 
     }
 
-    "dag/blocks"(block) {
+    async "dag/blocks"(block) {
         console.log('received: dag/blocks');
         this.io.emit("dag/blocks",[block]);
 
-        this.postRTB(block);
+        await this.postRTB(block);
     }
 
     async "dag/selected-parent-chain"(args) {
@@ -93,27 +93,30 @@ class DAGViz {
 
         const { addedChainBlocks, removedBlockHashes } = args;
         if(addedChainBlocks && addedChainBlocks.length) {
-            let addedHashes = addedChainBlocks.map(v=>v.hash);
-            console.log('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
-            this.sql('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
+            // let addedHashes = addedChainBlocks.map(v=>v.hash);
+            // console.log(`UPDATE blocks SET blocks.acceptedBlockHash='${}' WHERE (blocks.blockHash) IN (?)`, addedHashes);
+            // this.sql('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
             // console.log('UPDATE blocks SET isChainBlock=1 WHERE blockHash IN ?', [addedHashes]);
             addedChainBlocks.forEach((instr) => {
                 const { hash, acceptedBlockHashes } = instr;
                 //console.log('UPDATE blocks SET parentBlockHashes =  WHERE blockHash IN ?', [acceptedBlockHashes], [hash]);
-                this.sql(`UPDATE blocks SET parentBlockHashes = '${acceptedBlockHashes.join(',')}' WHERE (blocks.blockHash) IN (?)`, [acceptedBlockHashes], [hash]);
+                this.sql(`UPDATE blocks SET isChainBlock = 1 WHERE blockHash = '${hash}'`);
+                this.sql(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blocks.blockHash) IN (?)`, [acceptedBlockHashes]);
             })
         }
         if(removedBlockHashes && removedBlockHashes.length)
-            this.sql('UPDATE blocks SET blocks.isChainBlock=0 WHERE (blocks.blockHash) IN (?)', removedBlockHashes);
+            this.sql(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=0 WHERE (blocks.blockHash) IN (?)`, removedBlockHashes);
     }
+
+    static MAX_RTBS_BLOCKS = 1024;
 
     postRTB(block) {
         this.rtbs.push(block.blockHash);    // parent chain block notifications
         this.rtbsMap[block.blockHash] = true;
-        while(this.rtbs.length > 1024)
+        while(this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
             delete this.rtbsMap[this.rtbs.shift()];
 
-        await this.post([block]);
+        return this.post([block]);
     }
 
     async "dag/selected-tip"(message) {
@@ -125,6 +128,9 @@ console.log("dag/selected-tip");
         
         const block = message;
         this.io.emit("dag/selected-tip", block);
+
+        this.sql(`UPDATE blocks SET isChainBlock = 1 WHERE blockHash = '${block.blockHash}'`);
+
 
         this.postRTB(block);
         // "real-time" blocks - data received at runtime...
@@ -421,7 +427,7 @@ console.log("dag/selected-tip");
         if(this.args['rate-limit'])
             limit = parseInt(this.args['rate-limit']) || 100;
 
-        this.verbose && process.stdout.write(` ...${skip}... `);
+        this.verbose && process.stdout.write(` ...${this.lastTotal ? (skip/this.lastTotal * 100).toFixed(2)+'%' : skip}... `);
         // console.log(`fetching: ${skip}`);
         this.fetch({ skip, limit, order }).then(async (data) => {
 
@@ -450,8 +456,17 @@ console.log("dag/selected-tip");
     
                 this.skip += data.blocks.length;
 
+                const pre_ = data.blocks.length;
                 const blocks = data.blocks.filter(block=>!this.rtbsMap[block.blockHash]);
+                const post_ = blocks.length;
+                if(!this.tracking && pre_ != post_)
+                    this.tracking = true;
                 if(blocks.length) {
+                    if(this.tracking) {
+                        console.log('WARNING: detected ${blocks.length} database blocks not visible in MQTT feed!');
+                        console.log(' ->'+blocks.map(data=>data.blockHash).join('\n'));
+                    }
+
                     await this.post(blocks);
                 }
             }
