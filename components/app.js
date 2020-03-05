@@ -926,10 +926,12 @@ export class App {
 
 			const { addedChainBlocks, removedBlockHashes } = args;
 			const { nodes } = this.graph;
-			addedChainBlocks.forEach((hash) => {
+			addedChainBlocks.forEach((instr) => {
+				const { hash, acceptedBlockHashes } = instr;
 				const node = nodes[hash]
 				if(node) {
 					node.data.isChainBlock = true;
+					node.data.parentBlockHashes = acceptedBlockHashes;
 					node.updateStyle();
 					node.rebuildLinks();
 				}
