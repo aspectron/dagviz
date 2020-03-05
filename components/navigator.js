@@ -5,6 +5,7 @@ class AxisNavigator extends BaseElement{
 	static get properties() {
 		return {
 			v:{type:Number},
+			vertical:{type:Boolean, value:false}
 		};
 	}
 	static get styles(){

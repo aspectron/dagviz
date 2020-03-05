@@ -482,9 +482,18 @@ export class App {
 
 		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation', {
 			update : (v) => {
-				const $orientationImg = $('#orientation > img');
+				const $orientationImg = $('#orientation > img, body');
 				$orientationImg.removeClass('orient-N orient-E orient-S orient-W');
 				$orientationImg.addClass(`orient-${v}`);
+				let vertical = false;
+				if(v=='N' || v=='S'){
+					$orientationImg.addClass('orient-v');
+					vertical = true;
+				}else{
+					$orientationImg.removeClass('orient-v');
+				}
+				this.graph.updateSVGSize();
+				this.navigator.vertical = vertical;
 			}
 		});
 
