@@ -456,9 +456,9 @@ export class App {
 		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks', {
 			update : (v) => {
 				if(v)
-					$("#tracking").css('opacity',1);
+					$("#tracking > img").css('opacity',1);
 				else
-					$("#tracking").css('opacity',0.25);
+					$("#tracking > img").css('opacity',0.25);
 			}
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
@@ -948,6 +948,8 @@ export class App {
 		// });
 
 		this.io.on('dag/selected-tip', (data) => {
+			return;
+
 			this.verbose && console.log('dag/selected-tip:', data);
 
 			this.ctx.lastBlockData = data;
@@ -969,15 +971,12 @@ export class App {
 			const updateMap = { };
 			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
 				const { hash, acceptedBlockHashes } = instr;
-
 				const ref = nodes[hash];
 				if(ref) {
 					ref.data.isChainBlock = true;
 					updateMap[ref.data.blockHash] = ref;
 				}
-
 				acceptedBlockHashes.forEach((target) => {
-
 					const node = nodes[target];
 					if(node) {
 						node.data.acceptingBlockHash = hash;
