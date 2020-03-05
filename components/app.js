@@ -64,8 +64,9 @@ export class Block extends GraphNode {
 
 
 class GraphContext {
-	constructor(options) {
+	constructor(app, options) {
 		this.unit = options.unit; // timestamp
+		this.app = app;
 
 		this.unitScale = 1.0;
 		this.unitDist = 100;
@@ -82,6 +83,8 @@ class GraphContext {
 		this.shape = 'square';
 		this.layout = 'determ';
 		this.quality = 'high';
+		this.spacingFactor = 1;
+		this.arrows = 'single';
 
 		this.dir = 'E';
 		this.directions = {
@@ -210,9 +213,12 @@ class GraphContext {
 			else
 			if(this.chainBlocksCenter =='force' && node.data.isChainBlock && node.location_init_ > ts - 512)
 				node[layoutAxis] = Math.random()-0.5;
+			else
+			if(Math.abs(node[layoutAxis]) < 50)
+				node[layoutAxis] += node[layoutAxis] > 0 ? 3 : -3; //Math.random();
 
-			if(this.layout_pos_ctx_)
-				delete this.layout_post_ctx_;
+			// if(this.layout_pos_ctx_)
+			// 	delete this.layout_post_ctx_;
 		}
 
 		if(node.data.parentBlockHashes) {
@@ -223,9 +229,9 @@ class GraphContext {
 					max = Math.abs(parent[axis]);
 			});
 
-			node[axis] = Math.round(max + this.unitDist*2)*sign;
+			node[axis] = Math.round(max + (this.unitDist*2*this.spacingFactor))*sign;
 		} else {
-			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * sign);
+			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign);
 		}
 	}
 
@@ -421,12 +427,13 @@ class GraphContext {
 		this.updateRangeScale();
 		this.graph.restartSimulation();
 	}
+
 }
 
 export class App {
 	constructor() {
 		this.scores = [];
-		this.ctx = new GraphContext({ unit : 'blueScore' });
+		this.ctx = new GraphContext(this, { unit : 'blueScore' });
 		//this.rpc = new FabricRPC({origin:window.location.origin, path: "/ctl"});
 		this.argv = new URLSearchParams(location.search);
 		this.connect = this.argv.get('connect') !== null;
@@ -476,6 +483,32 @@ export class App {
 				$orientationImg.addClass(`orient-${v}`);
 			}
 		});
+
+		new MultiChoice(this.ctx,'spacingFactor',[1,1.5,2.0,2.5,3.0],'SPACING','Spacing Factor', {
+			update : (v) => {
+				this.graph.restartSimulation();
+			}
+		});
+
+		new MultiChoice(this.ctx,'arrows',{
+			'off' : 'OFF',
+			'single' : 'SINGLE',
+			'multi' : 'MULTI',
+
+		},'ARROWS','fal fa-location-arrow:Display Arrows', {
+			update : (v) => {
+
+				Object.values(this.graph.nodes).forEach(node => {
+					node.rebuildLinks();
+					node.updateStyle();
+
+				});
+				// const $orientationImg = $('#orientation > img');
+				// $orientationImg.removeClass('orient-N orient-E orient-S orient-W');
+				// $orientationImg.addClass(`orient-${v}`);
+			}
+		});
+
 	}
 
 	init() {
@@ -766,7 +799,7 @@ export class App {
 		return new Promise((resolve,reject) => {
 			let query = '';
 
-			if(!args.from || !args.to)
+			if(isNaN(args.from) || isNaN(args.to))
 				throw new Error('missing from or to in fetch() args...');
 
 			args.unit = this.ctx.unit;
@@ -1247,6 +1280,9 @@ export class App {
         }
     }
     
+	disableTracking() {
+		this.ctls.track.setValue(false);
+	}
 
 }
 
