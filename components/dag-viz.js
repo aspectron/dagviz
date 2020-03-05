@@ -228,6 +228,7 @@ D3x.shape.square = function(el, o) {
         .attr("stroke", D3x.rgba([0,0,0], 0.5))
 		//.attr("stroke-width", 1)
 		//.attr('class',['block'])
+	root.blockBox = node;
 
 	if(o.strokeWidth)
 		node.attr('stroke-width', o.strokeWidth);
@@ -734,10 +735,14 @@ export class GraphNode{
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash;
 		const isRed = !isBlue;
-		if(isBlue)
+		if(isBlue){
 			data.color = `rgba(194,244,255,0.99)`;
-		else
+			data.highlightColor = 'rgba(86,193,251,1)'
+		}
+		else{
 			data.color = `rgba(255,194,194,0.99)`;
+			data.highlightColor = 'rgba(251,116,118,1)'
+		}
 
 		this.shape 	= data.shape;
 		this.color 	= data.color;
@@ -926,6 +931,7 @@ export class GraphNode{
 	onNodeHover(){
 		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
 		this.holder.highlightLinks(this.parentLinks, 'red', this);
+		this.highlightConnectedBlocks(true);
 
 		const { data } = this;
 
@@ -953,7 +959,26 @@ export class GraphNode{
 		`);
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.addClass('focus');
+	}
 
+	highlightConnectedBlocks(highlight){
+		(this.linkNodes||[]).forEach(l=>{
+			l.target.highlight(highlight);
+		});
+		this.parentLinks.forEach(l=>{
+			l.source.highlight(highlight);
+		});
+		this.highlight(highlight);
+	}
+
+	highlight(highlight = true){
+		const color = highlight? (this.data.highlightColor || "#F00"): this.data.color;
+		//this.el.setFill(()=>{
+		//	return color;
+		//});
+		this.el.blockBox.transition().duration(500)
+			.attr('fill', color)
+			.style("transform", highlight?"scale(1.1)":null)
 	}
 
 	highlightLinks(highlight = true) {
@@ -968,6 +993,7 @@ export class GraphNode{
 	onNodeOut(){
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.removeClass('focus');
+		this.highlightConnectedBlocks(false)
 
 		this.$info.html('');
 
