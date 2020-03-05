@@ -84,9 +84,24 @@ class DAGViz {
         console.log('received: dag/blocks');
     }
 
-    async "dag/selected-parent-chain"(message) {
+    async "dag/selected-parent-chain"(args) {
         console.log("dag/selected-parent-chain");
-        this.io.emit("dag/selected-parent-chain",message);
+        this.io.emit("dag/selected-parent-chain",args);
+
+        const { addedChainBlocks, removedBlockHashes } = args;
+        if(addedChainBlocks) {
+            let addedHashes = addedChainBlocks.map(v=>v.hash);
+            console.log('UPDATE blocks SET isChainBlock=1 WHERE (blocks.blockHash) IN (?)', [addedHashes]);
+            this.sql('UPDATE blocks SET isChainBlock=1 WHERE (blocks.blockHash) IN (?)', [addedHashes]);
+            // console.log('UPDATE blocks SET isChainBlock=1 WHERE blockHash IN ?', [addedHashes]);
+            addedChainBlocks.forEach((instr) => {
+                const { hash, acceptedBlockHashes } = instr;
+                //console.log('UPDATE blocks SET parentBlockHashes =  WHERE blockHash IN ?', [acceptedBlockHashes], [hash]);
+                this.sql(`UPDATE blocks SET parentBlockHashes = '${acceptedBlockHashes.join(',')}' WHERE (blocks.blockHash) IN (?)`, [acceptedBlockHashes], [hash]);
+            })
+        }
+        if(removedBlockHashes)
+            this.sql('UPDATE blocks SET isChainBlock=0 WHERE (blockHash) IN (?)', [removedBlockHashes]);
     }
 
     async "dag/selected-tip"(message) {
