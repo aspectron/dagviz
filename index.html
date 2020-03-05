@@ -271,6 +271,18 @@
 			margin-left: 8px;
 		}
 
+		#tracking > img {
+			width: 24px;
+			height: auto;
+			transition: all 0.1s;
+			margin-left: 16px;
+			opacity: 0.25;
+		}
+
+		.tracking-enabled {
+			opacity: 1;
+		}
+
 		#orientation > img {
 			width: 24px;
 			height: auto;
@@ -291,6 +303,7 @@
 	<div id='top'>
 		<div id="menu-bar">
 			<div id="menu-anchor" class="menu-item"><i class='fal fa-sliders-h' tooltip="Settings"></i></div>
+			<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast.png' tooltip="Track"></div>
 			<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"></div>
 			<div id="search-wrapper">
 				<div class='icon-wrapper'><i class='fal fa-search' style='font-size:22px;' tooltip="Search for blue score of block "></i></div>
