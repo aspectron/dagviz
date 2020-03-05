@@ -479,33 +479,15 @@ export class GraphNodeLink{
 
 		if(this.holder.ctx.arrows == 'multi') {
 			this.updateArrow();
-			// const color = "#000";
-			// if(!this.el.arrow)
-			// 	this.el.arrow = this.el.append('polygon')
-			// 				.attr("fill", color).attr('stroke',color);
-			// if(this.el.arrow._dir == this.holder.ctx.dir)
-			// 	return
-			// let arrow = this.el.arrow;
-			// arrow._dir = this.holder.ctx.dir;
-			// const {h, sign} = this.holder.ctx.direction;
-			// const { x, y } = target;
-			// arrow.attr("points", `${x} ${y}, ${x+20*sign} ${y-6}, ${x+20*sign} ${y+6}`);
-			//let dist = (target.data.size+(target.data.isChainBlock?4:1))*sign;
-//			if(h){
-			// 	arrow.attr("points", `${x} 0, ${x+20*sign} -6, ${x+20*sign} 6`);
-			// }else{
-			// 	arrow.attr("points", `0 ${y}, -8 ${y+40*sign}, 8 ${y+40*sign}`);
-			// }
-		}
-		else {
+		}else{
 			this.removeArrow();
-		}	
-		
+		}
 	}
 	
 	updateArrow() {
 		const { target } = this;
 		const color = "#000";
+		/*
 		if(!this.el.arrow)
 			this.el.arrow = this.el.append('polygon')
 						.attr("fill", color).attr('stroke',color);
@@ -516,7 +498,8 @@ export class GraphNodeLink{
 		const {h, sign} = this.holder.ctx.direction;
 		const { x, y } = target;
 		arrow.attr("points", `${x} ${y}, ${x+20*sign} ${y-6}, ${x+20*sign} ${y+6}`);
-
+		*/
+		this.el.path.attr("marker-end", 'url(#endarrow)')
 	}
 
 	removeArrow() {
@@ -528,12 +511,17 @@ export class GraphNodeLink{
 	buildD(x1, y1, x2, y2) {
 		const {h, sign} = this.holder.ctx.direction;
 		if(this.holder.ctx.arrows != 'off') {
+			let tSize = this.target.data.size+(this.target.data.isChainBlock?3:0)
+			const sSize = this.source.data.size
+
+			if(this.holder.ctx.arrows=="single")
+				tSize += 21;
 			if(h){
-				x1 -= 26 * sign
-				x2 += 40 * sign
+				x1 -= sSize * sign
+				x2 += tSize * sign
 			}else{
-				y1 -= 26 * sign
-				y2 += 40 * sign
+				y1 -= sSize * sign
+				y2 += tSize * sign
 			}
 		}
 		if(!this.curves)
@@ -907,37 +895,22 @@ export class GraphNode{
 	}
 
 	updateArrowHead(){
-<<<<<<< HEAD
 		if(!Object.keys(this.parentLinks).length || this.holder.ctx.arrows != 'single')
 			return this.removeArrowHead();
 		const color = "#000";
 		if(!this.el.arrow)
 			this.el.arrow = this.el.append('polygon')
 						.attr("fill", color).attr('stroke',color);
-=======
-		if(!Object.keys(this.parentLinks).length)
-			return this.removeArrowHead();
-		if(!this.el.arrow)
-			this.el.arrow = this.el.append('polygon')
-						.attr("fill", "red");
->>>>>>> e009dfd5e792e82cf3055faa321b89e2199959a7
 		if(this.el.arrow._dir == this.holder.ctx.dir)
 			return
 		let arrow = this.el.arrow;
 		arrow._dir = this.holder.ctx.dir;
 		const {h, sign} = this.holder.ctx.direction;
-<<<<<<< HEAD
 		let dist = (this.data.size+(this.data.isChainBlock?4:1))*sign;
 		if(h){
 			arrow.attr("points", `${dist} 0, ${dist+20*sign} -6, ${dist+20*sign} 6`);
 		}else{
 			arrow.attr("points", `0 ${dist}, -6 ${dist+20*sign}, 6 ${dist+20*sign}`);
-=======
-		if(h){
-			arrow.attr("points", `${(this.data.size+(this.data.isChainBlock?4:1))*sign} 0, ${40*sign} -8, ${40*sign} 8`);
-		}else{
-			arrow.attr("points", `0 ${(this.data.size+(this.data.isChainBlock?4:1))*sign}, -8 ${40*sign}, 8 ${40*sign}`);
->>>>>>> e009dfd5e792e82cf3055faa321b89e2199959a7
 		}
 	}
 	removeArrowHead(){
@@ -1196,13 +1169,13 @@ export class DAGViz extends BaseElement {
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100">
 			<defs>
 			    <marker id="startarrow" markerWidth="10" markerHeight="7" 
-			    refX="10" refY="3.5" orient="auto">
+			    	refX="10" refY="3.5" orient="auto">
 			      <polygon points="10 0, 10 7, 0 3.5" fill="red" />
 			    </marker>
-			    <symbol id="endarrow" width="12" height="12" 
-			    	viewBox="0 0 2 2">
-			        <polygon points="0 0, 12 6, 0 12" fill="red" />
-			    </symbol>
+			    <marker id="endarrow" markerWidth="6" markerHeight="6" 
+			    	refX="6" refY="3" orient="auto" >
+			        <polygon points="0 0, 6 3, 0 6" fill="red" />
+			    </marker>
 		  </defs>
 		</svg>
 		</div>
