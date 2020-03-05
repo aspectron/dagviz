@@ -840,16 +840,16 @@ export class App {
 		return block;
 	}
 
-	onDagSelectedTip(data) {
-		//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
-		if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
-			data.acceptingBlockHash = this.lastBlock.blockHash;
-		}
+	// onDagSelectedTip(data) {
+	// 	//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
+	// 	if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
+	// 		data.acceptingBlockHash = this.lastBlock.blockHash;
+	// 	}
 
-		this.lastBlock = data;
-		this.createBlock(data);
-		this.graph.updateSimulation();
-	}
+	// 	this.lastBlock = data;
+	// 	this.createBlock(data);
+	// 	this.graph.updateSimulation();
+	// }
 
 	afterInit(){
 		document.body.classList.remove("initilizing");
@@ -901,12 +901,48 @@ export class App {
 			}
 		});
 
-		this.io.on('last-block-data', (data) => {
+		// this.io.on('last-block-data', (data) => {
+		// 	// console.log('last block:', data);
+		// 	let v = data[this.ctx.unit];
+		// 	if(v)
+		// 		this.ctx.updateMax(v);
+		// });
+
+		this.io.on('dag/selected-tip', (data) => {
 			// console.log('last block:', data);
 			let v = data[this.ctx.unit];
 			if(v)
 				this.ctx.updateMax(v);
-		})
+
+			this.createBlocks([data]);
+			this.graph.updateSimulation();
+		});
+
+		this.io.on('dag/selected-parent-chain', (args) => {
+			console.log('dag/selected-parent-chain', args);
+
+			const { addedChainBlocks, removedBlockHashes } = args;
+			const { nodes } = this.graph;
+			addedChainBlocks.forEach((hash) => {
+				const node = nodes[hash]
+				if(node) {
+					node.data.isChainBlock = true;
+					node.updateStyle();
+					node.rebuildLinks();
+				}
+			});
+
+			removedBlockHashes.forEach((hash) => {
+				const node = nodes[hash]
+				if(node) {
+					node.data.isChainBlock = false;
+					node.updateStyle();
+					node.rebuildLinks();
+				}
+			});
+
+		});
+
 	}
 
 	initNavigator() {

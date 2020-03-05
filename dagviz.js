@@ -9,24 +9,32 @@ const MF = require('micro-fabric');
 const MySQL = require('./lib/mysql');
 const basicAuth = require('basic-auth');
 const io = require('socket.io');//(http);
+const mqtt = require('mqtt');
 
  
-
 class DAGViz {
 
     constructor() {
         this.args = MF.utils.args();
 
-        this.kasparov = `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
-        // this.kasparov = `http://finland.aspectron.com:8082`;
-        if(this.args['kasparov']) {
-            this.kasparov = this.args['kasparov'];
-        }
+        this.kasparov = this.args['kasparov'] || `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
+        this.mqtt = {
+             address : this.args['mqtt-address'] || "mqtt://kasparov-dev-auxiliary-open-devnet.daglabs.com:1883",
+             username : this.args['mqtt-user'] || 'user',
+             password : this.args['mqtt-pass'] || 'pass'
+        };
+
         console.log(`kasparov api server at ${this.kasparov}`);
         this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
 
         this.verbose = this.args.verbose ? true : false;
+
+        this.pcbs = [ ];
+        this.pcbsMap = { };
     }
+
+
+    
 
     hash(data,h='sha256') {
         return crypto.createHash(h).update(data).digest('hex');
@@ -34,8 +42,79 @@ class DAGViz {
 
     async init() {
         await this.initDatabase()
+        await this.initMQTT();
         await this.initHTTP();
+
         return this.main();
+    }
+
+    async initMQTT() {
+
+        const client = mqtt.connect(this.mqtt.address,{
+            clientId:"mqtt_"+(Date.now()*Math.random()).toString(16),
+            username: this.mqtt.username, //'user',
+            password: this.mqtt.password //'pass'
+        });
+        
+        client.subscribe("dag/blocks",{qos:1});
+        client.subscribe("dag/selected-tip",{qos:1});
+        client.subscribe("dag/selected-parent-chain",{qos:1});
+        client.on("connect",() => {
+            console.log("MQTT connected");
+        })
+        
+        client.on('message',(topic, message, packet) => {
+            console.log('topic:',topic);
+            //topic = 'MQTT_'+topic.replace(/\W/g,'_')+'';
+            try {
+                if(this[topic])
+                    this[topic](JSON.parse(message.toString()));
+            } catch(ex) {
+                console.log(ex);
+                console.log('while parsing:',message.toString());
+            }
+            // console.log("MQTT message is "+ message);
+            // console.log("MQTT topic is "+ topic);
+        });
+
+
+    }
+
+    "dag/blocks"(message) {
+        console.log('received: dag/blocks');
+    }
+
+    async "dag/selected-parent-chain"(message) {
+        console.log("dag/selected-parent-chain");
+        this.io.emit("dag/selected-parent-chain",message);
+    }
+
+    async "dag/selected-tip"(message) {
+
+console.log("dag/selected-tip");
+
+        if(!message.blockHash)
+            return console.log('invalid mqtt message:', message);
+        
+        const block = message;
+        this.io.emit("dag/selected-tip", block);
+
+        this.pcbs.push(block.blockHash);    // parent chain block notifications
+        this.pcbsMap[block.blockHash] = true;
+        while(this.pcbs.length > 1024)
+            delete this.pcbsMap[this.pcbs.shift()];
+
+        await this.post([block]);
+
+        // let blocks = [message].map(block => DAGViz.DB_TABLE_BLOCKS_ORDER.map(field => block[field]));
+
+        // await this.sql(`
+        //     REPLACE INTO blocks (
+        //         ${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')}
+        //     ) VALUES ?
+        // `, [blocks]);
+
+
     }
 
     async initHTTP() {
@@ -202,6 +281,23 @@ class DAGViz {
 
     async sql(...args) { return this.db.query(...args); }
 
+    static DB_TABLE_BLOCKS_ORDER = [
+        'blockHash', 
+        'acceptingBlockHash',  
+        'version', 
+        'hashMerkleRoot', 
+        'acceptedIDMerkleRoot', 
+        'utxoCommitment', 
+        'timestamp', 
+        'bits', 
+        'nonce', 
+        'blueScore', 
+        'isChainBlock', 
+        'mass', 
+        'parentBlockHashes', 
+        'childBlockHashes'
+    ];
+
     async main() {
 
         await this.sql(`CREATE DATABASE IF NOT EXISTS ${this.uid} DEFAULT CHARACTER SET utf8;`);
@@ -320,8 +416,14 @@ class DAGViz {
                 this.lastTotal = data.total;
 
             if(data.blocks && data.blocks.length) {
+
+                if(data.blocks.length < 100)
+                    this.io.emit('blocks',data.blocks);
+    
                 this.skip += data.blocks.length;
-                await this.post(data.blocks);
+
+                const blocks = data.blocks.filter(block=>!this.pcbsMap[block.blockHash]);
+                await this.post(blocks);
             }
             const wait = (!data || !data.blocks || data.blocks.length != 100) ? 1000 : 0;
             //(data.blocks && data.blocks.length != 100) ? 1000 : 0;
@@ -342,17 +444,15 @@ class DAGViz {
 
     }
 
-    post(blocks) {
+    post(blocks, excludeMap) {
         // console.log("DATA:",data);
 
         this.lastBlock = blocks[blocks.length-1];
         // console.log('posting blocks...',blocks.length);
-        if(blocks.length < 100)
-            this.io.emit('blocks',blocks);
 
         return new Promise(async (resolve,reject)=>{
             //console.log("DOING POST") // 'acceptingBlockTimestamp',
-            let order = ['blockHash', 'acceptingBlockHash',  'version', 'hashMerkleRoot', 'acceptedIDMerkleRoot', 'utxoCommitment', 'timestamp', 'bits', 'nonce', 'blueScore', 'isChainBlock', 'mass', 'parentBlockHashes', 'childBlockHashes'];
+            
 
             // let blocks = data.blocks;
             let relations = [];
@@ -376,21 +476,21 @@ class DAGViz {
                 //delete block.acceptingBlockHash;
             });
 
-            blocks = blocks.map(block => order.map(field => block[field]));
+            blocks = blocks.map(block => DAGViz.DB_TABLE_BLOCKS_ORDER.map(field => block[field]));
                 //Object.values(block));
 
             this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
             try {
                 await this.sql(`
-                    INSERT INTO blocks (
-                        ${order.join(', ')}
+                    REPLACE INTO blocks (
+                        ${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')}
                     ) VALUES ?
                 `, [blocks]);
 
                 if(relations.length) {
                     await this.sql(`
-                        INSERT INTO block_relations (
+                        REPLACE INTO block_relations (
                             parent, child, linked
                         ) VALUES ?
                     `, [relations]);
@@ -406,6 +506,7 @@ class DAGViz {
             }
         });
     }
+
 
     async updateRelations() {
         let rows = await this.sql('SELECT * FROM block_relations WHERE linked = 0 LIMIT 1000');
