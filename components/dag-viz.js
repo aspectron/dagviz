@@ -170,8 +170,6 @@ D3x.shape.triangle = function(el, o) {
     return node;
 }
 
-
-
 D3x.shape.circle = function(el, o) {
     var node = el.append('svg:circle')
         .attr('r', 0)//Math.random() * 25 + 25)
@@ -424,6 +422,7 @@ export class GraphNodeLink{
 		this.target = holder.nodes[data.parent];
 		this.target.addParentLink(this);
 		this.target.attachNode();
+		this.linkIndex = 0;//holder.getNodeSortedIndex(this.source);
 
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
@@ -475,8 +474,9 @@ export class GraphNodeLink{
 
 		//this.el.transition().duration(1000).style('opacity', 1);
 
-		
-
+		if(this.arrowType == this.holder.ctx.arrows+this.holder.ctx.dir)
+			return
+		this.arrowType = this.holder.ctx.arrows+this.holder.ctx.dir;
 		if(this.holder.ctx.arrows == 'multi') {
 			this.updateArrow();
 		}else{
@@ -485,51 +485,46 @@ export class GraphNodeLink{
 	}
 	
 	updateArrow() {
-		const { target } = this;
-		const color = "#000";
-		/*
-		if(!this.el.arrow)
-			this.el.arrow = this.el.append('polygon')
-						.attr("fill", color).attr('stroke',color);
-		if(this.el.arrow._dir == this.holder.ctx.dir)
-			return
-		let arrow = this.el.arrow;
-		arrow._dir = this.holder.ctx.dir;
-		const {h, sign} = this.holder.ctx.direction;
-		const { x, y } = target;
-		arrow.attr("points", `${x} ${y}, ${x+20*sign} ${y-6}, ${x+20*sign} ${y+6}`);
-		*/
-		this.el.path.attr("marker-end", 'url(#endarrow)')
+		let dir = this.holder.ctx.dir.toLowerCase();
+		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir})`:`url(#endarrow-${dir})`)
 	}
 
 	removeArrow() {
-		if(this.el.arrow){
-			this.el.arrow.remove();
-			delete this.el.arrow;
-		}
+		this.el.path.attr("marker-end", null)
 	}
 	buildD(x1, y1, x2, y2) {
 		const {h, sign} = this.holder.ctx.direction;
-		if(this.holder.ctx.arrows != 'off') {
-			let tSize = this.target.data.size+(this.target.data.isChainBlock?3:0)
+		const {arrows} = this.holder.ctx;
+		if(arrows != 'off') {
+			let tSize = this.target.data.size+(this.target.data.isChainBlock?9:6)
 			const sSize = this.source.data.size
+			let boxHSize = tSize;
+			const margin = (boxHSize*2)/(this.target.parentLinks.length+1);
+				
+			if(arrows=="single")
+				tSize += 15;
+			else if(this.isChainBlockLink)
+				tSize += 1;
 
-			if(this.holder.ctx.arrows=="single")
-				tSize += 21;
 			if(h){
 				x1 -= sSize * sign
 				x2 += tSize * sign
+				if(arrows=="multi"){
+					//console.log("this.linkIndex", this.linkIndex, this.el.node())
+					y2 += (this.linkIndex * margin) - boxHSize + margin;
+				}
 			}else{
 				y1 -= sSize * sign
 				y2 += tSize * sign
+				if(arrows=="multi")
+					x2 += (this.linkIndex * margin) - boxHSize + margin;
 			}
 		}
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
-		if(this.holder.ctx)
-			return this.holder.ctx.nodeLinkCurveData(x1, y1, x2, y2, this, this.holder);
-		let xx = x1+(x2-x1)*0.5;
-		return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
+		return this.holder.ctx.nodeLinkCurveData(x1, y1, x2, y2, this, this.holder);
+		//let xx = x1+(x2-x1)*0.5;
+		//return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
 	}
 	setStaticPosition(x, y, x2, y2){
 		if(typeof(x2) == 'undefined' || typeof(y2) == 'undefined'){
@@ -583,7 +578,7 @@ export class GraphNode{
 		this.id 	= data.id || data.name;
 		this.tOffset = 0;
 		holder.nodes[this.id] = this;
-		this.parentLinks = {};
+		this.parentLinks = [];
 		this.selected = false;
 		this.x = 0;
 		this.y = 0;
@@ -739,10 +734,8 @@ export class GraphNode{
 			delete this.heightEl;
 		this.removeLinks();
 
-		_.each(this.parentLinks, (link, parent)=>{
-			link.remove();
-			delete this.parentLinks[parent];
-		});
+		this.parentLinks.forEach(link=>link.remove());
+		this.parentLinks=[];
 
 		this.removeArrowHead();
 		this.holder.removeIdx(this);
@@ -879,32 +872,55 @@ export class GraphNode{
 
 		this.el
 			.style('transform', `translate(${this.x}px, ${this.y}px)`)
-			
+		if(this.holder.ctx.arrows == "multi")
+			this.updateLinkIndexes();
+		this.updateArrowHead();	
 		if(this.linkNodes)
 			this.linkNodes.forEach(node=>node.updateStyle());
+		this.parentLinks.forEach(link=>link.updateStyle())
+	}
+	addParentLink(link){
+		if(this.parentLinks.indexOf(link)<0){
+			this.parentLinks.push(link);
+			this.updateArrowHead();
+		}
+	}
+	removeParentLinks(link){
+		let index = this.parentLinks.indexOf(link)
+		if(index>-1){
+			this.parentLinks.splice(index, 1);
+			this.updateArrowHead();
+		}
+	}
 
-		this.updateArrowHead();
+	updateLinkIndexes(){
+		let links = this.parentLinks;
+		if(this.holder.ctx.direction.h)
+			links = links.sort((a, b)=>{
+				return a.source.y-b.source.y;
+			})
+		else
+			links = links.sort((a, b)=>{
+				return a.source.x-b.source.x;
+			})
+		links.forEach((link, index)=>{
+			link.linkIndex = index;
+		})
 	}
-	addParentLink(parentLink){
-		this.parentLinks[parentLink.data.child] = parentLink;
-		this.updateArrowHead();
-	}
-	removeParentLinks(parentLink){
-		delete this.parentLinks[parentLink.data.child];
-		this.updateArrowHead();
-	}
-
 	updateArrowHead(){
-		if(!Object.keys(this.parentLinks).length || this.holder.ctx.arrows != 'single')
+		const {arrows, dir} = this.holder.ctx;
+		if(!this.parentLinks.length || arrows != 'single')
 			return this.removeArrowHead();
-		const color = "#000";
-		if(!this.el.arrow)
+
+		if(!this.el.arrow){
 			this.el.arrow = this.el.append('polygon')
-						.attr("fill", color).attr('stroke',color);
-		if(this.el.arrow._dir == this.holder.ctx.dir)
-			return
+				.attr("fill", "#000").attr('stroke', "#000");
+		}
 		let arrow = this.el.arrow;
-		arrow._dir = this.holder.ctx.dir;
+		if(arrow._type == arrows+dir)
+			return
+		
+		arrow._type = arrows+dir
 		const {h, sign} = this.holder.ctx.direction;
 		let dist = (this.data.size+(this.data.isChainBlock?4:1))*sign;
 		if(h){
@@ -921,7 +937,7 @@ export class GraphNode{
 	}
 
 	getLinks() {
-		return (this.linkNodes || []).concat(Object.values(this.parentLinks));
+		return (this.linkNodes || []).concat(this.parentLinks);
 	}
 
 	onNodeClick(e) {
@@ -931,7 +947,7 @@ export class GraphNode{
 	}
 	onNodeHover(){
 		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
-		this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
+		this.holder.highlightLinks(this.parentLinks, 'red', this);
 
 		const { data } = this;
 
@@ -965,7 +981,7 @@ export class GraphNode{
 	highlightLinks(highlight = true) {
 		if(highlight) {
 			this.holder.highlightLinks(this.linkNodes || [], 'green', this);
-			this.holder.highlightLinks(Object.values(this.parentLinks), 'red', this);
+			this.holder.highlightLinks(this.parentLinks, 'red', this);
 		}else {
 			this.holder.highlightLinks(this.getLinks(), null, this);
 		}
@@ -981,7 +997,6 @@ export class GraphNode{
 			this.holder.highlightLinks(this.getLinks(), null, this);
 	}
 
-
 	getTS(src_date) {
 		var a = src_date || (new Date());
 		var year = a.getFullYear();
@@ -994,7 +1009,6 @@ export class GraphNode{
 		return `${year}-${month}-${date} ${hour}:${min}:${sec}`;
 	}
 	
-
 	getBoundingClientRect(){
 		if(this.el.getBoundingClientRect)
 			return this.el.getBoundingClientRect();
@@ -1166,15 +1180,43 @@ export class DAGViz extends BaseElement {
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="smalldot" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgo8cmVjdCB3aWR0aD0nNScgaGVpZ2h0PSc1JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyNjY2MnLz4KPC9zdmc+" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="circles-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSJ3aGl0ZSIgLz4KICA8Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIgZmlsbD0iYmxhY2siLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>						
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100" fill="#000">
 			<defs>
 			    <marker id="startarrow" markerWidth="10" markerHeight="7" 
 			    	refX="10" refY="3.5" orient="auto">
-			      <polygon points="10 0, 10 7, 0 3.5" fill="red" />
+			      <polygon points="10 0, 10 7, 0 3.5"/>
 			    </marker>
-			    <marker id="endarrow" markerWidth="6" markerHeight="6" 
-			    	refX="6" refY="3" orient="auto" >
-			        <polygon points="0 0, 6 3, 0 6" fill="red" />
+			    <marker id="endarrow-e" markerWidth="6" markerHeight="6" 
+			    	refX="6" refY="3">
+			        <polygon points="6 6, 0 3, 6 0"/>
+			    </marker>
+			    <marker id="endarrow-w" markerWidth="6" markerHeight="6" 
+			    	refX="0" refY="3">
+			        <polygon points="0 0, 6 3, 0 6"/>
+			    </marker>
+			    <marker id="endarrow-n" markerWidth="6" markerHeight="6" 
+			    	refX="3" refY="0">
+			        <polygon points="0 0, 6 0, 3 6"/>
+			    </marker>
+			    <marker id="endarrow-s" markerWidth="6" markerHeight="6" 
+			    	refX="3" refY="6">
+			        <polygon points="3 0, 6 6, 0 6"/>
+			    </marker>
+			    <marker id="endarrowsm-e" markerWidth="2" markerHeight="2" 
+			    	refX="1" refY="1">
+			        <polygon points="2 2, 0 1, 2 0"/>
+			    </marker>
+			    <marker id="endarrowsm-w" markerWidth="2" markerHeight="2" 
+			    	refX="1" refY="1">
+			        <polygon points="0 0, 2 1, 0 2"/>
+			    </marker>
+			    <marker id="endarrowsm-n" markerWidth="2" markerHeight="2" 
+			    	refX="1" refY="1">
+			        <polygon points="0 0, 2 0, 1 2"/>
+			    </marker>
+			    <marker id="endarrowsm-s" markerWidth="2" markerHeight="2" 
+			    	refX="1" refY="1">
+			        <polygon points="1 0, 2 2, 0 2"/>
 			    </marker>
 		  </defs>
 		</svg>
