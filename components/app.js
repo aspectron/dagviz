@@ -21,10 +21,14 @@ export class Block extends GraphNode {
 		if(!data.shape)
 			data.shape = ctx.shape; // 'square';
 		if(!data.color) {
-			if(data.isChainBlock && ctx.chainBlocksDistinct)
+			if(data.isChainBlock && ctx.chainBlocksDistinct){
 				data.color = `rgba(194,255,204,0.99)`;
-			else
+				//data.highlightColor = 'rgba(86,193,251,1)'
+			}
+			else{
 				data.color = `rgba(194,244,255,0.99)`;
+				//data.highlightColor = 'rgba(251,116,118,1)'
+			}
 		}
 		super(holder,data);
 		this.detsalt = data.detsalt;
