@@ -468,6 +468,8 @@ export class GraphNodeLink{
 	
 	updateArrow() {
 		let dir = this.holder.ctx.dir.toLowerCase();
+		if(this.holder.ctx.arrows == "multir")
+			dir = 'w'
 		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir})`:`url(#endarrow-${dir})`)
 	}
 
