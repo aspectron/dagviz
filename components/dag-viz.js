@@ -1754,22 +1754,29 @@ export class DAGViz extends BaseElement {
 			//delta = 1.0;
 
 			let { k } = this.paintEl.transform;
-			
-			this.centerBy(this.ctx.lastBlockData.blockHash, { filter : (t,v) => {
-				
-				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
-				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
 
-				let delta = 0.015;
-				if(X_ > 256 || Y_ > 256)
-					delta = 0.75;
-				else
-				if(X_ > 16 || Y_ > 16)
-					delta = 0.05;
+			let offset = `offset${this.ctx.direction.axis.toUpperCase()}`;
 			
-				t.x += v.cX * delta;
-				t.y += v.cY * delta;
-			}, offsetX : 0.1 } );
+			this.centerBy(this.ctx.lastBlockData.blockHash, { 
+				filter : (t,v) => {
+					
+					let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
+					let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
+
+					let delta = 0.015;
+					if(X_ > 256 || Y_ > 256)
+						delta = 0.75;
+					else
+					if(X_ > 16 || Y_ > 16)
+						delta = 0.05;
+				
+					t.x += v.cX * delta;
+					t.y += v.cY * delta;
+				}, 
+				[offset] : this.ctx.direction.h ? 0.1 : 0.3
+				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
+				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
+			});
 		}
 		else if(this.focusTargetHash) {
 
