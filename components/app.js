@@ -490,22 +490,25 @@ export class App {
 			}
 		});
 
-		new MultiChoice(this.ctx,'arrows',{
+		new MultiChoice(this.ctx, 'arrows', {
 			'off' : 'OFF',
 			'single' : 'SINGLE',
-			'multi' : 'MULTI',
-
+			'multis' : 'MULTI-S',
+			'multir': 'MULTI-R'
 		},'ARROWS','fal fa-location-arrow:Display Arrows', {
 			update : (v) => {
-
+				//d3.select('node-text').attr("stroke-width", 0.5);
+				let {arrows} = this.ctx;
+				this.ctx._arrows = arrows.indexOf("multi")>-1? "multi": arrows;
+				if(arrows =="multis"){
+					this.graph.setArrowsOrient(null)
+				}else if(arrows=="multir"){
+					this.graph.setArrowsOrient("auto")
+				}
 				Object.values(this.graph.nodes).forEach(node => {
-					//node.rebuildLinks();
+					node.rebuildLinks();
 					node.updateStyle();
-
 				});
-				// const $orientationImg = $('#orientation > img');
-				// $orientationImg.removeClass('orient-N orient-E orient-S orient-W');
-				// $orientationImg.addClass(`orient-${v}`);
 			}
 		});
 
