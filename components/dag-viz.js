@@ -1852,7 +1852,7 @@ export class DAGViz extends BaseElement {
 		}
 		else if(this.focusTargetHash) {
 
-			this.ctx.disableTracking();
+			this.app.disableTracking();
 
 			let { k } = this.paintEl.transform;
 
