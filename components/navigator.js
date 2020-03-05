@@ -149,6 +149,7 @@ class AxisNavigator extends BaseElement{
 		let absolute = this.app.ctx.position / this.app.ctx.max;
 		const thumbHeight = (54/2)*this.scale;
 		ctx.lineWidth = 1;
+		ctx.fillStyle = `rgba(0,0,0,1.0)`;
 		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
 		ctx.font = `${Math.round(36/2*this.scale)}px "Exo 2"`;
 		ctx.textBaseline = "top";
@@ -160,25 +161,42 @@ class AxisNavigator extends BaseElement{
 		if(thumbWidth < 128*this.scale)
 			thumbWidth = 128*this.scale;
 
-		let x = (width-thumbWidth) * absolute + thumbWidth/2;
-		let offset = 0.5;
-		ctx.fillText(text, x-textWidth/2+offset, height/2-textHeight/2+offset);
 
+		let x = (width-thumbWidth) * absolute + thumbWidth/2;
+
+		ctx.beginPath();
+		ctx.fillStyle = `rgba(255,255,255,1)`;
+		ctx.fillRect(x-thumbWidth/2,height/2-thumbHeight/2,thumbWidth,thumbHeight);
+		ctx.stroke();
+		
 		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
 		ctx.lineWidth = 1;
 		ctx.beginPath();
 		ctx.moveTo(x, 0);
 		ctx.lineTo(x, height/2-thumbHeight/2);
 		ctx.stroke();
-
+		
 		ctx.beginPath();
 		ctx.moveTo(x, height);
 		ctx.lineTo(x, height/2+thumbHeight/2);
 		ctx.stroke();
+		
+		
+		/////////////////////
+		
+		let offset = 0.5;
 
-		ctx.beginPath();
-		ctx.rect(x-thumbWidth/2,height/2-thumbHeight/2,thumbWidth,thumbHeight);
-		ctx.stroke();
+		ctx.fillStyle = `rgba(0,0,0,1.0)`;
+		ctx.fillText(text, x-textWidth/2+offset, height/2-textHeight/2+offset);
+
+		ctx.strokeStyle = `rgba(0,0,0,0.25)`;
+		ctx.fillStyle = `rgba(0,0,0,0.325)`;
+		ctx.fillText('0', 4, height/2-textHeight/2+offset);
+		let max_text = this.app.ctx.max+'';
+		let maxMetrics = ctx.measureText(max_text);
+		ctx.fillText(max_text, width-4-maxMetrics.width, height/2-textHeight/2+offset);
+
+
 	}
 
 	getTS(src_date) {
