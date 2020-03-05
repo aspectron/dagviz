@@ -416,9 +416,8 @@ export class GraphNodeLink{
 		this.holder = holder;
 		this.curves = holder.curves;
 		this.data = data;
-		this.el = holder.linksEl.append("g");
-		this.el.path = this.el.append("path");
-		this.el.path.style('opacity', 0).style('fill', 'none');
+		this.el = holder.linksEl.append("path");
+		this.el.style('opacity', 0).style('fill', 'none');
 		//this.el.attr("marker-end", "url(#endarrow)");
 		this.source = holder.nodes[data.child];
 		this.target = holder.nodes[data.parent];
@@ -440,7 +439,7 @@ export class GraphNodeLink{
 		if(this.holder.ctx.quality == 'low')
 			this.defaultOpacity = 1;
 
-		this.el.path.transition().duration(1000)
+		this.el.transition().duration(1000)
 			.attr('stroke', this.defaultColor)
 			.attr('stroke-width', this.defaultStrokeWidth)
 			.style('opacity', this.defaultOpacity);
@@ -452,8 +451,7 @@ export class GraphNodeLink{
 		// TODO - should we check/remove children?
 	}
 	updateStyle(){
-		const { source, target } = this;
-		if(!source || !target){
+		if(!this.source || !this.target){
 			//console.log("this.source", this.data.child)
 			return
 		}
@@ -461,80 +459,28 @@ export class GraphNodeLink{
 		//	console.log("this.target", this.target.data.blockHash, this.target.x)
 		//}
 		//if(!isNaN(this.source.x) && !isNaN(this.source.y) && !isNaN(this.target.x) && !isNaN(this.target.y)) {
-			this.el.path
+			this.el
 				//.transition('o')
 				//.duration(2000)
 				.attr("d", this.buildD(
-					source.x,
-					source.y,
-					target.x,
-					target.y
+					this.source.x,
+					this.source.y,
+					this.target.x,
+					this.target.y
 				))
 				//.attr('stroke-width', this.isChainBlockLink ? 7 : 1);
 		//}
 
 		//this.el.transition().duration(1000).style('opacity', 1);
-
-		
-
-		if(this.holder.ctx.arrows == 'multi') {
-			this.updateArrow();
-			// const color = "#000";
-			// if(!this.el.arrow)
-			// 	this.el.arrow = this.el.append('polygon')
-			// 				.attr("fill", color).attr('stroke',color);
-			// if(this.el.arrow._dir == this.holder.ctx.dir)
-			// 	return
-			// let arrow = this.el.arrow;
-			// arrow._dir = this.holder.ctx.dir;
-			// const {h, sign} = this.holder.ctx.direction;
-			// const { x, y } = target;
-			// arrow.attr("points", `${x} ${y}, ${x+20*sign} ${y-6}, ${x+20*sign} ${y+6}`);
-			//let dist = (target.data.size+(target.data.isChainBlock?4:1))*sign;
-//			if(h){
-			// 	arrow.attr("points", `${x} 0, ${x+20*sign} -6, ${x+20*sign} 6`);
-			// }else{
-			// 	arrow.attr("points", `0 ${y}, -8 ${y+40*sign}, 8 ${y+40*sign}`);
-			// }
-		}
-		else {
-			this.removeArrow();
-		}	
-		
-	}
-	
-	updateArrow() {
-		const { target } = this;
-		const color = "#000";
-		if(!this.el.arrow)
-			this.el.arrow = this.el.append('polygon')
-						.attr("fill", color).attr('stroke',color);
-		if(this.el.arrow._dir == this.holder.ctx.dir)
-			return
-		let arrow = this.el.arrow;
-		arrow._dir = this.holder.ctx.dir;
-		const {h, sign} = this.holder.ctx.direction;
-		const { x, y } = target;
-		arrow.attr("points", `${x} ${y}, ${x+20*sign} ${y-6}, ${x+20*sign} ${y+6}`);
-
-	}
-
-	removeArrow() {
-		if(this.el.arrow){
-			this.el.arrow.remove();
-			delete this.el.arrow;
-		}
 	}
 	buildD(x1, y1, x2, y2) {
 		const {h, sign} = this.holder.ctx.direction;
-		if(this.holder.ctx.arrows != 'off') {
-			if(h){
-				x1 -= 26 * sign
-				x2 += 40 * sign
-			}else{
-				y1 -= 26 * sign
-				y2 += 40 * sign
-			}
+		if(h){
+			x1 -= 26 * sign
+			x2 += 40 * sign
+		}else{
+			y1 -= 26 * sign
+			y2 += 40 * sign
 		}
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
@@ -551,10 +497,8 @@ export class GraphNodeLink{
 			y2 = this.target.y;
 		}
 		if(!isNaN(x) && !isNaN(y) && !isNaN(x2) && !isNaN(y2)) {
-			this.el.path
+			this.el
 				.attr("d", this.buildD(x, y, x2, y2));
-
-			this.updateArrow();
 		}
 	}
 
@@ -907,22 +851,20 @@ export class GraphNode{
 	}
 
 	updateArrowHead(){
-		if(!Object.keys(this.parentLinks).length || this.holder.ctx.arrows != 'single')
+		if(!Object.keys(this.parentLinks).length)
 			return this.removeArrowHead();
-		const color = "#000";
 		if(!this.el.arrow)
 			this.el.arrow = this.el.append('polygon')
-						.attr("fill", color).attr('stroke',color);
+						.attr("fill", "red");
 		if(this.el.arrow._dir == this.holder.ctx.dir)
 			return
 		let arrow = this.el.arrow;
 		arrow._dir = this.holder.ctx.dir;
 		const {h, sign} = this.holder.ctx.direction;
-		let dist = (this.data.size+(this.data.isChainBlock?4:1))*sign;
 		if(h){
-			arrow.attr("points", `${dist} 0, ${dist+20*sign} -6, ${dist+20*sign} 6`);
+			arrow.attr("points", `${(this.data.size+(this.data.isChainBlock?4:1))*sign} 0, ${40*sign} -8, ${40*sign} 8`);
 		}else{
-			arrow.attr("points", `0 ${dist}, -6 ${dist+20*sign}, 6 ${dist+20*sign}`);
+			arrow.attr("points", `0 ${(this.data.size+(this.data.isChainBlock?4:1))*sign}, -8 ${40*sign}, 8 ${40*sign}`);
 		}
 	}
 	removeArrowHead(){
@@ -1864,8 +1806,6 @@ export class DAGViz extends BaseElement {
 		}
 		else if(this.focusTargetHash) {
 
-			this.ctx.disableTracking();
-
 			let { k } = this.paintEl.transform;
 
 			this.centerBy(this.focusTargetHash, { filter : (t,v) => {
@@ -1909,7 +1849,7 @@ export class DAGViz extends BaseElement {
 		});
 
 		if(l.length > 2) {
-			let t = Math.round(l.length/2-0.5);
+			let t = Math.round(l.length/2);
 			for(let i = 0; i < l.length; i++)
 				if(l[i].data.isChainBlock) {
 					if(t == i)
