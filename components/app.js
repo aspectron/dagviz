@@ -96,6 +96,7 @@ class GraphContext {
 			'E' : {
 				h : true,
 				size : 'width',
+				sizePerp : 'height',
 				axis : 'x',
 				layoutAxis : 'y',
 				sign : 1,
@@ -103,6 +104,7 @@ class GraphContext {
 			'S' : {
 				v : true,
 				size : 'height',
+				sizePerp : 'width',
 				axis : 'y',
 				layoutAxis : 'x',
 				sign : 1,
@@ -110,6 +112,7 @@ class GraphContext {
 			'W' : {
 				h : true,
 				size : 'width',
+				sizePerp : 'height',
 				axis : 'x',
 				layoutAxis : 'y',
 				sign : -1,
@@ -117,6 +120,7 @@ class GraphContext {
 			'N' : {
 				v : true,
 				size : 'height',
+				sizePerp : 'width',
 				axis : 'y',
 				layoutAxis : 'x',
 				sign : -1,
@@ -456,9 +460,9 @@ export class App {
 		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks', {
 			update : (v) => {
 				if(v)
-					$("#tracking > img").css('opacity',1);
+					$("#tracking").addClass('tracking-enabled');
 				else
-					$("#tracking > img").css('opacity',0.25);
+					$("#tracking").removeClass('tracking-enabled');
 			}
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
@@ -908,6 +912,8 @@ export class App {
 		this.ctx.init(this, this.graph);
 		this._updateRegion = _.debounce(this.updateRegion.bind(this), 50)
 		this.graph.registerRegionUpdateSink(this._updateRegion);
+		
+		this.region = this.getRegion();
 	}
 
 	initIO() {
@@ -918,11 +924,11 @@ export class App {
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
 
-			if(!this.ctx.track) {
-				let region = this.getRegion();
+			if(!this.ctx.track && this.region) {
+				// let region = this.getRegion();
 				blocks = blocks.filter((block) => {
 					block.origin = 'tip-update';
-					if(block[this.ctx.unit] < (region.from-this.range_) || block[this.ctx.unit] > (region.to+this.range_))
+					if(block[this.ctx.unit] < (this.region.from-this.range_) || block[this.ctx.unit] > (this.region.to+this.range_))
 						return false;
 					return true;
 				});
@@ -1112,12 +1118,12 @@ export class App {
 		let { blocks, max : max_ } = await this.fetch({ from, to });
 		this.ctx.updateMax(max_);
 
-		let region = this.getRegion();
+		this.region = this.getRegion();
 		//console.log("xxxxx",this.ctx.position, region.position, range, region.range);
 		//console.log("region.from, region.to", region.from-half_range, region.to+half_range)
 		//let l1 = blocks.length;
 		blocks = blocks.filter((block) => {
-			if(block[this.ctx.unit] < (region.from-half_range) || block[this.ctx.unit] > (region.to+half_range))
+			if(block[this.ctx.unit] < (this.region.from-half_range) || block[this.ctx.unit] > (this.region.to+half_range))
 				return false;
 			return true;
 		});
@@ -1386,6 +1392,7 @@ class Toggle {
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
+		this.options = options;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip}></span>`);
@@ -1427,8 +1434,8 @@ class Toggle {
 	}
 
 	update() {
-		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${this.target[this.ident] ? 'ON' : 'OFF' }</span>`);
-
+		const value = this.target[this.ident];
+		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${value ? 'ON' : 'OFF' }</span>`);
 		if(this.options && this.options.update)
 			this.options.update(value);
 	}
@@ -1484,7 +1491,6 @@ class MultiChoice {
 	update() {
 		const value = this.choices[this.target[this.ident]];
 		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${ value }</span>`);
-
 		if(this.options && this.options.update)
 			this.options.update(value);
 	}
