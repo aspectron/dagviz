@@ -25,14 +25,23 @@ class AxisNavigator extends BaseElement{
 		this.data = { }
 		this.margin = 32;
 		this.scale = 0.75;
+
+		// this.fontSize = 
+		// return Math.round(36/2*this.scale);
+
 	}
 
+	getFontSize() {
+		if(window.app.ctx.direction.axis == 'x')
+			return Math.round(36/2*this.scale);
+		return 11*this.scale;
+	}
 
 	render(){
 		let box = this.getBoundingClientRect();
 		// console.log("box",box);
 		return html`
-		<canvas id="canvas" style="height:48px;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width*this.scale}" height="${box.height*this.scale}">Your browser does not support the HTML5 canvas tag</canvas>
+		<canvas id="canvas" style="height:100%;min-height:48px;/*border:1px solid red;*/width:100%;" width="${box.width*this.scale}" height="${box.height*this.scale}">Your browser does not support the HTML5 canvas tag</canvas>
 		`;
 	}
 
@@ -80,6 +89,11 @@ class AxisNavigator extends BaseElement{
 		this.updateCanvas();
 	}
 
+	_onResize() {
+		this.updateCanvas();
+		console.log('resize:', this.getBoundingClientRect());
+	}
+
 	onMouseEvent(event, e) {
 		switch(event) {
 			case 'mousedown': {
@@ -108,9 +122,18 @@ class AxisNavigator extends BaseElement{
 	}
 
 	handleMouse(e, skipUpdates) {
+
+		const { axis } = window.app.ctx.direction;
+		const horizontal = (axis == 'x');
+
+		const fontSize = this.getFontSize();
+
 		const box = this.getBoundingClientRect();
 		const thumbWidth = 128;
-		let absolute = (e.clientX-thumbWidth/2) / (box.width-thumbWidth)
+		let absolute = 
+			horizontal ? 		
+				(e.clientX-thumbWidth/2) / (box.width-thumbWidth) : 
+				(e.clientY-fontSize/2) / (box.height-fontSize);
 		//console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
@@ -123,16 +146,18 @@ class AxisNavigator extends BaseElement{
 		if(!this.canvas)
 			return;
 
+		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
+		//let { width, height } = parentBox;
 		let { width, height } = canvasBox;
 		this.PIXEL_RATIO = this.getPixelRatio();
 		this.setHiDPICanvas(width*this.scale,height*this.scale,this.PIXEL_RATIO);
 		this.redraw();
 	}
 
-	_onResize() {
-		this.updateCanvas();
-	}
+	// _onResize() {
+	// 	this.updateCanvas();
+	// }
 
 	// redraw() {
 	// 	if(this.vertical)
@@ -207,24 +232,28 @@ class AxisNavigator extends BaseElement{
 		//const { direction } = ctx;
 		const { axis, layoutAxis, size, sizePerp } = window.app.ctx.direction;
 		const horizontal = (axis == 'x');
-console.log('horizontal:',horizontal,ctx.direction,ctx,this);
+		// console.log('horizontal:',horizontal,ctx.direction,ctx,this);
+
+		const fontSize = this.getFontSize();
 
 		if(!this.app || !this.app.ctx.max)
 			return
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
+		console.log('parentBox:',parentBox);
+		console.log('canvasBox:',canvasBox);
 		let { width, height } = canvasBox;
 		width *= this.scale;
 		height *= this.scale;
 		const ctl = { width, height };
-		
+		console.log('ctl:',ctl);
 		let absolute = this.app.ctx.position / this.app.ctx.max;
 		ctx.clearRect(0, 0, width, height);
 		ctx.lineWidth = 1;
 		ctx.lineWidth = 1;
 		ctx.fillStyle = `rgba(0,0,0,1.0)`;
 		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
-		const fontSize = Math.round(36/2*this.scale);
+//		const fontSize = Math.round(36/2*this.scale);
 		ctx.font = `${fontSize}px "Exo 2"`;
 		ctx.textBaseline = "top";
 		const content = Math.round(this.app.ctx.position)+'';
@@ -266,8 +295,9 @@ console.log('horizontal:',horizontal,ctx.direction,ctx,this);
 		ctx.fillText(max_text, 
 			...(horizontal ?
 				[width-4-maxMetrics.width, height/2-text.height/2] :
-				[width/2-text.width/2, height-4-maxMetrics.height]));
+				[width/2-text.width/2, height-4-fontSize]));
 
+		console.log('rect:',max_text,maxMetrics,width/2-text.width/2, height-4-fontSize);
 		// ------------------
 
 
@@ -278,7 +308,8 @@ console.log('horizontal:',horizontal,ctx.direction,ctx,this);
 		ctx.beginPath();
 		thumb.rect = horizontal ? 
 			[pos-thumb.width/2, height/2-thumb.height/2, thumb.width, thumb.height] :
-			[width/2-thumb.width/2, pos-height/2-thumb.height/2, thumb.width, thumb.height];
+			[width/2-thumb.width/2, pos-thumb.height/2, thumb.width, thumb.height];
+		console.log('thumb rect:',thumb.rect);
 		ctx.fillRect(...thumb.rect);
 		ctx.rect(...thumb.rect);
 		ctx.stroke();
@@ -286,7 +317,7 @@ console.log('horizontal:',horizontal,ctx.direction,ctx,this);
 		ctx.fillStyle = `rgba(0,0,0,1.0)`;
 		ctx.fillText(text.content, ...(horizontal ? 
 			[pos-text.width/2, height/2-text.height/2] :
-			[width/2-text.width/2, pos-height/2-text,height/2]));
+			[width/2-text.width/2, pos-text.height/2]));
 	
 
 		// ctx.fillStyle = `rgba(0,0,0,1)`;
