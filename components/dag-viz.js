@@ -737,11 +737,15 @@ export class GraphNode{
 		const isRed = !isBlue;
 		if(isBlue){
 			data.color = `rgba(194,244,255,0.99)`;
-			data.highlightColor = 'rgba(86,193,251,1)'
+			data.highlightColor_before = 'rgba(107, 198, 250,1)'
+			data.highlightColor = 'rgba(83, 191, 252,1)'
+			data.highlightColor_after = 'rgba(43, 179, 255,1)'
 		}
 		else{
 			data.color = `rgba(255,194,194,0.99)`;
+			data.highlightColor_before = 'rgba(251,116,118,1)'
 			data.highlightColor = 'rgba(251,116,118,1)'
+			data.highlightColor_after = 'rgba(251,116,118,1)'
 		}
 
 		this.shape 	= data.shape;
@@ -963,16 +967,24 @@ export class GraphNode{
 
 	highlightConnectedBlocks(highlight){
 		(this.linkNodes||[]).forEach(l=>{
-			l.target.highlight(highlight);
+			l.target.highlight(highlight, 'before');
 		});
 		this.parentLinks.forEach(l=>{
-			l.source.highlight(highlight);
+			l.source.highlight(highlight, 'after');
 		});
 		this.highlight(highlight);
 	}
 
-	highlight(highlight = true){
-		const color = highlight? (this.data.highlightColor || "#F00"): this.data.color;
+//	highlight(highlight = true){
+	highlight(highlight, type){
+			let color = this.data.color;
+			if(highlight) {
+				const highlightColor = this.data[`highlightColor${type?'_'+type:''}`];
+				color = highlightColor || '#f00';
+
+			}
+			
+//			highlight? (this.data.hightlightColor || "#F00"): this.data.color;
 		//this.el.setFill(()=>{
 		//	return color;
 		//});
@@ -1280,6 +1292,7 @@ export class DAGViz extends BaseElement {
 			})
 			.on('start', (e)=>{
 				window.app.enableUndo(false);
+				window.app.ctls.track.setValue(false);
 			})
 			.on('end', () => {
 				window.app.enableUndo(true);
@@ -1773,7 +1786,7 @@ export class DAGViz extends BaseElement {
 					t.x += v.cX * delta;
 					t.y += v.cY * delta;
 				}, 
-				[offset] : this.ctx.direction.h ? 0.1 : 0.3
+				[offset] : (this.ctx.direction.h ? 0.1 : 0.3) * this.ctx.direction.sign
 				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
 				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
 			});
