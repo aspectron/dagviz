@@ -944,6 +944,13 @@ export class App {
 				this.ctx.lastBlockData = blocks[blocks.length-1];
 				this.ctx.lastBlockDataTS = Date.now();
 			}
+
+			if(this.ctx.track) {
+				dpc(()=>{
+					this.regionCleanup();
+				})
+			}
+
 		});
 
 		// this.io.on('last-block-data', (data) => {
@@ -1383,6 +1390,21 @@ export class App {
 		this.ctls.track.setValue(false);
 	}
 
+
+	regionCleanup() {
+
+		const { region : { from, to, range } } = this;
+
+		Object.values(this.graph.nodes).forEach((node) => {
+			if(node.selected)
+				return;
+			if(this.ctx && this.ctx.lastBlockData && node.data.blockHash == this.ctx.lastBlockData.blockHash)
+				return;
+			if(node.data[this.ctx.unit] < (from-range) || node.data[this.ctx.unit] > (to+range))
+				node.purge();
+		})
+
+	}
 }
 
 class Toggle {
