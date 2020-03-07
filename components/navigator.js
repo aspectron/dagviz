@@ -34,7 +34,7 @@ class AxisNavigator extends BaseElement{
 	getFontSize() {
 		if(window.app.ctx.direction.axis == 'x')
 			return Math.round(36/2*this.scale);
-		return 11*this.scale;
+		return 14*this.scale;
 	}
 
 	render(){
@@ -76,7 +76,7 @@ class AxisNavigator extends BaseElement{
 			this.resizeObserver.observe(this);
 		}
 
-		['mousedown','mouseup','mousemove','click'].forEach((event) => {
+		['mousedown','mouseup','mousemove','click', 'pointerdown', 'pointerup', 'pointermove'].forEach((event) => {
 			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
 		})
 
@@ -86,6 +86,7 @@ class AxisNavigator extends BaseElement{
 
 		this.canvas = this.renderRoot.getElementById('canvas');
 		this.ctx = this.canvas.getContext('2d');
+		this.ctx.globalAlpha = 0;
 		this.updateCanvas();
 	}
 
@@ -96,17 +97,20 @@ class AxisNavigator extends BaseElement{
 
 	onMouseEvent(event, e) {
 		switch(event) {
-			case 'mousedown': {
+			case 'pointerdown': {
 				this.drag = true;
+				this.setPointerCapture(e.pointerId);
+
 			} break;
 			
-			case 'mouseup': {
+			case 'pointerup': {
 				this.drag = false;
+				this.releasePointerCapture(e.pointerId);
 				this.handleMouse(e);
 
 			} break;
 
-			case 'mousemove': {
+			case 'pointermove': {
 				if(!this.drag)
 					return;
 				this.handleMouse(e, true);
@@ -128,14 +132,16 @@ class AxisNavigator extends BaseElement{
 
 		const fontSize = this.getFontSize();
 
-		const box = this.getBoundingClientRect();
-		const thumbWidth = 128;
+		const box = this.canvasBox; //this.getBoundingClientRect();
+		//const thumbWidth = 128;
+		const _scale = 1/this.scale;
+
 		let absolute = 
 			horizontal ? 		
-				(e.clientX-thumbWidth/2) / (box.width-thumbWidth) : 
-				(e.clientY-fontSize/2) / (box.height-fontSize);
+				(e.clientX-this.thumb.width/2*_scale) / (box.width-this.thumb.width*_scale) : 
+				(e.clientY-fontSize/2*_scale) / (box.height-fontSize/2*_scale);
 
-		
+		console.log('e:', e);
 		//console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
@@ -203,6 +209,7 @@ class AxisNavigator extends BaseElement{
 		let canvasBox = this.canvas.getBoundingClientRect();
 		console.log('parentBox:',parentBox);
 		console.log('canvasBox:',canvasBox);
+		this.canvasBox = canvasBox;
 		let { width, height } = canvasBox;
 		width *= this.scale;
 		height *= this.scale;
@@ -218,23 +225,38 @@ class AxisNavigator extends BaseElement{
 //		const fontSize = Math.round(36/2*this.scale);
 		ctx.font = `${fontSize}px "Exo 2"`;
 		ctx.textBaseline = "top";
-		const content = Math.round(this.app.ctx.position)+'';
+		const content = Math.round(this.app.ctx.position).toScaleAbbrev();
 		let textMetrics = ctx.measureText(content);
 		const text = {
 			content,
 			width : textMetrics.width,
 			height : fontSize,
 		}
-
+console.log('scale:',this.scale);
 		const thumb = { 
-			height : (54/2)*this.scale,
+			height : fontSize*this.scale,
 			width : text.width+8
 		};
+
 		// thumeight = (54/2)*this.scale;
 		// let thumbWidth = textWidth+32;
-		if(thumb.width < 128*this.scale)
-			thumb.width = 128*this.scale;
+		if(horizontal) {
+			if(thumb.width < 128*this.scale)
+				thumb.width = 128*this.scale;
+			if(thumb.height < 54/2*this.scale)
+				thumb.height = 54/2*this.scale;
+		}
+		else
+		if(!horizontal) {
+			thumb.width = width-8;
+			if(thumb.height < 54/2*this.scale)
+				thumb.height = 18*this.scale;
+		}
 
+
+
+		this.thumb = thumb;
+		//this.thumb = thumb;
 		//let pos = (width-thumbWidth) * absolute + thumbWidth/2;
 
 
@@ -253,16 +275,19 @@ class AxisNavigator extends BaseElement{
 		ctx.strokeStyle = `rgba(0,0,0,0.25)`;
 		ctx.fillStyle = `rgba(0,0,0,0.325)`;
 		let minMetrics = ctx.measureText('0');
+		minMetrics.height = fontSize;
+		console.log('min metrics:',minMetrics);
 		ctx.fillText('0', ...this.adapt(horizontal ? 
-			[4+minMetrics.width*(sign>0?0:1), height/2-text.height/2] :
-			[width/2-text.width/2, 4*sign]));
+			[4+minMetrics.width*(sign>0?0:1), height/2-minMetrics.height/2] :
+			[width/2-minMetrics.width/2, (4+fontSize)*(sign<0?1:0)]));
 
 		let max_text = this.app.ctx.max+'';
 		let maxMetrics = ctx.measureText(max_text);
+		maxMetrics.height = fontSize;
 		ctx.fillText(max_text, 
 			...this.adapt(horizontal ?
-				[width-4-(maxMetrics.width)*(sign>0?1:0), height/2-text.height/2] :
-				[width/2-text.width/2, height+4+(fontSize)*(sign>0?1:0)]));
+				[width-4-(maxMetrics.width)*(sign>0?1:0), height/2-maxMetrics.height/2] :
+				[width/2-maxMetrics.width/2, height-4-(fontSize)*(sign>0?1:0)]));
 
 		console.log('rect:',max_text,maxMetrics,width/2-text.width/2, height-4-fontSize);
 		// ------------------
@@ -272,14 +297,18 @@ class AxisNavigator extends BaseElement{
 
 		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
 		ctx.fillStyle = `rgba(255,255,255,1)`;
-		ctx.beginPath();
-		thumb.rect = horizontal ? 
-			[pos-thumb.width/2*sign, height/2-thumb.height/2, thumb.width, thumb.height] :
-			[width/2-thumb.width/2, pos-thumb.height/2*sign, thumb.width, thumb.height];
-		console.log('thumb rect:',thumb.rect);
-		ctx.fillRect(...this.adapt(thumb.rect));
-		ctx.rect(...this.adapt(thumb.rect));
-		ctx.stroke();
+//		if(horizontal) {
+			ctx.beginPath();
+			thumb.rect = horizontal ? 
+				[pos-thumb.width/2*sign, height/2-thumb.height/2, thumb.width, thumb.height] :
+				[width/2-thumb.width/2, pos-(thumb.height/2)*sign, thumb.width, thumb.height];
+			console.log('thumb rect:',thumb.rect);
+			ctx.fillRect(...this.adapt(thumb.rect));
+				ctx.rect(...this.adapt(thumb.rect));
+			ctx.stroke();
+		// } else {
+
+		// }
 
 		ctx.fillStyle = `rgba(0,0,0,1.0)`;
 		ctx.fillText(text.content, ...this.adapt(horizontal ? 
@@ -291,12 +320,43 @@ class AxisNavigator extends BaseElement{
 		ctx.lineWidth = 1;
 		ctx.beginPath();
 		ctx.moveTo(...this.adapt(horizontal ? [pos, 0] : [0, pos]));
-		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2-thumb.height/2] : [width/2-thumb.width/2, pos]));
+		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2-thumb.height/2] : [4, pos]));
 		ctx.moveTo(...this.adapt(horizontal ? [pos, height] : [width,pos]));
-		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2+thumb.height/2] : [width/2+thumb.width/2, pos]));
+		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2+thumb.height/2] : [width-4, pos]));
 		ctx.stroke();
 		
+
+		let dist = this.size[size]/3;// / 3;
+		let begin = pos - dist;
+		let end = pos + dist;
+		let invert = sign > 0;
+		const grad = ctx.createLinearGradient(...(horizontal ? 
+			[!invert ? width - begin : begin,0,!invert ? width - end : end,0] : 
+			[0,!invert ? height - begin : begin,0,!invert ? height - end : end]));
+		grad.addColorStop(0.0,`rgba(0,0,0,0)`);
+		grad.addColorStop(0.35,`rgba(0,0,0,0.75)`);
+		grad.addColorStop(0.65,`rgba(0,0,0,0.75)`);
+		grad.addColorStop(1.0,`rgba(0,0,0,0)`);
+		ctx.strokeStyle = grad;
+		ctx.beginPath();
+		ctx.moveTo(...this.adapt(horizontal ? [begin, 0] : [0, begin]));
+		ctx.lineTo(...this.adapt(horizontal ? [end, 0] : [0, end]));
+		ctx.stroke();
+
+		// this.app.ctx.position 
+		let d = (this.app.ctx.max - this.app.ctx.min) / 15;
+		d = Math.pow(10, Math.floor(Math.log(d)/Math.log(10))) * 10;
 		
+		let range = (this.size[size]-thumb[size]);
+		for(let v = 0; v < this.app.ctx.max; v+=d) {
+			let p = range * v / this.app.ctx.max + thumb[size] / 2;
+
+			ctx.moveTo(...this.adapt(horizontal ? [p, 0] : [0, p]));
+			ctx.lineTo(...this.adapt(horizontal ? [p, 3] : [3, p]));
+		}
+
+		ctx.stroke();
+
 		/////////////////////
 	}
 
@@ -311,6 +371,52 @@ class AxisNavigator extends BaseElement{
 		//var time = year + '-' + month + '-' + date + ' ' + hour + ':' + min + ':' + sec;
 		return `${year}-${month}-${date} ${hour}:${min}:${sec}`;
 	}
+
+	_C(f, p, tz) {
+		var precision = p || 0;
+		if(f === null || f === undefined )
+			return '?';
+		if(typeof(f) != 'number')
+			return f;
+	
+		f = (f).toFixed(precision).split('.');
+	
+		f[0] = f[0].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		let t = f.join('.');
+		
+		if(!tz || !~t.indexOf('.'))
+			return t;
+	
+		while(t.length > 2 && t[t.length-1] == 0 && t[t.length-2] != '.')
+			t = t.substring(0, t.length-1);
+		return t;
+	}
+
+
+
+	
+	
+}
+
+if(!Number.prototype.toScaleAbbrev) {
+	Object.defineProperty(Number.prototype, 'toScaleAbbrev', {
+		value: function(a, asNumber) {
+			var b,c,d;
+			var r = (
+				a=a?[1e3,'k','']:[1024,'K',''],
+				b=Math,
+				c=b.log,
+				d=c(this)/c(a[0])|0,this/b.pow(a[0],d)
+			).toFixed(this > 999 ? 2 : 0)
+
+			if(!asNumber) {
+				r += ' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'');
+			}
+			return r;
+		},
+		writable:false,
+		enumerable:false
+	});
 }
 
 AxisNavigator.register();

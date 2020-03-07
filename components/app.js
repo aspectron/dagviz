@@ -75,6 +75,7 @@ class GraphContext {
 		this.unitScale = 1.0;
 		this.unitDist = 120;
 		this.position = 10;
+		this.min = 0;
 		this.max = 0;
 		this.mass = true;
 		this.curves = true;

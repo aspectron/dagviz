@@ -30,7 +30,10 @@
 	<script type="module" src="./components/block-info.js"></script>
 	<script type="module" src="./components/menu-panel.js"></script>
 	<style type="text/css">
-		#dagViz{height:calc(100vh - 50px);}
+		#dagViz{
+			height: 100vh;
+/*			height:calc(100vh - 50px);*/
+		}
 		#address { 
 			font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 16px;
 			position: absolute; right: 8px; top: 8px; color: rgb(52, 74, 87);
@@ -295,14 +298,15 @@
 		.menu-item .orient-W { transform: rotate(270deg); }
 
 		#timenav {
-			position: absolute; bottom: 0px; left: 0px; right: 0px; height: 48px; width: 100%; border-top: 1px solid #ccc;
+			position: absolute; bottom: 0px; left: 0px; right: 0px; height: 48px; width: 100%; /*border-top: 1px solid #ccc;*/
+			background-color: transparent;
 		}
 
 		body.orient-v #timenav {
-			width: 48px;
-    		height: 100%;
+			width: 64px;
+    		height: 100vh;
     		border-top:0px;
-    		border-left:1px solid #ccc;
+    		/*border-left:1px solid #ccc;*/
 			position: absolute;
 			left: unset;
 			top: 0px;
@@ -310,8 +314,13 @@
     	}
     	body.orient-v #dagViz{
     		height:100vh;
+			width: 100vw;
+
+/*
     		width: calc(100vw - 50px);
     		margin-right:50px;
+*/
+
     	}
 
 		/*
