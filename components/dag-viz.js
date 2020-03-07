@@ -435,7 +435,7 @@ export class GraphNodeLink{
 
 		this.el.path.transition().duration(1000)
 			.attr('stroke', this.defaultColor)
-			.attr('stroke-width', this.defaultStrokeWidth)
+			.attr('stroke-width', this.holder.buildStrokeWidth(this.defaultStrokeWidth) )
 			.style('opacity', this.defaultOpacity);
 	}
 	remove(){
@@ -539,7 +539,7 @@ export class GraphNodeLink{
 		console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
 		console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
-		let strokeWidth = this.defaultStrokeWidth;
+		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth)
 		if(color) {
 			if(this.isChainBlockLink) {
 				strokeWidth = 7;
@@ -1245,6 +1245,9 @@ export class DAGViz extends BaseElement {
 		</svg>
 		</div>
 		`;
+	}
+	buildStrokeWidth(strokeWidth){
+		return Math.max(1, strokeWidth/this.paintEl.transform.k)
 	}
 	setArrowsOrient(orient){
 		d3.select(this.renderRoot.getElementById('markers'))
