@@ -1247,7 +1247,7 @@ export class DAGViz extends BaseElement {
 		`;
 	}
 	buildStrokeWidth(strokeWidth){
-		return Math.max(1, strokeWidth/this.paintEl.transform.k)
+		return strokeWidth;//Math.max(1, strokeWidth/this.paintEl.transform.k)
 	}
 	setArrowsOrient(orient){
 		d3.select(this.renderRoot.getElementById('markers'))
