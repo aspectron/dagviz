@@ -239,7 +239,7 @@ class GraphContext {
 					max = Math.abs(parent[axis]);
 			});
 
-			node[axis] = max + (this.unitDist*2*this.spacingFactor)*sign;
+			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign;
 		} else {
 			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign;
 		}
