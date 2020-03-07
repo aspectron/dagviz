@@ -535,7 +535,9 @@ export class GraphNodeLink{
 	}
 
 	highlight(color, node) {
-
+console.log('highlight arrows');
+console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
+console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
 		let strokeWidth = this.defaultStrokeWidth;
 		if(color) {
@@ -547,6 +549,11 @@ export class GraphNodeLink{
 			else
 			if(this.source.selected && this.target.selected){
 				stroke = 'blue';
+				strokeWidth = 5;
+			}
+			else
+			if(this.source.data.blockHash == this.target.data.acceptingBlockHash) { //this.source.selected && this.target.selected){
+				stroke = '#84e';
 				strokeWidth = 5;
 			}
 			else if(node.selected)
