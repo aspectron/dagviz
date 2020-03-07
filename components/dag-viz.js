@@ -435,7 +435,7 @@ export class GraphNodeLink{
 
 		this.el.path.transition().duration(1000)
 			.attr('stroke', this.defaultColor)
-			.attr('stroke-width', this.defaultStrokeWidth)
+			.attr('stroke-width', this.holder.buildStrokeWidth(this.defaultStrokeWidth) )
 			.style('opacity', this.defaultOpacity);
 	}
 	remove(){
@@ -484,7 +484,7 @@ export class GraphNodeLink{
 			let tSize = this.target.data.size+(this.target.data.isChainBlock?9:6)
 			const sSize = this.source.data.size
 			let boxHSize = tSize;
-			const margin = (boxHSize*2)/(this.target.parentLinks.length+1);
+			const margin = (boxHSize*2)/(this.target.parentLinksLength+1);
 				
 			if(arrows=="single")
 				tSize += 15;
@@ -535,11 +535,11 @@ export class GraphNodeLink{
 	}
 
 	highlight(color, node) {
-		console.log('highlight arrows ->', node);
-		console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
-		console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
+		//console.log('highlight arrows ->', node);
+		//console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
+		//console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
-		let strokeWidth = this.defaultStrokeWidth;
+		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth)
 		if(color) {
 			if(this.isChainBlockLink) {
 				strokeWidth = 7;
@@ -900,6 +900,8 @@ export class GraphNode{
 
 	updateLinkIndexes(){
 		let links = this.parentLinks;
+		this.parentLinksLength = links.length;
+		let {isChainBlock} = this.data;
 		if(this.holder.ctx.direction.h)
 			links = links.sort((a, b)=>{
 				return a.source.y-b.source.y;
@@ -908,9 +910,27 @@ export class GraphNode{
 			links = links.sort((a, b)=>{
 				return a.source.x-b.source.x;
 			})
-		links.forEach((link, index)=>{
-			link.linkIndex = index;
-		})
+		if(this.holder.ctx.chainBlocksCenter == "fixed" && isChainBlock){
+			let mid = Math.round(this.parentLinksLength/2);
+			if(this.parentLinksLength%2 == 0){
+				mid +=1;
+				this.parentLinksLength += 1;
+			}
+			mid -= 1;
+			let a = 1;
+			links.forEach((link, index)=>{
+				if(link.source.data.isChainBlock){
+					link.linkIndex = mid;
+					//console.log("link.linkIndex", link.linkIndex, link.el.node())
+					return
+				}
+				link.linkIndex = index<mid?index:mid+a++;
+			})
+		}else{
+			links.forEach((link, index)=>{
+				link.linkIndex = index;
+			})
+		}
 	}
 	updateArrowHead(){
 		const {_arrows:arrows, dir} = this.holder.ctx;
@@ -1245,6 +1265,9 @@ export class DAGViz extends BaseElement {
 		</svg>
 		</div>
 		`;
+	}
+	buildStrokeWidth(strokeWidth){
+		return strokeWidth;//Math.max(1, strokeWidth/this.paintEl.transform.k)
 	}
 	setArrowsOrient(orient){
 		d3.select(this.renderRoot.getElementById('markers'))
