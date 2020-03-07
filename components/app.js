@@ -88,7 +88,7 @@ class GraphContext {
 		this.layout = 'determ';
 		this.quality = 'high';
 		this.spacingFactor = 1;
-		this.arrows = 'single';
+		this.arrows = 'multi-s';
 		this.childShift = 1;
 
 		this.dir = 'E';
@@ -1393,7 +1393,7 @@ export class App {
 
 	regionCleanup() {
 
-		const { region : { from, to, range } } = this;
+		const { region : { from, to, range } } = this.getRegion();
 
 		Object.values(this.graph.nodes).forEach((node) => {
 			if(node.selected)

@@ -831,7 +831,6 @@ export class GraphNode{
 			this.highlightLinks(true);
 	}
 	updateStyle(force){
-
 		const isBlue = !!this.data.acceptingBlockHash;
 		const data = this.data;
 
@@ -1504,7 +1503,7 @@ export class DAGViz extends BaseElement {
 			this.simulation.alphaDecay(0.001);
 		}
 
-		if(Date.now() - this.simulationTimeoutTS > 10 * 1000) {
+		if(!this.ctx.track && (Date.now() - this.simulationTimeoutTS > 10 * 1000)) {
 			this.simulation.stop();
 		}
 	}
@@ -1781,12 +1780,12 @@ export class DAGViz extends BaseElement {
 						delta = 0.75;
 					else
 					if(X_ > 16 || Y_ > 16)
-						delta = 0.05;
+						delta = 0.25;
 				
 					t.x += v.cX * delta;
 					t.y += v.cY * delta;
 				}, 
-				[offset] : (this.ctx.direction.h ? 0.1 : 0.3) * this.ctx.direction.sign
+				[offset] : (this.ctx.direction.h ? 0.3 : 0.3) * this.ctx.direction.sign
 				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
 				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
 			});

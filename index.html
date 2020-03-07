@@ -43,6 +43,7 @@
 			padding-left: 64px;
 			display: flex;
 			flex-direction: column;
+			user-select: none;
 		}
 
 		#menu-bar {
@@ -94,10 +95,6 @@
 		}
 
 
-		#timenav {
-			position: absolute; bottom: 0px; left: 0px; right: 0px; height: 48px; width: 100%; border-top: 1px solid #ccc;
-		}
-
 		#logo {
 			background-image: url('/resources/images/k-subtract.svg');
 			background-size: contain;
@@ -127,6 +124,7 @@
 			position: absolute;
 			left : 10px;
 			top : 72px;
+			user-select: none;
 		}
 
 		#left .tool {
@@ -295,17 +293,28 @@
 		.menu-item .orient-E { transform: rotate(90deg); }
 		.menu-item .orient-S { transform: rotate(180deg); }
 		.menu-item .orient-W { transform: rotate(270deg); }
-		body.orient-v #timenav{
+
+		#timenav {
+			position: absolute; bottom: 0px; left: 0px; right: 0px; height: 48px; width: 100%; border-top: 1px solid #ccc;
+		}
+
+		body.orient-v #timenav {
 			width: 48px;
     		height: 100%;
     		border-top:0px;
-    		border-right:1px solid #ccc;
+    		border-left:1px solid #ccc;
+			position: absolute;
+			left: unset;
+			top: 0px;
+			right: 0px;
     	}
     	body.orient-v #dagViz{
     		height:100vh;
     		width: calc(100vw - 50px);
-    		margin-left:50px;
+    		margin-right:50px;
     	}
+
+		/*
     	body.orient-v #logo{
     		left:56px;
     	}
@@ -317,7 +326,7 @@
     	}
     	body.orient-v #bottom{
     		left:54px;
-    	}
+    	}*/
 	</style>
 </head>
 <body>

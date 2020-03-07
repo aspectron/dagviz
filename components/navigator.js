@@ -123,7 +123,7 @@ class AxisNavigator extends BaseElement{
 
 	handleMouse(e, skipUpdates) {
 
-		const { axis } = window.app.ctx.direction;
+		const { axis, sign } = window.app.ctx.direction;
 		const horizontal = (axis == 'x');
 
 		const fontSize = this.getFontSize();
@@ -134,11 +134,17 @@ class AxisNavigator extends BaseElement{
 			horizontal ? 		
 				(e.clientX-thumbWidth/2) / (box.width-thumbWidth) : 
 				(e.clientY-fontSize/2) / (box.height-fontSize);
+
+		
 		//console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
 		if(absolute > 1)
 			absolute = 1;
+
+		if(sign < 0)
+			absolute = 1 - absolute;
+
 		this.app.ctx.reposition(absolute, skipUpdates);
 	}
 
@@ -159,79 +165,34 @@ class AxisNavigator extends BaseElement{
 	// 	this.updateCanvas();
 	// }
 
-	// redraw() {
-	// 	if(this.vertical)
-	// 		return this.redrawV();
-	// 	this.redrawH();
-	// }
 
-	// redrawV(){
-	// 	const { ctx } = this;
-	// 	if(!this.app || !this.app.ctx.max)
-	// 		return
-	// 	let parentBox = this.getBoundingClientRect();
-	// 	let canvasBox = this.canvas.getBoundingClientRect();
-	// 	let { width, height } = canvasBox;
-	// 	width *= this.scale;
-	// 	height *= this.scale;
-		
-	// 	ctx.clearRect(0, 0, width, height);
-	// 	ctx.lineWidth = 1;
-	// 	let absolute = this.app.ctx.position / this.app.ctx.max;
-	// 	const thumbHeight = (54/2)*this.scale;
-	// 	ctx.lineWidth = 1;
-	// 	ctx.fillStyle = 'rgba(0,0,0,1.0)';
-	// 	ctx.strokeStyle = 'rgba(0,0,0,1.0)';
-	// 	ctx.font = `${Math.round(36/2*this.scale)}px "Exo 2"`;
-	// 	ctx.textBaseline = "top";
-	// 	let text = Math.round(this.app.ctx.position)+'';
-	// 	let textMetrics = ctx.measureText(text);
-	// 	const textWidth = textMetrics.width;
-	// 	const textHeight = 36/2*this.scale;
-	// 	let thumbWidth = textWidth+32;
-	// 	if(thumbWidth < 128*this.scale)
-	// 		thumbWidth = 128*this.scale;
+	adapt(args) {
+		args = args.slice();
+		if(this.direction.sign > 0)
+			return args;
+		const horizontal = !!this.direction.h;
+		const x = args[0];
+		const y = args[1];
+		if(horizontal) 
+			args[0] = this.size.width - args[0];
+		else
+			args[1] = this.size.height - args[1];
 
-	// 	let x = (width-thumbWidth) * absolute + thumbWidth/2;
+		return args;
+	}
 
-	// 	ctx.beginPath();
-	// 	ctx.fillStyle = 'rgba(255,255,255,1)';
-	// 	ctx.fillRect(x-thumbWidth/2, height/2-thumbHeight/2, thumbWidth, thumbHeight);
-	// 	ctx.stroke();
-		
-	// 	ctx.strokeStyle = `rgba(0,0,0,0.75)`;
-	// 	ctx.lineWidth = 1;
-	// 	ctx.beginPath();
-	// 	ctx.moveTo(x, 0);
-	// 	ctx.lineTo(x, height/2-thumbWidth/2);
-	// 	ctx.stroke();
-		
-	// 	ctx.beginPath();
-	// 	ctx.moveTo(x, height);
-	// 	ctx.lineTo(x, height/2+thumbWidth/2);
-	// 	ctx.stroke();
-		
-		
-	// 	/////////////////////
-		
-	// 	let offset = 0.5;
-
-	// 	ctx.fillStyle = `rgba(0,0,0,1.0)`;
-	// 	ctx.fillText(text, x-textWidth/2+offset, height/2-textHeight/2+offset);
-
-	// 	ctx.strokeStyle = `rgba(0,0,0,0.25)`;
-	// 	ctx.fillStyle = `rgba(0,0,0,0.325)`;
-	// 	ctx.fillText('0', 4, height/2-textHeight/2+offset);
-	// 	let max_text = this.app.ctx.max+'';
-	// 	let maxMetrics = ctx.measureText(max_text);
-	// 	ctx.fillText(max_text, width-4-maxMetrics.width, height/2-textHeight/2+offset);
-	// }
 	redraw(){
-		const { ctx } = this;
+		if(!window.app || !window.app.ctx)
+			return;
 
+		
+		this.direction = window.app.ctx.direction;
+		
+		const { ctx } = this;
 		//const { direction } = ctx;
-		const { axis, layoutAxis, size, sizePerp } = window.app.ctx.direction;
+		const { axis, layoutAxis, size, sizePerp, sign } = window.app.ctx.direction;
 		const horizontal = (axis == 'x');
+		const inverse = (sign < 0);
 		// console.log('horizontal:',horizontal,ctx.direction,ctx,this);
 
 		const fontSize = this.getFontSize();
@@ -245,8 +206,9 @@ class AxisNavigator extends BaseElement{
 		let { width, height } = canvasBox;
 		width *= this.scale;
 		height *= this.scale;
-		const ctl = { width, height };
-		console.log('ctl:',ctl);
+		//const ctl = 
+		this.size = { width, height };
+		//console.log('ctl:',ctl);
 		let absolute = this.app.ctx.position / this.app.ctx.max;
 		ctx.clearRect(0, 0, width, height);
 		ctx.lineWidth = 1;
@@ -277,25 +239,30 @@ class AxisNavigator extends BaseElement{
 
 
 
-		const pos = (ctl[size]-thumb[size]) * absolute + thumb[size]/2;
+		let pos_ = (this.size[size]-thumb[size]) * absolute + thumb[size]/2;
+		// if(inverse)
+		//  	pos_ = this.size[size] - pos_;
+		const pos = pos_;
+		console.log('pos:', pos);
 
 		// let x = (width-thumbWidth) * absolute + thumbWidth/2;
-
 
 		
 		let offset = 0.5;
 
 		ctx.strokeStyle = `rgba(0,0,0,0.25)`;
 		ctx.fillStyle = `rgba(0,0,0,0.325)`;
-		ctx.fillText('0', ...(horizontal ? 
-			[4, height/2-text.height/2] :
-			[width/2-text.width/2, 4]));
+		let minMetrics = ctx.measureText('0');
+		ctx.fillText('0', ...this.adapt(horizontal ? 
+			[4+minMetrics.width*(sign>0?0:1), height/2-text.height/2] :
+			[width/2-text.width/2, 4*sign]));
+
 		let max_text = this.app.ctx.max+'';
 		let maxMetrics = ctx.measureText(max_text);
 		ctx.fillText(max_text, 
-			...(horizontal ?
-				[width-4-maxMetrics.width, height/2-text.height/2] :
-				[width/2-text.width/2, height-4-fontSize]));
+			...this.adapt(horizontal ?
+				[width-4-(maxMetrics.width)*(sign>0?1:0), height/2-text.height/2] :
+				[width/2-text.width/2, height+4+(fontSize)*(sign>0?1:0)]));
 
 		console.log('rect:',max_text,maxMetrics,width/2-text.width/2, height-4-fontSize);
 		// ------------------
@@ -307,26 +274,26 @@ class AxisNavigator extends BaseElement{
 		ctx.fillStyle = `rgba(255,255,255,1)`;
 		ctx.beginPath();
 		thumb.rect = horizontal ? 
-			[pos-thumb.width/2, height/2-thumb.height/2, thumb.width, thumb.height] :
-			[width/2-thumb.width/2, pos-thumb.height/2, thumb.width, thumb.height];
+			[pos-thumb.width/2*sign, height/2-thumb.height/2, thumb.width, thumb.height] :
+			[width/2-thumb.width/2, pos-thumb.height/2*sign, thumb.width, thumb.height];
 		console.log('thumb rect:',thumb.rect);
-		ctx.fillRect(...thumb.rect);
-		ctx.rect(...thumb.rect);
+		ctx.fillRect(...this.adapt(thumb.rect));
+		ctx.rect(...this.adapt(thumb.rect));
 		ctx.stroke();
 
 		ctx.fillStyle = `rgba(0,0,0,1.0)`;
-		ctx.fillText(text.content, ...(horizontal ? 
-			[pos-text.width/2, height/2-text.height/2] :
-			[width/2-text.width/2, pos-text.height/2]));
+		ctx.fillText(text.content, ...this.adapt(horizontal ? 
+			[pos-text.width/2*sign, height/2-text.height/2] :
+			[width/2-text.width/2, pos-text.height/2*sign]));
 	
 
 		// ctx.fillStyle = `rgba(0,0,0,1)`;
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.moveTo(...(horizontal ? [pos, 0] : [0, pos]));
-		ctx.lineTo(...(horizontal ? [pos, height/2-thumb.height/2] : [width/2-thumb.width/2, pos]));
-		ctx.moveTo(...(horizontal ? [pos, height] : [width,pos]));
-		ctx.lineTo(...(horizontal ? [pos, height/2+thumb.height/2] : [width/2+thumb.width/2, pos]));
+		ctx.moveTo(...this.adapt(horizontal ? [pos, 0] : [0, pos]));
+		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2-thumb.height/2] : [width/2-thumb.width/2, pos]));
+		ctx.moveTo(...this.adapt(horizontal ? [pos, height] : [width,pos]));
+		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2+thumb.height/2] : [width/2+thumb.width/2, pos]));
 		ctx.stroke();
 		
 		
