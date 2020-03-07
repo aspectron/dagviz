@@ -562,7 +562,9 @@ console.log('target:',this.target.data.blockHash, this.target.data.acceptingBloc
 				stroke = color;
 		}
 
-		this.el.transition()
+		//console.log("stroke", stroke, strokeWidth, this.el.node())
+
+		this.el.path.transition()
 			.duration(200)
 			.style('opacity', color ? 1 : this.defaultOpacity)
 			.attr('stroke', stroke)
