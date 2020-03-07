@@ -535,7 +535,7 @@ export class GraphNodeLink{
 	}
 
 	highlight(color, node) {
-console.log('highlight arrows');
+console.log('highlight arrows ->', node);
 console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
 console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
@@ -552,14 +552,16 @@ console.log('target:',this.target.data.blockHash, this.target.data.acceptingBloc
 				strokeWidth = 5;
 			}
 			else
-			if(this.source.data.blockHash == this.target.data.acceptingBlockHash) { //this.source.selected && this.target.selected){
-				stroke = '#84e';
-				strokeWidth = 5;
+			if(node.data.blockHash == this.target.data.acceptingBlockHash) { //this.source.selected && this.target.selected){
+				stroke = 'rgba(136, 68, 238, 1)';
+				strokeWidth = 3;
 			}
 			else if(node.selected)
 				stroke = this.defaultColor;
-			else
-				stroke = color;
+			else {
+				//stroke = color;
+				strokeWidth = 2;
+			}
 		}
 
 		//console.log("stroke", stroke, strokeWidth, this.el.node())
