@@ -143,10 +143,10 @@ class GraphContext {
 
 	nodeLinkCurveData(x1, y1, x2, y2){
 		if(this.direction.v){
-			let yy = y1+(y2-y1)*0.5;
+			let yy = Math.round(y1+(y2-y1)*0.5);
 			return `M${x1},${y1} C${x1},${yy} ${x2},${yy} ${x2},${y2}`;
 		}else{
-			let xx = x1+(x2-x1)*0.5;
+			let xx = Math.round(x1+(x2-x1)*0.5);
 			return `M${x1},${y1} C${xx},${y1} ${xx},${y2} ${x2},${y2}`;
 		}
 	}
@@ -155,7 +155,7 @@ class GraphContext {
 		const { axis, sign, layoutAxis } = this.direction;
 		const ts = Date.now();
 
-		node[layoutAxis] = Math.round(node[layoutAxis]);
+		//node[layoutAxis] = Math.round(node[layoutAxis]);
 
 		let needsToRun = false;
 		if(!node.location_init_) {
@@ -239,10 +239,13 @@ class GraphContext {
 					max = Math.abs(parent[axis]);
 			});
 
-			node[axis] = Math.round(max + (this.unitDist*2*this.spacingFactor))*sign;
+			node[axis] = max + (this.unitDist*2*this.spacingFactor)*sign;
 		} else {
-			node[axis] = Math.round(node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign);
+			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign;
 		}
+
+		node[axis] = Math.round(node[axis])
+		node[layoutAxis] = Math.round(node[layoutAxis])
 	}
 
 	reposition(x, skipUpdate) {

@@ -492,16 +492,26 @@ export class GraphNodeLink{
 				tSize += 1;
 
 			if(h){
-				x1 -= sSize * sign
-				x2 += tSize * sign
-				if(arrows=="multi")
+				x1 -= sSize * sign;
+				x2 += tSize * sign;
+				x1 = Math.round(x1);
+				x2 = Math.round(x2);
+				if(arrows=="multi"){
 					y2 += (this.linkIndex * margin) - boxHSize + margin;
+					y2 = Math.round(y2)
+				}
 			}else{
-				y1 -= sSize * sign
-				y2 += tSize * sign
-				if(arrows=="multi")
+				y1 -= sSize * sign;
+				y2 += tSize * sign;
+				y1 = Math.round(y1);
+				y2 = Math.round(y2);
+				if(arrows=="multi"){
 					x2 += (this.linkIndex * margin) - boxHSize + margin;
+					x2 = Math.round(x2)
+				}
 			}
+
+
 		}
 		if(!this.curves)
 			return `M${x1},${y1} ${x2},${y2}`;
@@ -973,20 +983,13 @@ export class GraphNode{
 		});
 		this.highlight(highlight);
 	}
-
-//	highlight(highlight = true){
 	highlight(highlight, type){
-			let color = this.data.color;
-			if(highlight) {
-				const highlightColor = this.data[`highlightColor${type?'_'+type:''}`];
-				color = highlightColor || '#f00';
+		let color = this.data.color;
+		if(highlight) {
+			const highlightColor = this.data[`highlightColor${type?'_'+type:''}`];
+			color = highlightColor || '#f00';
 
-			}
-			
-//			highlight? (this.data.hightlightColor || "#F00"): this.data.color;
-		//this.el.setFill(()=>{
-		//	return color;
-		//});
+		}
 		this.el.blockBox.transition().duration(500)
 			.attr('fill', color)
 			.style("transform", highlight?"scale(1.1)":null)
@@ -1495,13 +1498,13 @@ export class DAGViz extends BaseElement {
 		} catch(ex) {
 			console.log(ex);
 		}
-		if(1) {
+		//if(1) {
 			this.simulation.alpha(0.005);
-			this.simulation.alphaDecay(0.005);
-		} else {
-			this.simulation.alpha(0.0045);
-			this.simulation.alphaDecay(0.001);
-		}
+			this.simulation.alphaDecay(0.08);
+		//} else {
+		//	this.simulation.alpha(0.0045);
+		//	this.simulation.alphaDecay(0.001);
+		//}
 
 		if(!this.ctx.track && (Date.now() - this.simulationTimeoutTS > 10 * 1000)) {
 			this.simulation.stop();
