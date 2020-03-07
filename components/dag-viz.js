@@ -535,9 +535,9 @@ export class GraphNodeLink{
 	}
 
 	highlight(color, node) {
-console.log('highlight arrows ->', node);
-console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
-console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
+		console.log('highlight arrows ->', node);
+		console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
+		console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
 		let strokeWidth = this.defaultStrokeWidth;
 		if(color) {
@@ -563,8 +563,6 @@ console.log('target:',this.target.data.blockHash, this.target.data.acceptingBloc
 				strokeWidth = 2;
 			}
 		}
-
-		//console.log("stroke", stroke, strokeWidth, this.el.node())
 
 		this.el.path.transition()
 			.duration(200)
@@ -1211,24 +1209,20 @@ export class DAGViz extends BaseElement {
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100" fill="#000" id="markers">
 			<defs>
-			    <marker id="startarrow" markerWidth="10" markerHeight="7" 
-			    	refX="10" refY="3.5">
-			      <polygon points="10 0, 10 7, 0 3.5"/>
-			    </marker>
 			    <marker id="endarrow-e" markerWidth="6" markerHeight="6" 
-			    	refX="6" refY="3">
+			    	refX="6" refY="3" markerUnits="userSpaceOnUse">
 			        <polygon points="6 6, 0 3, 6 0"/>
 			    </marker>
 			    <marker id="endarrow-w" markerWidth="6" markerHeight="6" 
-			    	refX="0" refY="3">
+			    	refX="0" refY="3" markerUnits="userSpaceOnUse">
 			        <polygon points="0 0, 6 3, 0 6"/>
 			    </marker>
 			    <marker id="endarrow-n" markerWidth="6" markerHeight="6" 
-			    	refX="3" refY="0">
+			    	refX="3" refY="0" markerUnits="userSpaceOnUse">
 			        <polygon points="0 0, 6 0, 3 6"/>
 			    </marker>
 			    <marker id="endarrow-s" markerWidth="6" markerHeight="6" 
-			    	refX="3" refY="6">
+			    	refX="3" refY="6" markerUnits="userSpaceOnUse">
 			        <polygon points="3 0, 6 6, 0 6"/>
 			    </marker>
 			    <marker id="endarrowsm-e" markerWidth="2" markerHeight="2" 
