@@ -1163,8 +1163,12 @@ export class App {
 
 		let updateTransform = false;
 		if(state.pos) {
-			const position = parseFloat(state.pos);
+			let position = parseFloat(state.pos);
 			if(this.ctx.position != position) {
+				if(position > this.ctx.max)
+					position = this.ctx.max;
+				if(position < this.ctx.min)
+					position = this.ctx.min;
 				this.ctx.position = position;
 				updateTransform = true;
 			}
