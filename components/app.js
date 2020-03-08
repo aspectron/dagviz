@@ -1099,6 +1099,9 @@ export class App {
 		this.ctx.range = range;
 		this.range_ = range;
 		
+		if(o.fullFetch)
+			this.fullFetch = true;
+		else
 		if(Math.round(this.last_range_*10) != Math.round(range*10)) {
 			this.last_range_ = range;
 			this.fullFetch = true;
@@ -1116,6 +1119,8 @@ export class App {
 		this.storeUndo();
 		const eraseMargin = this.ctx.quality == 'high' ? half_range : half_range/2;
 		let max=0, min = -1;
+
+		if(!o.noCleanup && !this.fullFetch)
 		Object.values(this.graph.nodes).forEach((node) => {
 			if(node.selected)
 				return;

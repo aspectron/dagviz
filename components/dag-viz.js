@@ -1833,6 +1833,7 @@ export class DAGViz extends BaseElement {
 			// console.log('blueScore pos:',pos)
 			this.ctx.app.updateRegion({
 				noCleanup : true,
+				fullFetch : true,
 				pos, range : this.ctx.app.range_
 			});
 
@@ -1843,6 +1844,7 @@ export class DAGViz extends BaseElement {
 				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
 				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
 				if(X_ < 1e-1 && Y_ < 1e-1) {
+					node.rebuildLinks();
 					// console.log("focusTarget STOP");
 					// console.log('coordinates:', x,y,t,v );
 					//this.ctx.position = node.data[this.ctx.unit];
