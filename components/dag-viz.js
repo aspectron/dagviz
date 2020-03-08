@@ -1800,6 +1800,14 @@ export class DAGViz extends BaseElement {
 			let { k } = this.paintEl.transform;
 
 			let offset = `offset${this.ctx.direction.axis.toUpperCase()}`;
+
+
+			// const pos = this.ctx.lastBlockData.data.blueScore;
+			// this.ctx.app.updateRegion({
+			// 	noCleanup : true,
+			// 	fullFetch : true,
+			// 	pos, range : this.ctx.app.range_
+			// });
 			
 			this.centerBy(this.ctx.lastBlockData.blockHash, { 
 				filter : (t,v) => {
@@ -1830,7 +1838,6 @@ export class DAGViz extends BaseElement {
 			const node = this.nodes[this.focusTargetHash];
 
 			const pos = node.data.blueScore;
-			// console.log('blueScore pos:',pos)
 			this.ctx.app.updateRegion({
 				noCleanup : true,
 				fullFetch : true,

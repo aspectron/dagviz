@@ -1011,9 +1011,7 @@ export class App {
 				if(node) {
 					node.data.isChainBlock = false;
 					node.data.acceptingBlockHash = null;
-					updateMap[node.data.blockHash] = true;
-					node.updateStyle();
-					node.rebuildLinks();
+					updateMap[node.data.blockHash] = node;
 				}
 			});
 
