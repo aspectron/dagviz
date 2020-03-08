@@ -1005,6 +1005,18 @@ export class App {
 			const { addedChainBlocks, removedBlockHashes } = args;
 			const { nodes } = this.graph;
 			const updateMap = { };
+
+			removedBlockHashes.forEach((hash) => {
+				const node = nodes[hash]
+				if(node) {
+					node.data.isChainBlock = false;
+					node.data.acceptingBlockHash = null;
+					updateMap[node.data.blockHash] = true;
+					node.updateStyle();
+					node.rebuildLinks();
+				}
+			});
+
 			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
 				const { hash, acceptedBlockHashes } = instr;
 				const ref = nodes[hash];
@@ -1019,19 +1031,11 @@ export class App {
 						updateMap[node.data.blockHash] = node;
 					}
 				});
-				Object.values(updateMap).forEach((node) => {
-					node.updateStyle();
-					node.rebuildLinks();
-				});
 			});
 
-			removedBlockHashes.forEach((hash) => {
-				const node = nodes[hash]
-				if(node) {
-					node.data.isChainBlock = false;
-					node.updateStyle();
-					node.rebuildLinks();
-				}
+			Object.values(updateMap).forEach((node) => {
+				node.updateStyle();
+				node.rebuildLinks();
 			});
 
 		});

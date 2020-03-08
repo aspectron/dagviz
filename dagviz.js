@@ -67,7 +67,7 @@ class DAGViz {
         })
         
         client.on('message',(topic, message, packet) => {
-            console.log('topic:',topic);
+            // console.log('topic:',topic);
             //topic = 'MQTT_'+topic.replace(/\W/g,'_')+'';
             try {
                 if(this[topic])
@@ -95,6 +95,10 @@ class DAGViz {
         this.io.emit("dag/selected-parent-chain",args);
 
         const { addedChainBlocks, removedBlockHashes } = args;
+
+        if(removedBlockHashes && removedBlockHashes.length)
+            this.sql(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=0 WHERE (blocks.blockHash) IN (?)`, removedBlockHashes);
+
         if(addedChainBlocks && addedChainBlocks.length) {
             // let addedHashes = addedChainBlocks.map(v=>v.hash);
             // console.log(`UPDATE blocks SET blocks.acceptedBlockHash='${}' WHERE (blocks.blockHash) IN (?)`, addedHashes);
@@ -104,11 +108,9 @@ class DAGViz {
                 const { hash, acceptedBlockHashes } = instr;
                 //console.log('UPDATE blocks SET parentBlockHashes =  WHERE blockHash IN ?', [acceptedBlockHashes], [hash]);
                 this.sql(`UPDATE blocks SET isChainBlock = 1 WHERE blockHash = '${hash}'`);
-                this.sql(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blocks.blockHash) IN (?)`, [acceptedBlockHashes]);
+                this.sql(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (?)`, [acceptedBlockHashes]);
             })
         }
-        if(removedBlockHashes && removedBlockHashes.length)
-            this.sql(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=0 WHERE (blocks.blockHash) IN (?)`, removedBlockHashes);
     }
 
     static MAX_RTBS_BLOCKS = 1024;
