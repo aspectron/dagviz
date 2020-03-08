@@ -92,7 +92,7 @@ class AxisNavigator extends BaseElement{
 
 	_onResize() {
 		this.updateCanvas();
-		console.log('resize:', this.getBoundingClientRect());
+		this.verbose && console.log('resize:', this.getBoundingClientRect());
 	}
 
 	onMouseEvent(event, e) {
@@ -141,7 +141,7 @@ class AxisNavigator extends BaseElement{
 				(e.clientX-this.thumb.width/2*_scale) / (box.width-this.thumb.width*_scale) : 
 				(e.clientY-fontSize/2*_scale) / (box.height-fontSize/2*_scale);
 
-		console.log('e:', e);
+		this.verbose && console.log('e:', e);
 		//console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
@@ -150,7 +150,7 @@ class AxisNavigator extends BaseElement{
 
 		if(sign < 0)
 			absolute = 1 - absolute;
-
+		this.verbose && console.log("mouse absolute:",absolute);
 		this.app.ctx.reposition(absolute, skipUpdates);
 	}
 
@@ -207,8 +207,8 @@ class AxisNavigator extends BaseElement{
 			return
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
-		console.log('parentBox:',parentBox);
-		console.log('canvasBox:',canvasBox);
+		this.verbose && console.log('parentBox:',parentBox);
+		this.verbose && console.log('canvasBox:',canvasBox);
 		this.canvasBox = canvasBox;
 		let { width, height } = canvasBox;
 		width *= this.scale;
@@ -226,13 +226,14 @@ class AxisNavigator extends BaseElement{
 		ctx.font = `${fontSize}px "Exo 2"`;
 		ctx.textBaseline = "top";
 		const content = Math.round(this.app.ctx.position).toScaleAbbrev();
+		// const content = (Math.round(this.app.ctx.position*100)/100).toFixed(2);
 		let textMetrics = ctx.measureText(content);
 		const text = {
 			content,
 			width : textMetrics.width,
 			height : fontSize,
 		}
-console.log('scale:',this.scale);
+		this.verbose && console.log('scale:',this.scale);
 		const thumb = { 
 			height : fontSize*this.scale,
 			width : text.width+8
@@ -261,11 +262,11 @@ console.log('scale:',this.scale);
 
 
 
-		let pos_ = (this.size[size]-thumb[size]) * absolute + thumb[size]/2;
+		let pos_ = (this.size[size]-thumb[size]) * absolute + thumb[size]/2;// * 1/this.scale;
 		// if(inverse)
 		//  	pos_ = this.size[size] - pos_;
 		const pos = pos_;
-		console.log('pos:', pos);
+		this.verbose && console.log('pos:', pos);
 
 		// let x = (width-thumbWidth) * absolute + thumbWidth/2;
 
@@ -276,7 +277,7 @@ console.log('scale:',this.scale);
 		ctx.fillStyle = `rgba(0,0,0,0.325)`;
 		let minMetrics = ctx.measureText('0');
 		minMetrics.height = fontSize;
-		console.log('min metrics:',minMetrics);
+		this.verbose && console.log('min metrics:',minMetrics);
 		ctx.fillText('0', ...this.adapt(horizontal ? 
 			[4+minMetrics.width*(sign>0?0:1), height/2-minMetrics.height/2] :
 			[width/2-minMetrics.width/2, (4+fontSize)*(sign<0?1:0)]));
@@ -289,7 +290,7 @@ console.log('scale:',this.scale);
 				[width-4-(maxMetrics.width)*(sign>0?1:0), height/2-maxMetrics.height/2] :
 				[width/2-maxMetrics.width/2, height-4-(fontSize)*(sign>0?1:0)]));
 
-		console.log('rect:',max_text,maxMetrics,width/2-text.width/2, height-4-fontSize);
+		this.verbose && console.log('rect:',max_text,maxMetrics,width/2-text.width/2, height-4-fontSize);
 		// ------------------
 
 
@@ -302,7 +303,7 @@ console.log('scale:',this.scale);
 			thumb.rect = horizontal ? 
 				[pos-thumb.width/2*sign, height/2-thumb.height/2, thumb.width, thumb.height] :
 				[width/2-thumb.width/2, pos-(thumb.height/2)*sign, thumb.width, thumb.height];
-			console.log('thumb rect:',thumb.rect);
+			this.verbose && console.log('thumb rect:',thumb.rect);
 			ctx.fillRect(...this.adapt(thumb.rect));
 				ctx.rect(...this.adapt(thumb.rect));
 			ctx.stroke();
@@ -400,7 +401,7 @@ console.log('scale:',this.scale);
 
 if(!Number.prototype.toScaleAbbrev) {
 	Object.defineProperty(Number.prototype, 'toScaleAbbrev', {
-		value: function(a, asNumber) {
+		value: function(a = true, asNumber = false) {
 			var b,c,d;
 			var r = (
 				a=a?[1e3,'k','']:[1024,'K',''],
