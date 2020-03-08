@@ -403,7 +403,10 @@ class GraphContext {
 		this.app.storeUndo();
 	}
 
-	updateViewportTransform(t, force){
+	updateViewportTransform(t, force) {
+
+//  return;
+
 		if(this[this.dir+"_transformed"]>1)
 			return
 
@@ -441,6 +444,21 @@ class GraphContext {
 		this.graph.restartSimulation();
 	}
 
+	disableTracking() {
+		if(this.track) {
+			this.app.ctls.track.setValue(false);
+
+
+			$.notify({
+				//title : 'DAGViz',
+				text : 'Tracking Disabled',
+				className : 'red',
+				autoHide : true,
+				autoHideDelay : 750
+			});
+
+		}
+	}
 }
 
 export class App {
@@ -806,6 +824,7 @@ export class App {
 	}
 
 	async updatePosition() {
+		//console.log('updatePosition');
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
@@ -1102,7 +1121,7 @@ export class App {
 				return;
 			if(this.ctx && this.ctx.lastBlockData && node.data.blockHash == this.ctx.lastBlockData.blockHash)
 				return;
-			if(node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin)) {
+			if(!o.noCleanup && (node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
 				node.purge();
 			} else {
 				if(min<0 || min > node.data[this.ctx.unit])
@@ -1114,7 +1133,7 @@ export class App {
 		})
 
 		if(!this.fullFetch) {
-			if(forward && min) {
+			if(forward && min > 0) {
 				from = min;
 			} else if(reverse && max) {
 				to = max;
@@ -1125,22 +1144,24 @@ export class App {
 			this.fullFetch = false;
 		
 
-		//console.log("max, min", this.fullFetch, {forward, reverse, max, min, from, to})
-		let { blocks, max : max_ } = await this.fetch({ from, to });
+		// console.log("max, min", this.fullFetch, {forward, reverse, max, min, from, to})
+		let { blocks, max : max_ } = await this.fetch({ from : Math.floor(from), to : Math.ceil(to) });
 		this.ctx.updateMax(max_);
 
 		this.region = this.getRegion();
 		//console.log("xxxxx",this.ctx.position, region.position, range, region.range);
 		//console.log("region.from, region.to", region.from-half_range, region.to+half_range)
 		//let l1 = blocks.length;
-		blocks = blocks.filter((block) => {
-			if(block[this.ctx.unit] < (this.region.from-half_range) || block[this.ctx.unit] > (this.region.to+half_range))
-				return false;
-			return true;
-		});
+		if(!o.noCleanup) {
+			blocks = blocks.filter((block) => {
+				if(block[this.ctx.unit] < (this.region.from-half_range) || block[this.ctx.unit] > (this.region.to+half_range))
+					return false;
+				return true;
+			});
+		}
 
 		//console.log("blocks", blocks.length, l1, blocks)
-
+		// console.log('tracking:', this.ctx.position,'blocks:',blocks);
 		this.createBlocks(blocks);
 		this.graph.updateSimulation();
 		this.ctx.updateViewportTransform()
@@ -1165,11 +1186,12 @@ export class App {
 		if(state.pos) {
 			let position = parseFloat(state.pos);
 			if(this.ctx.position != position) {
-				if(position > this.ctx.max)
-					position = this.ctx.max;
-				if(position < this.ctx.min)
-					position = this.ctx.min;
+				// if(position > this.ctx.max)
+				// 	position = this.ctx.max;
+				// if(position < this.ctx.min)
+				// 	position = this.ctx.min;
 				this.ctx.position = position;
+				// console.log("init position:",this.ctx.position);
 				updateTransform = true;
 			}
 		}
@@ -1394,11 +1416,6 @@ export class App {
         }
     }
     
-	disableTracking() {
-		this.ctls.track.setValue(false);
-	}
-
-
 	regionCleanup() {
 
 		const { region : { from, to, range } } = this.getRegion();

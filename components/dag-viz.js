@@ -553,7 +553,7 @@ export class GraphNodeLink{
 			}
 			else
 			if(node.data.blockHash == this.target.data.acceptingBlockHash) { //this.source.selected && this.target.selected){
-				stroke = 'rgba(136, 68, 238, 1)';
+				stroke = 'rgba(0, 150, 136, 1)';
 				strokeWidth = 3;
 			}
 			else if(node.selected)
@@ -1434,7 +1434,7 @@ export class DAGViz extends BaseElement {
 
 	}
 	setChartTransform(transform, skipUpdates){
-		this.paintEl.transform = transform;
+		this.paintEl.transform = transform || this.paintEl.transform;
 		//this.paintEl.
 		// transition().duration(1000)
 		// .attr('transform', transform);
@@ -1528,7 +1528,8 @@ export class DAGViz extends BaseElement {
 		}
 		//if(1) {
 			this.simulation.alpha(0.005);
-			this.simulation.alphaDecay(0.08);
+			//this.simulation.alphaDecay(0.08);
+			this.simulation.alphaDecay(0.005);
 		//} else {
 		//	this.simulation.alpha(0.0045);
 		//	this.simulation.alphaDecay(0.001);
@@ -1823,22 +1824,38 @@ export class DAGViz extends BaseElement {
 		}
 		else if(this.focusTargetHash) {
 
-			this.app.disableTracking();
+			// this.ctx.disableTracking();
 
-			let { k } = this.paintEl.transform;
+			let { k, x, y } = this.paintEl.transform;
+			const node = this.nodes[this.focusTargetHash];
+
+			const pos = node.data.blueScore;
+			// console.log('blueScore pos:',pos)
+			this.ctx.app.updateRegion({
+				noCleanup : true,
+				pos, range : this.ctx.app.range_
+			});
+
+			this.ctx.app.suspend = true;
 
 			this.centerBy(this.focusTargetHash, { filter : (t,v) => {
+				// console.log("focusTarget RUN",t,v);
 				let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
 				let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
 				if(X_ < 1e-1 && Y_ < 1e-1) {
+					// console.log("focusTarget STOP");
+					// console.log('coordinates:', x,y,t,v );
+					//this.ctx.position = node.data[this.ctx.unit];
 					delete this.focusTargetHash;
+					this.ctx.app.suspend = false;
 					window.app.enableUndo(true);
-					window.app.updatePosition();
+					this.setChartTransform();
+					// window.app.updatePosition();
 				}
 
 				let delta = 0.45;
 				if(X_ < 7 && Y_ < 7) {
-					delta = 0.3;
+					delta = 0.1;
 				}
 				
 				t.x += v.cX * delta; //0.0075;// * delta;
@@ -1897,6 +1914,7 @@ export class DAGViz extends BaseElement {
 	}
 	
 	setFocusTargetHash(hash) {
+		console.log("setFocusTargetHash - targeting:",hash);
 		this.focusTargetHash = hash;
 		//this.simulation.restart();
 		this.restartSimulation();
