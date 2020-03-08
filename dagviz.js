@@ -29,11 +29,13 @@ class DAGViz {
 
         this.verbose = this.args.verbose ? true : false;
 
+    }
+    
+    async initRTBS() {
         this.rtbs = [ ];
         this.rtbsMap = { };
+        return Promise.resolve();
     }
-
-
     
 
     hash(data,h='sha256') {
@@ -41,6 +43,7 @@ class DAGViz {
     }
 
     async init() {
+        await this.initRTBS();
         await this.initDatabase()
         await this.initMQTT();
         await this.initHTTP();
@@ -81,14 +84,14 @@ class DAGViz {
     }
 
     async "dag/blocks"(block) {
-        console.log('received: dag/blocks');
+        // console.log('received: dag/blocks');
         this.io.emit("dag/blocks",[block]);
 
         await this.postRTB(block);
     }
 
     async "dag/selected-parent-chain"(args) {
-        console.log("dag/selected-parent-chain");
+        // console.log("dag/selected-parent-chain");
         this.io.emit("dag/selected-parent-chain",args);
 
         const { addedChainBlocks, removedBlockHashes } = args;
@@ -121,7 +124,7 @@ class DAGViz {
 
     async "dag/selected-tip"(message) {
 
-console.log("dag/selected-tip");
+        // console.log("dag/selected-tip");
 
         if(!message.blockHash)
             return console.log('invalid mqtt message:', message);
@@ -439,6 +442,7 @@ console.log("dag/selected-tip");
                 await this.sql(`TRUNCATE TABLE block_relations`);
                 this.lastTotal = data.total;
                 this.skip = 0;
+                this.initRTBS();
                 this.io.emit('chain-reset');
                 dpc(1000, () => {
                     this.sync();
