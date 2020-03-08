@@ -1892,6 +1892,17 @@ export class DAGViz extends BaseElement {
 			return a.detsalt - b.detsalt;
 		});
 
+		let min = l[0].timestamp;
+		let max = l[0].timestamp;
+		l.forEach((node) => {
+			if(node.timestamp < min)
+				min = node.timestamp;
+			if(node.timestamp > max)
+				max = node.timestamp;
+		});
+
+		l.range = { min, max };
+
 		if(l.length > 2) {
 			let t = Math.round(l.length/2-0.5);
 			for(let i = 0; i < l.length; i++)
