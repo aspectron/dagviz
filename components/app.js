@@ -515,6 +515,7 @@ export class App {
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
 		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation', {
+			limit : ['E','N'],
 			update : (v) => {
 				const $orientationImg = $('#orientation > img, body');
 				$orientationImg.removeClass('orient-N orient-E orient-S orient-W');
@@ -696,7 +697,9 @@ export class App {
 		const $orientationImg = $('#orientation > img');
 		$orientationImg.addClass(`orient-${this.ctx.dir}`);
 		$orientationImg.click((e) => {
-			this.ctls.dir.toggle();
+			this.ctls.dir.toggle({
+				disableLimit : (e.ctrlKey || e.shiftKey)				
+			});
 		});
 
 		const $trackingImg = $('#tracking > img');
@@ -1503,19 +1506,23 @@ class MultiChoice {
 		this.caption = caption;
 		this.options = options;
 		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v,v])) : choices;
+		this.limit = options && options.limit ? (Array.isArray(options.limit) ? Object.fromEntries(options.limit.map(v=>[v,v])) : options.limit) : null;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
 		$("menu-panel").append(this.el);
 
-		$(this.el).on('click', () => {
-			this.toggle();
+		$(this.el).on('click', (e) => {
+			this.toggle({
+				disableLimit : (e.ctrlKey || e.shiftKey)
+			});
 		});
 		this.update();
 	}
 
-	toggle() {
-		const choices = Object.keys(this.choices);
+	toggle(opts_) {
+		const opts = opts_ || { };
+		const choices = this.limit && !opts.disableLimit ? Object.keys(this.limit) : Object.keys(this.choices);
 		let value = this.target[this.ident];
 		let idx = choices.indexOf(value);
 		idx++;
