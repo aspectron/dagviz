@@ -1892,14 +1892,20 @@ export class DAGViz extends BaseElement {
 			return a.detsalt - b.detsalt;
 		});
 
-		let min = l[0].timestamp;
-		let max = l[0].timestamp;
+		let min = l[0].data.timestamp;
+		let max = l[0].data.timestamp;
 		l.forEach((node) => {
-			if(node.timestamp < min)
-				min = node.timestamp;
-			if(node.timestamp > max)
-				max = node.timestamp;
+			if(node.data.timestamp < min)
+				min = node.data.timestamp;
+			if(node.data.timestamp > max)
+				max = node.data.timestamp;
 		});
+		l.forEach((node) => {
+			node.lvariance = max > min ? (node.data.timestamp - min) / (max-min) * 2 - 1 : 0;
+			if(isNaN(node.lvariance))
+				console.log('isNaN failure:',min,max,l.length,node);
+		});
+		
 
 		l.range = { min, max };
 

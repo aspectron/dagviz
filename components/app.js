@@ -32,6 +32,7 @@ export class Block extends GraphNode {
 		}
 		super(holder,data);
 		this.detsalt = data.detsalt;
+		this.lvariance = 0;
 		data.size = this.getSize(); 
 		this.x = Math.random();
 		this.y = Math.random();
@@ -91,6 +92,7 @@ class GraphContext {
 		this.spacingFactor = 1;
 		this.arrows = 'multi-s';
 		this.childShift = 1;
+		this.lvariance = true;
 
 		this.dir = 'E';
 		this.directions = {
@@ -231,6 +233,8 @@ class GraphContext {
 			// 	delete this.layout_post_ctx_;
 		}
 
+		// console.log('lvariance:',node.lvariance);
+		let offset = this.lvariance ? node.lvariance * this.unitDist * 0.45 : 0;
 		if(node.data.parentBlockHashes && this.childShift) {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
 			node.data.parentBlockHashes.forEach((hash) => {
@@ -239,9 +243,9 @@ class GraphContext {
 					max = Math.abs(parent[axis]);
 			});
 
-			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign;
+			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign+offset;
 		} else {
-			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign;
+			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign + offset;
 		}
 
 		node[axis] = Math.round(node[axis])
@@ -302,6 +306,7 @@ class GraphContext {
 				});
 				this.restart();
 			} break;
+			case 'lvariance':
 			case 'chainBlocksDistinct': {
 				Object.values(this.graph.nodes).forEach((node) => {
 					node.updateStyle();
@@ -489,6 +494,7 @@ export class App {
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
 		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
+		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain');
 		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
 		// 	'border' : 'BORDER',
 		// 	'green' : 'GREEN',
