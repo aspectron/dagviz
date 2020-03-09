@@ -356,6 +356,29 @@ class AxisNavigator extends BaseElement{
 			ctx.lineTo(...this.adapt(horizontal ? [p, 3] : [3, p]));
 		}
 
+		let tristep = 64 * this.scale;
+		let trimargin = 4;
+		let tri = 3;
+		let trioffset = 32*this.scale;
+		for(let i = 0; i < 5; i++) {
+			let p = pos + thumb[size]*0.5+tristep*i + trioffset;
+
+			ctx.moveTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+			ctx.lineTo(...this.adapt(horizontal ? [p+tri, trimargin+tri] : [trimargin+tri, p+tri]));
+			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin+tri+tri] : [trimargin+tri+tri, p]));
+			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+
+			p = pos - (thumb[size]*0.5+tristep*i + trioffset+tri);
+
+			ctx.moveTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+			ctx.lineTo(...this.adapt(horizontal ? [p+tri, trimargin+tri] : [trimargin+tri, p+tri]));
+			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin+tri+tri] : [trimargin+tri+tri, p]));
+			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+
+
+		}
+
+
 		ctx.stroke();
 
 		/////////////////////
