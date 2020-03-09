@@ -91,11 +91,46 @@
 			display: inline-block;
 		}
 
+/*
 		#bottom { 
 			font-family: 'Roboto Mono', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
 			position: absolute; left: 4px; bottom: 54px; color: #444;
 			font-weight: 400;
 		}
+*/		
+
+		#selection { 
+			font-family: 'Roboto Mono', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
+			position: absolute; left: 4px; bottom: 54px; color: #444;
+			font-weight: 400;
+
+			display: flex;
+            flex-direction: row;
+			flex-wrap: wrap-reverse;
+			align-items: flex-start;
+			justify-content: left;
+		}
+
+		body.orient-v #selection {
+            flex-direction: column;
+			/*flex-wrap: wrap-reverse;*/
+			align-items: flex-start;
+			align-content: flex-start;
+			/*justify-content: flex-start;*/
+			bottom: 0px;
+			right: 54px;
+			top: 0px;
+			
+		}
+
+		#selection {
+			pointer-events: none;
+		}
+
+		#selection > * {
+			pointer-events: auto;
+		}
+
 
 
 		#logo {
@@ -115,13 +150,6 @@
 		}
 		body{padding:0px;margin:0px;overflow:hidden;}
 
-		.selection {
-			display: flex;
-            flex-direction: row;
-			flex-wrap: wrap-reverse;
-			align-items: flex-start;
-			justify-content: left;
-		}
 
 		#left {
 			position: absolute;
@@ -174,13 +202,6 @@
 
 		#copy-url { display: none; }
 
-		#bottom, .selection {
-			pointer-events: none;
-		}
-
-		.selection > * {
-			pointer-events: auto;
-		}
 
 		.tooltip {
 			opacity: 0.6;
@@ -362,7 +383,8 @@
 			<i class="fa fa-unlink"></i>
 		</div>
 	</div>
-	<div id='bottom'><div class='selection'></div></div>
+	<div id='selection'></div>
+	<div id='bottom'></div>
 	<axis-navigator id="timenav"></axis-navigator>
 	<menu-panel></menu-panel>
 	<div id="copy-url"></div>

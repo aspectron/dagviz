@@ -18,7 +18,7 @@ class BlockInfo extends BaseElement{
                 margin: 8px;
                 padding: 0px;
                 background-color: rgba(255,255,255,0.9);
-                max-height: 80vh;                
+                max-height: 80vh;
             }
             :host(.hidden){display:none}
             .panel {

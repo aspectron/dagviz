@@ -1101,7 +1101,7 @@ export class GraphNode{
 
 		this.highlightLinks(true, null, this);
 		this.nodeInfoEl = $(`<block-info hash='${this.data.blockHash}'></block-info>`);
-		$('#bottom .selection').append(this.nodeInfoEl);
+		$('#selection').append(this.nodeInfoEl);
 
 	}
 
