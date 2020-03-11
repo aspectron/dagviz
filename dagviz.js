@@ -163,7 +163,9 @@ class DAGViz {
             const server = http.createServer((req, res)=>{
 
                 var auth = basicAuth(req);
-                if(!auth || auth.name != 'dag' || auth.pass != 'dag') {
+                if(!req.url.startsWith('/components') && 
+                    !req.url.startsWith('/build') &&
+                    (!auth || auth.name != 'dag' || auth.pass != 'dag')) {
                     res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
                     return res.end();
                 }
