@@ -536,13 +536,12 @@ export class GraphNodeLink{
 	}
 
 	highlight(color, node, isTealing=false) {
+		//isTealing = isTealing || !!this.source.parentLinks.find(l=>l.isTealing);
 		//console.log('highlight arrows ->', node);
 		//console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
 		//console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
 		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth)
-		//if(this.source.data.blockHash == '00003a18cfa6d96ca093448007c52653d9c00e1c516bf7b21de5225264f7fc1e')
-		//	console.log("color", color, node)
 		//if(color) {
 			if(this.isChainBlockLink) {
 				strokeWidth = 7;
@@ -555,23 +554,15 @@ export class GraphNodeLink{
 				strokeWidth = 5;
 			}
 			else
-			if(isTealing || (this.source.selected && this.source.data.blockHash == this.target.data.acceptingBlockHash)){
+			if((isTealing || this.source.selected) && this.source.data.blockHash == this.target.data.acceptingBlockHash){
 				stroke = 'rgba(0, 150, 136, 1)';
 				strokeWidth = 3;
-				/*if(this.target.data.blockHash=='00003a35e2bdedc7234b14d10f2df1f9d4dc82faed2c287f733e0099bd6cd842')
-				console.log({
-					sBH: this.source.data.name,
-					tBH: this.target.data.name,
-					tABH:this.target.data.acceptingBlockHash.replace(/^\s*0+/,'').substring(0,6),
-					t:this.target.linkNodes
-				});*/
 				isTealing = true;
 			}
 			else if(color){
 				if(node.selected)
 					stroke = this.defaultColor;
 				else {
-					//stroke = color;
 					strokeWidth = 2;
 				}
 			}
@@ -580,14 +571,9 @@ export class GraphNodeLink{
 		if(this.isTealing != isTealing){
 			this.isTealing = isTealing;
 			(this.target.linkNodes || []).forEach(l=>{
-				/*console.log("l", {
-					s: l.source.data.name,
-					t: l.target.data.acceptingBlockHash.replace(/^\s*0+/,'').substring(0,6),
-					xx: l.source.data.blockHash == l.target.data.acceptingBlockHash,
-					//node: l.el.node()
-				})*/
 				dpc(100, ()=>{
-					l.highlight(color, this.source, isTealing);
+					if(l.target.data.acceptingBlockHash)
+						l.highlight(false, l.source, isTealing);
 				})
 				
 			});
@@ -595,7 +581,7 @@ export class GraphNodeLink{
 
 		this.el.path.transition()
 			.duration(200)
-			.style('opacity', color ? 1 : this.defaultOpacity)
+			.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
 			.attr('stroke', stroke)
 			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
 			.attr('stroke-width', strokeWidth)
