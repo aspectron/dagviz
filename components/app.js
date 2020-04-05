@@ -1177,6 +1177,17 @@ export class App {
 
 			}
 		})
+		else{
+			Object.values(this.graph.nodes).forEach((node) => {
+				if(node.selected)
+					return;
+				if(this.ctx && this.ctx.lastBlockData && node.data.blockHash == this.ctx.lastBlockData.blockHash)
+					return;
+				if(!o.noCleanup && (node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
+					node.updateStyle();
+				}
+			})
+		}
 
 		if(!this.fullFetch) {
 			if(forward && min > 0) {
