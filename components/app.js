@@ -73,9 +73,13 @@ class GraphContext {
 		this.unit = options.unit; // timestamp
 		this.app = app;
 
+		this.linearScale = d3.scaleLinear()
+		this.linearScale.domain([0, 100000]).range([0, 15000]);
 		this.unitScale = 1.0;
 		this.unitDist = 120;
 		this.position = 10;
+		this.offset = 0;
+		this.updateOffset();
 		this.min = 0;
 		this.max = 0;
 		this.mass = true;
@@ -132,6 +136,28 @@ class GraphContext {
 
 		this.direction = this.directions[this.dir];
 	}
+	updateOffset(){
+		this.offset = this.linearScale(this.position/this.unitDist) - this.position * this.unitDist;
+	}
+	/*
+	get position(){
+		return this._position || 0;
+	}
+	set position(value){
+		this._position = value;
+		//this.offset = this.linearScale(value/this.unitDist) - value * this.unitDist;
+		//console.log("this.offset", value, this.offset)
+		/*
+		if(value != 20 && value!==0){
+			try{
+				throw new Error("")
+			}catch(e){
+				console.log(e.stack)
+			}
+		}
+		* /
+	}
+	*/
 
 	init(app,graph) {
 		this.app = app;
@@ -248,7 +274,7 @@ class GraphContext {
 			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign + offset;
 		}
 
-		node[axis] = Math.round(node[axis])
+		node[axis] = Math.round(node[axis] + (sign * this.offset))
 		node[layoutAxis] = Math.round(node[layoutAxis])
 	}
 
@@ -257,6 +283,7 @@ class GraphContext {
 			return;
 
 		this.position = x * this.max;
+		this.updateOffset();
 		// console.log('position:',this.position,'x:',x,'max:',this.max);
 		if(skipUpdate)
 			return;
@@ -375,6 +402,11 @@ class GraphContext {
 		if(max == null)
 			return
 		this.max = max;
+		/*
+		console.log("this.linearScale1111", this.linearScale(100000))
+		this.linearScale.domain([0, max])
+		console.log("this.linearScale2222", this.linearScale(100000))
+		*/
 	}
 
 	getIdx(node) {
@@ -409,8 +441,6 @@ class GraphContext {
 	}
 
 	updateViewportTransform(t, force) {
-
-//  return;
 
 		if(this[this.dir+"_transformed"]>1)
 			return
@@ -1209,6 +1239,7 @@ export class App {
 				this.ctx.position = position;
 				// console.log("init position:",this.ctx.position);
 				updateTransform = true;
+				this.ctx.updateOffset();
 			}
 		}
 

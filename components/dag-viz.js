@@ -1453,7 +1453,16 @@ export class DAGViz extends BaseElement {
 		//this.paintEl.
 		// transition().duration(1000)
 		// .attr('transform', transform);
-		this.paintEl.attr('transform', transform);
+		let {axis, sign} = this.ctx.direction;
+		let {x, y, k} = this.paintEl.transform;
+		console.log("axis, sign, offset", axis, sign, this.ctx.offset)
+		if(axis == 'x'){
+			x += -sign * this.ctx.offset * k
+		}else{
+			y += -sign * this.ctx.offset * k
+		}
+
+		this.paintEl.attr('transform', `translate(${x}, ${y}) scale(${k})`);
 
 		if(skipUpdates)
 			return;
