@@ -275,6 +275,8 @@ class GraphContext {
 		}
 
 		node[axis] = Math.round(node[axis] + (sign * this.offset))
+		//if(node.data.name == '8f74e9')
+		//	console.log("node[axis]node[axis]node[axis]node[axis]", node[axis])
 		node[layoutAxis] = Math.round(node[layoutAxis])
 	}
 
@@ -864,6 +866,7 @@ export class App {
 
 	async updatePosition() {
 		//console.log('updatePosition');
+		this.graph.style.opacity = 0;
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
@@ -1178,13 +1181,11 @@ export class App {
 			}
 		})
 		else{
-			Object.values(this.graph.nodes).forEach((node) => {
-				if(node.selected)
-					return;
-				if(this.ctx && this.ctx.lastBlockData && node.data.blockHash == this.ctx.lastBlockData.blockHash)
-					return;
-				if(!o.noCleanup && (node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
-					node.updateStyle();
+			Object.values(this.graph.nodes).forEach(node=>{
+				if((node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
+					//if(node.data.name == '8f74e9')
+					//	console.log("node", node.data.name)
+					node.purge();
 				}
 			})
 		}
@@ -1222,6 +1223,7 @@ export class App {
 		this.createBlocks(blocks);
 		this.graph.updateSimulation();
 		this.ctx.updateViewportTransform()
+		this.graph.style.opacity = 1;
 
 		return Promise.resolve();
 	}
