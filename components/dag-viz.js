@@ -1430,6 +1430,9 @@ export class DAGViz extends BaseElement {
 			t.x += cX;// * 0.01;
 			t.y += cY;// * 0.01;
 		}
+		const { axis, size, sign } = this.ctx.direction;
+		let pos = -(t[axis] / t.k / this.ctx.unitDist) * sign;
+		this.ctx.updateOffset(pos);
 		this.setChartTransform(this.paintEl.transform);
 	}
 

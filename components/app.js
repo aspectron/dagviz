@@ -136,8 +136,9 @@ class GraphContext {
 
 		this.direction = this.directions[this.dir];
 	}
-	updateOffset(){
-		this.offset = this.linearScale(this.position/this.unitDist) - this.position * this.unitDist;
+	updateOffset(pos){
+		pos = pos!==undefined? pos : this.position;
+		this.offset = this.linearScale(pos/this.unitDist) - pos * this.unitDist;
 	}
 	/*
 	get position(){
