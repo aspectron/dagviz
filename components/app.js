@@ -265,8 +265,10 @@ class GraphContext {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
 			node.data.parentBlockHashes.forEach((hash) => {
 				let parent = graph.nodes[hash];
-				if(parent && parent[axis] && Math.abs(parent[axis]-(sign * this.offset)) > max)
-					max = Math.abs(parent[axis]-(sign * this.offset));
+				if(parent && parent.xx && Math.abs(parent.xx) > max){
+					max = Math.abs(parent.xx);
+					//console.log("new max", max)
+				}
 			});
 
 			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign+offset;
@@ -277,7 +279,7 @@ class GraphContext {
 			if(node.data.name == '8f74e9')
 				console.log("xxxxxxxxxx", this.offset, node[axis])
 		}
-
+		node.xx = node[axis];
 		node[axis] = Math.round(node[axis] + (sign * this.offset))
 		//if(node.data.name == '8f74e9')
 		//	console.log("node[axis]node[axis]node[axis]node[axis]", node[axis])
