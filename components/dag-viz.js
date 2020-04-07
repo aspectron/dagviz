@@ -408,8 +408,8 @@ export class GraphNodeLink{
 		this.holder = holder;
 		this.curves = holder.curves;
 		this.data = data;
-		this.el = holder.linksEl.append("g");
-		this.el.path = this.el.append("path");
+		this.el = holder.linksEl.append("path");
+		this.el.path = this.el;//this.el.append("path");
 		this.el.path.style('opacity', 0).style('fill', 'none');
 		//this.el.attr("marker-end", "url(#endarrow)");
 		this.source = holder.nodes[data.child];
@@ -442,6 +442,8 @@ export class GraphNodeLink{
 	remove(){
 		this.el.remove();
 		//delete this.holder.links.parent[this.data.parent];
+		if(this.source.linkNodes)
+			this.source.linkNodes = this.source.linkNodes.filter(l=>l!=this)
 		this.target.removeParentLinks(this);
 		// TODO - should we check/remove children?
 	}

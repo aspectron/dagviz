@@ -273,12 +273,12 @@ class GraphContext {
 			});
 
 			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign+offset;
-			if(node.data.name == '8f74e9')
-				console.log("aaaaaaaaa", this.offset, node[axis])
+			//if(node.data.name == '8f74e9')
+			//	console.log("aaaaaaaaa", this.offset, node[axis])
 		} else {
 			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign + offset;
-			if(node.data.name == '8f74e9')
-				console.log("xxxxxxxxxx", this.offset, node[axis])
+			//if(node.data.name == '8f74e9')
+			//	console.log("xxxxxxxxxx", this.offset, node[axis])
 		}
 		node.xx = node[axis];
 		node[axis] = Math.round(node[axis] + (sign * this.offset))
@@ -1192,8 +1192,8 @@ export class App {
 				//if((node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
 					
 					node.updateStyle();
-					if(node.data.name == '8f74e9')
-						console.log("#######   node.updateStyle", node.data.name, node[axis])
+					//if(node.data.name == '8f74e9')
+					//	console.log("#######   node.updateStyle", node.data.name, node[axis])
 				//}
 			})
 		}
