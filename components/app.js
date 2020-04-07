@@ -265,13 +265,17 @@ class GraphContext {
 			let max = node.data[this.unit] * this.unitScale * this.unitDist;
 			node.data.parentBlockHashes.forEach((hash) => {
 				let parent = graph.nodes[hash];
-				if(parent && parent[axis] && Math.abs(parent[axis]) > max)
-					max = Math.abs(parent[axis]);
+				if(parent && parent[axis] && Math.abs(parent[axis]-(sign * this.offset)) > max)
+					max = Math.abs(parent[axis]-(sign * this.offset));
 			});
 
 			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign+offset;
+			if(node.data.name == '8f74e9')
+				console.log("aaaaaaaaa", this.offset, node[axis])
 		} else {
 			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign + offset;
+			if(node.data.name == '8f74e9')
+				console.log("xxxxxxxxxx", this.offset, node[axis])
 		}
 
 		node[axis] = Math.round(node[axis] + (sign * this.offset))
@@ -1132,7 +1136,7 @@ export class App {
 
 		let { pos, range } = o;
 		let forward = false, reverse = false;
-		let {sign} = this.ctx.direction;
+		let {sign, axis} = this.ctx.direction;
 		if(pos > this.ctx.position)
 			forward = true;
 		else
@@ -1183,9 +1187,10 @@ export class App {
 		else{
 			Object.values(this.graph.nodes).forEach(node=>{
 				if((node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
-					//if(node.data.name == '8f74e9')
-					//	console.log("node", node.data.name)
-					node.purge();
+					
+					node.updateStyle();
+					if(node.data.name == '8f74e9')
+						console.log("#######   node.updateStyle", node.data.name, node[axis])
 				}
 			})
 		}

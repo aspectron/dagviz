@@ -1455,7 +1455,7 @@ export class DAGViz extends BaseElement {
 		// .attr('transform', transform);
 		let {axis, sign} = this.ctx.direction;
 		let {x, y, k} = this.paintEl.transform;
-		console.log("axis, sign, offset", axis, sign, this.ctx.offset)
+		//console.log("axis, sign, offset", axis, sign, this.ctx.offset)
 		if(axis == 'x'){
 			x += -sign * this.ctx.offset * k
 		}else{
