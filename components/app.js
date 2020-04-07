@@ -1189,12 +1189,12 @@ export class App {
 		})
 		else{
 			Object.values(this.graph.nodes).forEach(node=>{
-				if((node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
+				//if((node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
 					
 					node.updateStyle();
 					if(node.data.name == '8f74e9')
 						console.log("#######   node.updateStyle", node.data.name, node[axis])
-				}
+				//}
 			})
 		}
 
