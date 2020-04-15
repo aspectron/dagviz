@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const fs = require('fs');
 const mysql = require('mysql');
 const finalhandler = require('finalhandler')
 var http = require('http')
@@ -233,8 +234,24 @@ class DAGViz {
                         res.end();
                     });
                 }
-                else
-                    serve(req, res, finalhandler(req, res))
+                else{
+                    if(req.url.startsWith('/exp/')){
+                        //console.log("req.url", req)
+                        res.writeHead(200, {'Content-Type':'text/html'});
+                        fs.readFile('./index.html', null, (err, data)=>{
+                            if (err) {
+                                res.writeHead(404);
+                                res.write('File not found!');
+                            } else {
+                                res.write(data);
+                            }
+                            res.end();
+                        });
+                    }else{
+                        console.log("req.url", req.url)
+                        serve(req, res, finalhandler(req, res))
+                    }
+                }
             }).listen(8686, () => {
                 console.log('listening on 8686');
                 resolve();
@@ -279,6 +296,8 @@ class DAGViz {
             
             this.db = {
                 query : async (sql, args) => {
+                    if(mySQL.stopped)
+                        return Promise.reject("MySQL stopped.")
                     //console.log("sql:", sql, args)
                     return new Promise((resolve,reject) => {
                         this.dbPool.getConnection((err, connection) => {

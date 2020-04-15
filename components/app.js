@@ -1,4 +1,14 @@
 import { GraphNode, GraphNodeLink } from './dag-viz.js';
+import { KAPI, kLinkStyles} from '/node_modules/k-explorer/k-explorer.js';
+
+class KApi extends KAPI{
+	constructor(options={}){
+		options = Object.assign(options, {
+			origin: window.location.origin+"/api/"
+		})
+		super(options)
+	}
+}
 
 const dpc = (t,fn)=>{
 	if(typeof(t) == 'function'){
@@ -66,6 +76,66 @@ export class Block extends GraphNode {
 
 	}
 }
+
+export class URLPathProcessor{
+	constructor(pathname="/"){
+		this.pathname = pathname;
+	}
+
+	parse(pathname){
+		pathname = pathname.replace(/^\/+|\/+$/g, '')
+		if(pathname.indexOf("exp") === 0)
+			pathname = pathname.substr(4)
+
+		const [method, ...args] =  pathname.split("/");
+		if(!method)
+			return {};
+		let opt = {};
+		if(this[`${method}_opt`])
+			opt = this[`${method}_opt`](args);
+		return {method, args, opt}
+	}
+
+	build(method, opts={}){
+		if(!method || method =="exp")
+			return "";
+		let args = [];
+		if(this[`${method}_args`])
+			args = this[`${method}_args`](opts);
+		let pathname = ["", "exp", method, ...args].join("/");
+		return pathname;
+	}
+
+	buildOpt(args=[], builder){
+		let opt = {};
+		args.forEach((arg, index)=>{
+			if((arg+"").indexOf(":") >-1){
+				let [k, v] = arg.split(":");
+				builder(k, v, index, opt, arg);
+			}else{
+				builder(null, arg, index, opt, arg);
+			}
+		});
+
+		return opt;
+	}
+
+	blocks_opt(args=[]){
+		return this.buildOpt(args, (k, v, index, opt, arg)=>{
+			if(k){
+				opt[k] = v;
+			}
+		});
+	}
+	blocks_args(opt={}){
+		return Object.entries(opt).map(([k, v])=>{
+			return `${k}:${v}`
+		})
+	}
+
+}
+
+const urlPathProcessor = new URLPathProcessor();
 
 
 class GraphContext {
@@ -1098,6 +1168,8 @@ export class App {
 	async initPosition() {
 
 		let url = new URL(window.location.href);
+		let expParams = urlPathProcessor.parse(url.pathname);
+		console.log("expParams", expParams)
 		let params = Object.fromEntries(url.searchParams.entries());
 		console.log("initializing with params:",params);
 		//if(params.pos === 'undefined')
@@ -1112,7 +1184,8 @@ export class App {
 			chainBlocksCenter : ctx.chainBlocksCenter,
 			layout : ctx.layout,
 			quality : ctx.quality,
-			select : 'none'
+			select : 'none',
+			expParams
 		}
 		params = Object.assign(defaults, params);
 		this.initContext(params);
@@ -1327,6 +1400,10 @@ export class App {
 				//ctlSet[ctl.ident] = ctl;
 		});
 
+		let {expParams} = state;
+		if(expParams && expParams.method)
+			this.initExplorer(expParams);
+
 		this.suspend = false;
 		this.undo = false;
 		if(updateTransform) {
@@ -1335,6 +1412,18 @@ export class App {
 		
 		this.undo = true;
 
+	}
+
+	initExplorer(params){
+		let {method, opt} = params;
+		if(!this.kExplorer){
+			this.kExplorer = document.querySelector("#kExplorer");
+			this.kExplorerWin = document.querySelector("#explorerWin");
+			this.kExplorer.setApi(new KApi());
+		}
+		if(this.kExplorer.callApi)
+			this.kExplorer.callApi(method, opt);
+		this.kExplorerWin.classList.add("active");
 	}
 
 	async focusOnBlock(hash) {
@@ -1366,8 +1455,8 @@ export class App {
 		state.pos = pos;
 		state.k = k;
 
-//		state.unit = this.ctx.unit;
-//		state.seek = this.ctx.seek;
+		//state.unit = this.ctx.unit;
+		//state.seek = this.ctx.seek;
 
 		const lseq = Object.values(this.graph.selection).map(node=>parseInt(node.data.lseq).toString(16));
 		if(lseq.length)
@@ -1411,7 +1500,10 @@ export class App {
 		});
 
 		const ts = Date.now();
-		history.pushState(state, "DAGViz", "?"+url.searchParams.toString());//+('#'+ts.toString(16)));
+		state.expParams = urlPathProcessor.parse(url.pathname);
+		let {method, opt} = state.expParams;
+		let pathname = urlPathProcessor.build(method, opt);
+		history.pushState(state, "DAGViz", pathname+"?"+url.searchParams.toString());//+('#'+ts.toString(16)));
 	}
 
 	getRegion() {
