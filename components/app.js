@@ -91,26 +91,26 @@ export class KPath{
 		url = this.getUrl(url);
 
 		let pathname = url.pathname;
-		let params = Object.fromEntries(url.searchParams.entries());
+		let _params = Object.fromEntries(url.searchParams.entries());
 
 		pathname = pathname.replace(/^\/+|\/+$/g, '')
 		const [method, ...paths] =  pathname.split("/");
 		if(!method)
 			return {};
-		let options = {};
-		if(this[`${method}_options`])
-			options = this[`${method}_options`](params);
-		return {method, paths, options}
+		let params = {};
+		if(this[`${method}_params`])
+			params = this[`${method}_params`](_params);
+		return {method, paths, params}
 	}
 
 	static buildUrl(expParams, url){
 		url = this.getUrl(url);
-		let {method, paths, options} = expParams || {};
+		let {method, paths, params:_params} = expParams || {};
 		if(!method)
 			return url;
 		let pathParts = [method];
 		if(this[`${method}_url`]){
-			let {paths:_paths, params} = this[`${method}_url`](paths, options);
+			let {paths:_paths, params} = this[`${method}_url`](paths, _params);
 			if(params){
 				Object.entries(params).forEach(([k, v])=>{
 					url.searchParams.set(k, v);
@@ -126,11 +126,11 @@ export class KPath{
 		return url;
 	}
 
-	static blocks_options(params){
+	static blocks_params(params){
 		return _.pick(params, ['limit', 'skip']);
 	}
 	static blocks_url(paths, params){
-		return {params}
+		return {params:this.blocks_params(params)}
 	}
 
 }
@@ -1408,19 +1408,33 @@ export class App {
 		}
 		
 		this.undo = true;
-
 	}
 
 	initExplorer(expParams){
-		let {method, paths, options} = expParams;
+		let {method, paths, params} = expParams;
 		if(!this.kExplorer){
 			this.kExplorer = document.querySelector("#kExplorer");
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorer.setApi(new KApi());
+			$(document.body).on("click", ".win .backdrop", (e, el)=>{
+				let $win = $(e.target).parent();
+				$win.removeClass("active");
+				if($win.find("k-explorer").length){
+					this.storeUndo();
+				}
+			});
+
+			$(document.body).on("k-explorer-state-changed", (e)=>{
+				console.log("k-explorer-state-changed", e);
+				this.storeUndo();
+			})
 		}
+		if(!method)
+			return
 		if(this.kExplorer.callApi)
-			this.kExplorer.callApi([method, ...paths], options);
+			this.kExplorer.callApi([method, ...paths], params);
 		this.kExplorerWin.classList.add("active");
+		this.storeUndo();
 	}
 
 	async focusOnBlock(hash) {
@@ -1434,18 +1448,41 @@ export class App {
 		}
 	}
 
+	deepClone(obj){
+		if(_.isArray(obj)){
+			return _.map(obj, (e)=>{
+				return this.deepClone(e);
+			})
+		}
+
+		if(_.isObject(obj)){
+			var r = {};
+			_.each(obj, (e, k)=>{
+				r[k] = this.deepClone(e);
+			})
+			return r;
+		}
+		return obj;
+	}
+
 	storeUndo() {
 		// console.log('storeUndo');
 		if(!this.undo || this.suspend)
 			return;
-		// console.log('storeUndo starting...');
+		if(!this.last_undo_state_)
+			this.last_undo_state_ = { };
+		//console.log('storeUndo starting...');
 
 		const state = { }
 		Object.values(this.ctls).forEach(ctl=>state[ctl.ident] = ctl.getValue(true));
+		const expParams = this.deepClone(this.kExplorer.buildUrlState());
+		//console.log("storeUndo:expParams", expParams, expParams.params)
+		const lastExpParams = this.last_undo_state_.expParams;
+		const expParamsChanged = JSON.stringify(expParams) != JSON.stringify(lastExpParams);
 
 		const pos = Math.round(this.ctx.position);
 		const k = (this.graph.paintEl.transform.k).toFixed(4);
-		if(Math.round(pos/3) == Math.round(this.last_stored_pos_/3) && k == this.last_sored_k_)
+		if(!expParamsChanged && Math.round(pos/3) == Math.round(this.last_stored_pos_/3) && k == this.last_sored_k_)
 			return;
 		this.last_stored_pos_ = pos;
 		this.last_stored_k_ = k;
@@ -1461,10 +1498,6 @@ export class App {
 		else
 			state.select = 'none';
 
-		// console.log(state);
-		if(!this.last_undo_state_)
-			this.last_undo_state_ = { };
-
 		const selectChange = state.select != this.last_undo_state_.select;
 
 		let keys = Object.keys(state);
@@ -1474,7 +1507,7 @@ export class App {
 				delete state[key];
 		});
 
-		if(!Object.keys(state).length)
+		if(!Object.keys(state).length && !expParamsChanged)
 			return;
 
 		// if(!state.select)// && this.last_undo_state_.select != 'none')
@@ -1487,6 +1520,7 @@ export class App {
 				state.k = this.last_undo_state_.k;
 		}
 
+
 		let url = new URL(window.location);
 		keys.forEach((key) => {
 			if(state[key] !== undefined) {
@@ -1496,9 +1530,10 @@ export class App {
 			}
 		});
 
-		const ts = Date.now();
-		state.expParams = this.kExplorer.buildUrlState();
-		url = KPath.buildUrl(state.expParams, url)
+		this.last_undo_state_.expParams = expParams;
+		state.expParams = expParams;
+
+		url = KPath.buildUrl(expParams, url)
 		history.pushState(state, "DAGViz", url.pathname+url.search);
 	}
 
