@@ -77,66 +77,63 @@ export class Block extends GraphNode {
 	}
 }
 
-export class URLPathProcessor{
-	constructor(pathname="/"){
-		this.pathname = pathname;
+export class KPath{
+
+	static getUrl(url){
+		url =  url || location.href;
+		if(_.isString(url))
+			url = new URL(url);
+
+		return url;
 	}
 
-	parse(pathname){
-		pathname = pathname.replace(/^\/+|\/+$/g, '')
-		if(pathname.indexOf("exp") === 0)
-			pathname = pathname.substr(4)
+	static parse(url){
+		url = this.getUrl(url);
 
-		const [method, ...args] =  pathname.split("/");
+		let pathname = url.pathname;
+		let params = Object.fromEntries(url.searchParams.entries());
+
+		pathname = pathname.replace(/^\/+|\/+$/g, '')
+		const [method, ...paths] =  pathname.split("/");
 		if(!method)
 			return {};
-		let opt = {};
-		if(this[`${method}_opt`])
-			opt = this[`${method}_opt`](args);
-		return {method, args, opt}
+		let options = {};
+		if(this[`${method}_options`])
+			options = this[`${method}_options`](params);
+		return {method, paths, options}
 	}
 
-	build(method, opts={}){
-		if(!method || method =="exp")
-			return "";
-		let args = [];
-		if(this[`${method}_args`])
-			args = this[`${method}_args`](opts);
-		let pathname = ["", "exp", method, ...args].join("/");
-		return pathname;
-	}
-
-	buildOpt(args=[], builder){
-		let opt = {};
-		args.forEach((arg, index)=>{
-			if((arg+"").indexOf(":") >-1){
-				let [k, v] = arg.split(":");
-				builder(k, v, index, opt, arg);
-			}else{
-				builder(null, arg, index, opt, arg);
+	static buildUrl(expParams, url){
+		url = this.getUrl(url);
+		let {method, paths, options} = expParams || {};
+		if(!method)
+			return url;
+		let pathParts = [method];
+		if(this[`${method}_url`]){
+			let {paths:_paths, params} = this[`${method}_url`](paths, options);
+			if(params){
+				Object.entries(params).forEach(([k, v])=>{
+					url.searchParams.set(k, v);
+				})
 			}
-		});
-
-		return opt;
-	}
-
-	blocks_opt(args=[]){
-		return this.buildOpt(args, (k, v, index, opt, arg)=>{
-			if(k){
-				opt[k] = v;
+			if(_paths && _paths.length){
+				pathParts = pathParts.concat(_paths)
 			}
-		});
+		}
+		
+		url.pathname = pathParts.join("/");
+
+		return url;
 	}
-	blocks_args(opt={}){
-		return Object.entries(opt).map(([k, v])=>{
-			return `${k}:${v}`
-		})
+
+	static blocks_options(params){
+		return _.pick(params, ['limit', 'skip']);
+	}
+	static blocks_url(paths, params){
+		return {params}
 	}
 
 }
-
-const urlPathProcessor = new URLPathProcessor();
-
 
 class GraphContext {
 	constructor(app, options) {
@@ -1168,7 +1165,7 @@ export class App {
 	async initPosition() {
 
 		let url = new URL(window.location.href);
-		let expParams = urlPathProcessor.parse(url.pathname);
+		let expParams = KPath.parse(url);
 		console.log("expParams", expParams)
 		let params = Object.fromEntries(url.searchParams.entries());
 		console.log("initializing with params:",params);
@@ -1414,15 +1411,15 @@ export class App {
 
 	}
 
-	initExplorer(params){
-		let {method, opt} = params;
+	initExplorer(expParams){
+		let {method, paths, options} = expParams;
 		if(!this.kExplorer){
 			this.kExplorer = document.querySelector("#kExplorer");
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorer.setApi(new KApi());
 		}
 		if(this.kExplorer.callApi)
-			this.kExplorer.callApi(method, opt);
+			this.kExplorer.callApi([method, ...paths], options);
 		this.kExplorerWin.classList.add("active");
 	}
 
@@ -1500,10 +1497,9 @@ export class App {
 		});
 
 		const ts = Date.now();
-		state.expParams = urlPathProcessor.parse(url.pathname);
-		let {method, opt} = state.expParams;
-		let pathname = urlPathProcessor.build(method, opt);
-		history.pushState(state, "DAGViz", pathname+"?"+url.searchParams.toString());//+('#'+ts.toString(16)));
+		state.expParams = this.kExplorer.buildUrlState();
+		url = KPath.buildUrl(state.expParams, url)
+		history.pushState(state, "DAGViz", url.pathname+url.search);
 	}
 
 	getRegion() {
@@ -1519,7 +1515,7 @@ export class App {
 
 	fetchBlock(hash) {
 		return new Promise((resolve,reject) => {
-			$.ajax('/block/'+hash, {
+			$.ajax('/get-block/'+hash, {
 				dataType: 'json',
 				// timeout: 500,     // timeout milliseconds
 				success: (data,status,xhr) => {
