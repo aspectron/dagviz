@@ -107,6 +107,7 @@ class GraphContext {
 		this.arrows = 'multi-s';
 		this.childShift = 1;
 		this.lvariance = true;
+		this['k-theme'] = 'light';
 
 		this.dir = 'E';
 		this.directions = {
@@ -617,6 +618,13 @@ export class App {
 			}
 		});
 
+		new MultiChoice(this.ctx, 'k-theme',{
+			'dark':'DARK',
+			'light':"LIGHT",
+		}, 'THEME','fa fa-palette:UI Theme', (v)=>{
+			this.kExplorer.setSettings({theme: v});
+		});
+
 
 	}
 
@@ -1125,6 +1133,7 @@ export class App {
 			layout : ctx.layout,
 			quality : ctx.quality,
 			select : 'none',
+			theme: ctx['k-theme'],
 			expParams
 		}
 		params = Object.assign(defaults, params);
@@ -1369,6 +1378,10 @@ export class App {
 			$(document.body).on("k-explorer-state-changed", (e, detail)=>{
 				console.log("k-explorer-state-changed", detail);
 				this.storeUndo();
+			})
+			window.addEventListener("k-settings", e=>{
+				let {theme} = this.kExplorer.settings;
+				this.ctls['k-theme'] && this.ctls['k-theme'].setValue(theme);
 			})
 		}
 		if(!method)
