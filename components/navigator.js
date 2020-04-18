@@ -217,12 +217,20 @@ class AxisNavigator extends BaseElement{
 		this.size = { width, height };
 		//console.log('ctl:',ctl);
 		let absolute = this.app.ctx.position / this.app.ctx.max;
+		if(this.theme != this.app.ctx['k-theme']){
+			this.theme = this.app.ctx['k-theme'];
+			let style = getComputedStyle(document.body);
+			this.strokeColor = style.getPropertyValue('--navigator-stroke-color') || 'rgba(0,0,0,0.325)';
+			this.fillColor = style.getPropertyValue('--navigator-fill-color') || 'rgba(0,0,0,0.325)';
+			this.thumbStrokeColor = style.getPropertyValue('--navigator-thumb-stroke-color') || `rgba(0,0,0,0.75)`;
+			this.thumbFillColor = style.getPropertyValue('--navigator-thumb-fill-color') || `rgba(255,255,255,1)`;
+			this.thumbTextFillColor = style.getPropertyValue('--navigator-thumb-text-fill-color') || `rgba(0,0,0,1.0)`;
+		}
 		ctx.clearRect(0, 0, width, height);
 		ctx.lineWidth = 1;
 		ctx.lineWidth = 1;
-		ctx.fillStyle = `rgba(0,0,0,1.0)`;
-		ctx.strokeStyle = `rgba(0,0,0,1.0)`;
-//		const fontSize = Math.round(36/2*this.scale);
+		ctx.strokeStyle = this.strokeColor;
+		ctx.fillStyle = this.fillColor;
 		ctx.font = `${fontSize}px "Exo 2"`;
 		ctx.textBaseline = "top";
 		const content = Math.round(this.app.ctx.position).toScaleAbbrev();
@@ -272,9 +280,8 @@ class AxisNavigator extends BaseElement{
 
 		
 		let offset = 0.5;
-
-		ctx.strokeStyle = `rgba(0,0,0,0.25)`;
-		ctx.fillStyle = `rgba(0,0,0,0.325)`;
+		ctx.strokeStyle = this.strokeColor;//`rgba(0,0,0,0.25)`;
+		ctx.fillStyle = this.fillColor;//`rgba(0,0,0,0.325)`;
 		let minMetrics = ctx.measureText('0');
 		minMetrics.height = fontSize;
 		this.verbose && console.log('min metrics:',minMetrics);
@@ -296,8 +303,8 @@ class AxisNavigator extends BaseElement{
 
 
 
-		ctx.strokeStyle = `rgba(0,0,0,0.75)`;
-		ctx.fillStyle = `rgba(255,255,255,1)`;
+		ctx.strokeStyle = this.thumbStrokeColor;//`rgba(0,0,0,0.75)`;
+		ctx.fillStyle = this.thumbFillColor;//`rgba(255,255,255,1)`;
 //		if(horizontal) {
 			ctx.beginPath();
 			thumb.rect = horizontal ? 
@@ -311,7 +318,7 @@ class AxisNavigator extends BaseElement{
 
 		// }
 
-		ctx.fillStyle = `rgba(0,0,0,1.0)`;
+		ctx.fillStyle = this.thumbTextFillColor;//`rgba(0,0,0,1.0)`;
 		ctx.fillText(text.content, ...this.adapt(horizontal ? 
 			[pos-text.width/2*sign, height/2-text.height/2] :
 			[width/2-text.width/2, pos-text.height/2*sign]));

@@ -621,8 +621,13 @@ export class App {
 		new MultiChoice(this.ctx, 'k-theme',{
 			'dark':'DARK',
 			'light':"LIGHT",
-		}, 'THEME','fa fa-palette:UI Theme', (v)=>{
-			this.kExplorer.setSettings({theme: v});
+		}, 'THEME','fa fa-palette:UI Theme', {
+			update:(v)=>{
+				if(this.kExplorer){
+					this.kExplorer.setSettings({theme: v.toLowerCase()}, true);
+					this.navigator.redraw();
+				}
+			}
 		});
 
 
@@ -1381,7 +1386,15 @@ export class App {
 			})
 			window.addEventListener("k-settings", e=>{
 				let {theme} = this.kExplorer.settings;
-				this.ctls['k-theme'] && this.ctls['k-theme'].setValue(theme);
+				let ctl = this.ctls['k-theme'];
+				if(!ctl)
+					return
+				let v = ctl.getValue();
+				v = v? v.toLowerCase():'';
+				if(v != theme){
+					ctl && this.ctls['k-theme'].setValue(theme);
+					this.navigator.redraw();
+				}
 			})
 		}
 		if(!method)
