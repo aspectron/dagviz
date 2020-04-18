@@ -1,5 +1,5 @@
 import { GraphNode, GraphNodeLink } from './dag-viz.js';
-import { KAPI, kLinkStyles} from '/node_modules/k-explorer/k-explorer.js';
+import { KAPI, kLinkStyles, KPath} from '/node_modules/k-explorer/k-explorer.js';
 
 class KApi extends KAPI{
 	constructor(options={}){
@@ -77,63 +77,6 @@ export class Block extends GraphNode {
 	}
 }
 
-export class KPath{
-
-	static getUrl(url){
-		url =  url || location.href;
-		if(_.isString(url))
-			url = new URL(url);
-
-		return url;
-	}
-
-	static parse(url){
-		url = this.getUrl(url);
-
-		let pathname = url.pathname;
-		let _params = Object.fromEntries(url.searchParams.entries());
-
-		pathname = pathname.replace(/^\/+|\/+$/g, '')
-		const [method, ...paths] =  pathname.split("/");
-		if(!method)
-			return {};
-		let params = {};
-		if(this[`${method}_params`])
-			params = this[`${method}_params`](_params);
-		return {method, paths, params}
-	}
-
-	static buildUrl(expParams, url){
-		url = this.getUrl(url);
-		let {method, paths, params:_params} = expParams || {};
-		if(!method)
-			return url;
-		let pathParts = [method];
-		if(this[`${method}_url`]){
-			let {paths:_paths, params} = this[`${method}_url`](paths, _params);
-			if(params){
-				Object.entries(params).forEach(([k, v])=>{
-					url.searchParams.set(k, v);
-				})
-			}
-			if(_paths && _paths.length){
-				pathParts = pathParts.concat(_paths)
-			}
-		}
-		
-		url.pathname = pathParts.join("/");
-
-		return url;
-	}
-
-	static blocks_params(params){
-		return _.pick(params, ['limit', 'skip']);
-	}
-	static blocks_url(paths, params){
-		return {params:this.blocks_params(params)}
-	}
-
-}
 
 class GraphContext {
 	constructor(app, options) {
@@ -1397,9 +1340,8 @@ export class App {
 				//ctlSet[ctl.ident] = ctl;
 		});
 
-		let {expParams} = state;
-		if(expParams && expParams.method)
-			this.initExplorer(expParams);
+		let expParams = state.expParams || {};
+		this.initExplorer(expParams);
 
 		this.suspend = false;
 		this.undo = false;
@@ -1424,8 +1366,8 @@ export class App {
 				}
 			});
 
-			$(document.body).on("k-explorer-state-changed", (e)=>{
-				console.log("k-explorer-state-changed", e);
+			$(document.body).on("k-explorer-state-changed", (e, detail)=>{
+				console.log("k-explorer-state-changed", detail);
 				this.storeUndo();
 			})
 		}
@@ -1434,7 +1376,6 @@ export class App {
 		if(this.kExplorer.callApi)
 			this.kExplorer.callApi([method, ...paths], params);
 		this.kExplorerWin.classList.add("active");
-		this.storeUndo();
 	}
 
 	async focusOnBlock(hash) {
@@ -1534,6 +1475,7 @@ export class App {
 		state.expParams = expParams;
 
 		url = KPath.buildUrl(expParams, url)
+		//console.log("url", url, url.pathname+url.search)
 		history.pushState(state, "DAGViz", url.pathname+url.search);
 	}
 
@@ -1600,7 +1542,6 @@ export class App {
             range.selectNodeContents(node);
             selection.removeAllRanges();
             selection.addRange(range);
-            console.log('getSelection');
 
         } else {
             console.warn("Could not select text in node: Unsupported browser.");
