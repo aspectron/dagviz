@@ -1368,6 +1368,7 @@ export class App {
 
 	initExplorer(expParams){
 		let {method, paths, params} = expParams;
+		paths = paths || [];
 		if(!this.kExplorer){
 			this.kExplorer = document.querySelector("#kExplorer");
 			this.kExplorerWin = document.querySelector("#explorerWin");
