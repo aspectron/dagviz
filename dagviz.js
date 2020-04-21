@@ -12,6 +12,9 @@ const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
 
+const DUMMY_TX = true;
+const USE_LOCAL_KASPAROV = true;
+
  
 class DAGViz {
 
@@ -200,16 +203,32 @@ class DAGViz {
             });
         })
 
+        app.get("/api/transactions", (req, res, next)=>{
+            if(!DUMMY_TX)
+                return next();
+            res.sendFile("./transactions-samples.json");
+        })
+
+        app.get("/api/transaction/hash/:code", (req, res, next)=>{
+            if(!DUMMY_TX)
+                return next();
+            let result = require("./transactions-samples.json");
+            let tx = result.transactions[0];
+            res.sendJSON(tx)
+        })
+
         app.get("/api", (req, res, next)=>{
             const _path = req.url.substring(4);
-            const url = `${this.kasparov}${_path}`;
+            let url = `${this.kasparov}${_path}`;
+            if(USE_LOCAL_KASPAROV)
+                url = `http://localhost:1234${_path}`;
             console.log('api request:',url);
             rp(url)
             .then(text=>{
                 res.sendJSON(text);
             })
             .catch(err=>{
-                res.sendJSON({"dagviz-proxy-error": err.toString()});
+                res.sendJSON({"dagviz-proxy-error": err.toString()}, 500);
             });
         })
 
