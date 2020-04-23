@@ -13,7 +13,8 @@ const path = require('path');
 const WebApp = require('./web-app.js');
 
 const DUMMY_TX = true;
-const USE_LOCAL_KASPAROV = true;
+console.log("!!! WARNING: 'USE_LOCAL_KASPAROV == false'")
+const USE_LOCAL_KASPAROV = false;
 
  
 class DAGViz {

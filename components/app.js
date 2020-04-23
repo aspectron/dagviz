@@ -1,6 +1,8 @@
 import { GraphNode, GraphNodeLink } from './dag-viz.js';
 import { KAPI, kLinkStyles, KPath} from '/node_modules/k-explorer/k-explorer.js';
 
+import { html, BaseElement, css } from './base-element.js';
+
 class KApi extends KAPI{
 	constructor(options={}){
 		options = Object.assign(options, {
@@ -529,6 +531,7 @@ export class App {
 
 		this.undo = true;
 		// this.init();
+		this.lastBlockWidget = document.getElementsByTagName("last-block-widget")[0];
 	}
 
 	initCtls() {
@@ -776,6 +779,12 @@ export class App {
 			this.ctls.track.toggle();
 		});
 
+		const $explorerImg = $('#explorer > img');
+		$explorerImg.click((e) => {
+			//const params = new URLSearchParams(window.location.search);
+			//console.log(params);
+			window.location.pathname = '/blocks';
+		})
 
 		$(window).on('keydown', (e) => {
 			if(e.key == 'Escape') {
@@ -1018,6 +1027,7 @@ export class App {
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
+			this.lastBlockWidget.updateBlocks(blocks);
 
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
@@ -1259,6 +1269,8 @@ export class App {
 		this.graph.updateSimulation();
 		this.ctx.updateViewportTransform()
 		this.graph.style.opacity = 1;
+
+		this.lastBlockWidget.updateRegion(this.region);
 
 		return Promise.resolve();
 	}
@@ -1577,7 +1589,8 @@ export class App {
     
 	regionCleanup() {
 
-		const { region : { from, to, range } } = this.getRegion();
+		const { from, to, range } = this.getRegion();
+//		const { region : { from, to, range } } = this.getRegion();
 
 		Object.values(this.graph.nodes).forEach((node) => {
 			if(node.selected)
@@ -1705,3 +1718,144 @@ class MultiChoice {
 			this.options.update(value);
 	}
 }
+
+
+class LastBlockWidget extends BaseElement{
+
+	static get properties() {
+		return {
+			height: { type:String },
+		};
+	}
+	static get styles(){
+		return css `
+			:host{
+				position: absolute;
+				font-family: "Cousine";
+				font-size: 16px;
+                z-index:4;
+                display:block;
+				
+				min-width: 160px;
+				height: 22px;
+				padding-top: 6px;
+
+				
+				top: 128px;
+				right: 32px;
+				eight: 128px;
+				transition: opacity 750ms;
+				opacity: 0;
+
+				background-color: rgba(0, 150, 136, 1);
+				border: 1px solid #ccc;
+				border-radius: 10px;
+				text-align: center;
+				color: white;
+				transform: translate3d(0,0,0);
+				perspective: 1000px;				
+				cursor: pointer;
+            }
+			:host(.visible) { opacity: 1 }
+			
+			@keyframes wiggle {
+				0% { transform: rotate(0deg); }
+			   80% { transform: rotate(0deg); }
+			   85% { transform: rotate(5deg); }
+			   95% { transform: rotate(-5deg); }
+			  100% { transform: rotate(0deg); }
+			}
+
+
+			@keyframes shake {
+				10%, 90% { transform: translate3d(-1px, 0, 0); }
+				20%, 80% { transform: translate3d(2px, 0, 0); }
+				30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+				40%, 60% { transform: translate3d(4px, 0, 0); }
+			}
+
+			:host.wiggle {
+				animation: wiggle 2.5s ;
+			}			
+
+			:host.shake {
+				/*animation: shake 2.5s ;*/
+				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+			}			
+		`;
+	}
+
+	constructor() {
+		super();
+		
+		this.blocks = 0;
+		this.active = false;
+    }
+
+	render(){
+
+        return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}<div>`;
+	}
+
+	updateBlocks(blocks) {
+		let length = blocks.length;
+
+		this.blueScore = blocks[0].blueScore;
+
+
+		let pos = -app.ctx.graph.paintEl.transform.x / app.ctx.graph.paintEl.transform.k / app.ctx.unitDist * app.ctx.direction.sign;
+		let from = pos - this.region.range * 0.5;
+		let to = pos + this.region.range * 0.5;
+console.log(pos,from,to);
+		if(from < this.blueScore && this.blueScore < to ) {
+			this.halt();
+		} else {
+			this.post(length);
+		}
+
+		console.log("last-block-widget::updateBlocks",blocks,this);
+	}
+
+	click() {
+		//console.log('click called');
+		//app.ctx.reposition(1.0);
+		app.ctls.track.setValue(true);
+		this.halt();
+		// dpc(750, () => {
+		// })
+		// app.position = this.blueScore(); //ctx.reposition(1.0);
+		// app.updatePosition();
+//		this.graph.setFocusTargetHash(first.data.blockHash);
+
+	}
+
+	updateRegion(region) {
+		this.region = region;
+		console.log("last-block-widget::updateRegion",region);
+		this.update();
+	}
+
+	halt() {
+		if(this.active) {
+			this.blocks = 0;
+			this.active = false;
+			this.classList.remove('visible');
+		}
+	}
+
+	post(length) {
+		if(!this.active)
+			this.classList.add('visible');
+		
+		this.classList.remove('wiggle');
+		dpc(300, () => {
+			this.classList.add('wiggle');
+		})
+
+		this.active = true;
+		this.blocks += length;
+		this.update();
+	}
+}
+
+LastBlockWidget.register();
