@@ -106,7 +106,7 @@ class GraphContext {
 		this.layout = 'determ';
 		this.quality = 'high';
 		this.spacingFactor = 1;
-		this.arrows = 'multi-s';
+		this.arrows = 'multis';
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
@@ -1402,9 +1402,6 @@ export class App {
 				//ctlSet[ctl.ident] = ctl;
 		});
 
-		let expParams = state.expParams || {};
-		this.initExplorer(expParams);
-
 		this.suspend = false;
 		this.undo = false;
 		if(updateTransform) {
@@ -1412,6 +1409,8 @@ export class App {
 		}
 		
 		this.undo = true;
+		let expParams = state.expParams || {};
+		this.initExplorer(expParams);
 	}
 
 	openExplorer(pathname="blocks", params={}){
@@ -1451,6 +1450,28 @@ export class App {
 					this.navigator.redraw();
 				}
 			})
+
+			if(method == "block" && paths.length && paths[0].length > 32){
+				setTimeout(()=>{
+					this.fetchSearch(paths[0]).then((result) => {
+						//console.log(result);
+						if(result && result.blocks && result.blocks.length){
+							let [block] = result.blocks;
+							this.ctx.position = block[this.ctx.unit];
+							let node = this.createBlock(block);
+							// console.log('selecting',node.data.lseq)
+							node.select(true);
+							this.graph.setFocusTargetHash(block.blockHash)
+							//this.updatePosition();
+							//this.createAndSelectBlocks(result.blocks);
+						}
+					}, (error) => {
+						// console.log('error:', error);
+
+						//this.userErrorNotify(error);
+					});
+				}, 1000)
+			}
 		}
 		if(!method)
 			return

@@ -1904,7 +1904,7 @@ export class DAGViz extends BaseElement {
 			this.ctx.app.updateRegion({
 				noCleanup : true,
 				fullFetch : true,
-				pos, range : this.ctx.app.range_
+				pos, range : this.ctx.app.range_ ||  20
 			});
 
 			this.ctx.app.suspend = true;
@@ -1921,10 +1921,11 @@ export class DAGViz extends BaseElement {
 					delete this.focusTargetHash;
 					/* @Anton this code is creating issue when we navigate by block-info click
 					//what was issue behind this code ?
+					//now it is not creating issue :(
+					*/
 					this.ctx.app.suspend = false;
 					window.app.enableUndo(true);
 					this.setChartTransform();
-					*/
 					// window.app.updatePosition();
 				}
 
