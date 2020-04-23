@@ -12,9 +12,10 @@ const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
 
+let args = MF.utils.args();
 const DUMMY_TX = true;
-console.log("!!! WARNING: 'USE_LOCAL_KASPAROV == false'")
-const USE_LOCAL_KASPAROV = false;
+const USE_LOCAL_KASPAROV = !!args['use-local-kas'];
+console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.white.bold)
 
  
 class DAGViz {
