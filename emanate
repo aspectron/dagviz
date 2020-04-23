@@ -35,8 +35,9 @@ E.task('docker',null, async () => {
 
     E.manifest_read();
 
-    await E.remove(path.join(__dirname,'node_modules','k-explorer'));
-    await E.copy(path.join(__dirname,'..','kexplorer'), path.join(__dirname,'node_modules','k-explorer'));
+    await E.remove(path.join(__dirname,'k-explorer'));
+    await E.copy(path.join(__dirname,'..','kexplorer'), path.join(__dirname,'k-explorer'));
+    await E.remove(path.join(__dirname,'k-explorer','node_modules'));
 
     const relay = ['no-cache'];
     const args = ['-s','docker','build'].concat(relay.map(k=>E.flags[k]?`--${k}`:null)).filter(v=>v);

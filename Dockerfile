@@ -12,6 +12,10 @@ WORKDIR /usr/src/dagviz
 COPY . .
 RUN npm install
 
+RUN mv /usr/src/dagviz/k-explorer /usr/src/dagviz/k-explorer
+RUN cd /usr/src/dagviz/k-explorer && npm install && npm link
+RUN npm link k-explorer
+
 EXPOSE 8686
 
 ENTRYPOINT ["node","dagviz.js"]
