@@ -1462,7 +1462,8 @@ export class DAGViz extends BaseElement {
 				t.x += cX;
 				t.y = t.y+sign*cY;// * 0.01;
 			}
-
+			t.x = +t.x.toFixed(4);
+			t.y = +t.y.toFixed(4);
 		}
 		let pos = -(t[axis] / t.k / this.ctx.unitDist) * sign;
 		this.ctx.updateOffset(pos);
