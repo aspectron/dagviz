@@ -4,7 +4,7 @@
 	<title>DAGViz</title>
 	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto|Roboto+Mono|Cousine|Share+Tech+Mono|Ubuntu+Mono&display=swap" rel="stylesheet">
 
-	<script type="module" src="./components/dag-viz.js" crossorigin></script>
+	<script type="module" src="/components/dag-viz.js" crossorigin></script>
 	<script src="/resources/scripts/jquery-3.4.1.js"></script>
 	<!--script src="/resources/d3.v5.min.js"></script-->
 
@@ -25,14 +25,15 @@
 	<!--script src="/resources/mqttws31.js"></script-->
 	<script src="/resources/scripts/mqtt.min.js"></script>
 
-	<script type="module" src="./components/app.js" crossorigin></script>
-	<script type="module" src="./components/navigator.js" crossorigin></script>
-	<script type="module" src="./components/block-info.js" crossorigin></script>
-	<script type="module" src="./components/menu-panel.js" crossorigin></script>
+	<script type="module" src="/components/app.js" crossorigin></script>
+	<script type="module" src="/components/navigator.js" crossorigin></script>
+	<script type="module" src="/components/block-info.js" crossorigin></script>
+	<script type="module" src="/components/menu-panel.js" crossorigin></script>
+	<script type="module" src="/node_modules/k-explorer/k-explorer.js" crossorigin></script>
 	<style type="text/css">
 		#dagViz{
 			height: 100vh;
-/*			height:calc(100vh - 50px);*/
+			/*height:calc(100vh - 50px);*/
 		}
 		#address { 
 			font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 16px;
@@ -91,15 +92,16 @@
 			display: inline-block;
 		}
 
-/*
+		/*
 		#bottom { 
 			font-family: 'Roboto Mono', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
 			position: absolute; left: 4px; bottom: 54px; color: #444;
 			font-weight: 400;
 		}
-*/		
+		*/		
 
-		#selection { 
+		#selection,
+		.block-boxes-holder{ 
 			font-family: 'Roboto Mono', 'Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace; font-size: 17px;
 			position: absolute; left: 4px; bottom: 58px; color: #444;
 			font-weight: 400;
@@ -123,11 +125,13 @@
 			
 		}
 
-		#selection {
+		#selection,
+		.block-boxes-holder{
 			pointer-events: none;
 		}
 
-		#selection > * {
+		#selection > *,
+		.block-boxes-holder>*{
 			pointer-events: auto;
 		}
 
@@ -319,7 +323,8 @@
 		.menu-item .orient-W { transform: rotate(270deg); }
 
 		#timenav {
-			position: absolute; bottom: 0px; left: 0px; right: 0px; height: 48px; width: 100%; /*border-top: 1px solid #ccc;*/
+			position: absolute; bottom: 0px; left: 0px;
+			right: 0px; height: 48px; width: 100%; /*border-top: 1px solid #ccc;*/
 			background-color: transparent;
 		}
 
@@ -336,12 +341,10 @@
     	body.orient-v #dagViz{
     		height:100vh;
 			width: 100vw;
-
-/*
+			/*
     		width: calc(100vw - 50px);
     		margin-right:50px;
-*/
-
+			*/
     	}
 
 		/*
@@ -357,7 +360,121 @@
     	body.orient-v #bottom{
     		left:54px;
     	}*/
+    	.win{
+    		position:fixed;
+    		z-index:-1;
+    		width:100%;
+    		height:100%;
+    		left:0px;
+    		top:0px;
+    		opacity:0;
+    		transition:opacity 0.2s ease;
+    		background-color:rgba(255, 255, 255, 0.5);
+    	}
+    	.win.active{
+    		z-index:10000;
+    		opacity:1;
+    	}
+    	.win.active .backdrop{
+    		position:absolute;
+    		left:0px;
+    		top:0px;
+    		right:0px;
+    		bottom:0px;
+    		height:100%;
+    	}
+    	.win-box{
+    		background-color:#FFF;
+    		position:absolute;
+    		width:90%;
+    		height:90%;
+    		left:5%;
+    		top:5%;
+    		border-radius:3px;
+    		box-shadow:0 3px 4px 0 rgba(0,0,0,.14),
+    			0 3px 3px -2px rgba(0,0,0,.2),
+    			0 1px 8px 0 rgba(0,0,0,.12);
+    	}
+    	.win-box>*{width:100%;height:100%;position:absolute;left:0px;top:0px;}
+    	.block-boxes-holder{
+    		z-index: 10000;
+    		bottom: 10px;
+    		left: 10px;
+    		/*position: absolute;
+		    bottom: 10px;
+		    left:10px;
+		    right:10px;
+		    z-index: 10000;
+		    max-height:30%;
+		    overflow-x:auto;
+		    overflow-y:hidden;
+		    background-color:rgba(255, 255, 255, 0.3);
+		    /*pointer-events: none;*/
+		}
+		menu-panel{z-index:100;}
+
+		body.k-theme-dark{
+			background-color:#202020;
+		}
+		.k-theme-dark menu-panel{
+			background-color:#383737;
+		}
+		.k-theme-dark .toggle:hover{
+			color:#009688;
+		}
+		.k-theme-dark #top,
+		.k-theme-dark #search,
+		.k-theme-dark .block-info-tip tr td,
+		body.k-theme-dark{
+			color:#c3c2c2;
+			
+		}
+		body.k-theme-dark{
+			--stoke-color-1:#FFF;
+			--stoke-color-2:#F00;
+			--arrow-head-fill:#c3c2c2;
+			--arrow-head-stroke:#c3c2c2;
+			--rect-stroke-color-1:rgba(255, 255, 255, 0.7);
+			--block-info-bg-color:#202020;
+			--block-info-color:#999;
+
+			--block-td-color:var(--block-info-color);
+			--block-strong-color:#FFF;
+
+			--block-bg-color-1:#351f1f;
+			--block-hover-bg-color-1:#4a2d2d;
+			
+
+			--block-bg-color-2:#1a2a2d;
+			--block-hover-bg-color-2:#2d4246;
+			--block-box-shadow:0 2px 2px 0 rgba(0,0,0,.14),
+				0 3px 1px -2px rgba(0,0,0,.2),
+				0 1px 5px 0 rgba(0,0,0,.12);
+
+			--block-button-filter:invert(0.8);
+
+			--navigator-stroke-color:rgba(255, 255, 255, 0.25);
+			--navigator-fill-color:rgba(255, 255, 255, 0.325);
+			--navigator-thumb-stroke-color:#6a6a6a;
+			--navigator-thumb-fill-color:#363636;
+			--navigator-thumb-text-fill-color:#c3c2c2;
+		}
+		.k-theme-dark #get-multi-select-link,
+		.k-theme-dark #menu-bar #orientation>img,
+		.k-theme-dark #menu-bar #tracking>img{
+			filter:invert(0.8);
+		}
+		.k-theme-dark #menu-bar #tracking{
+			opacity:0.5;
+		}
+		.k-theme-dark #menu-bar #tracking.tracking-enabled{
+			opacity:1;
+		}
+		.k-theme-dark .block-info-tip tr td {
+			text-shadow:none;
+		}
 	</style>
+	<style class="k-link-style"></style>
 </head>
 <body>
 	<dag-viz id="dagViz"></dag-viz>
@@ -388,8 +505,14 @@
 	<axis-navigator id="timenav"></axis-navigator>
 	<menu-panel></menu-panel>
 	<div id="copy-url"></div>
+	<div id="explorerWin" class="win">
+		<div class="backdrop"></div>
+		<div class="win-box">
+			<k-explorer id="kExplorer"></k-explorer>
+		</div>
+	</div>
 	<script type="module">
-		import { App } from './components/app.js';
+		import { App } from '/components/app.js';
 		// import { io } from './node_modules/socket.io-client/dist/socket.io.js';
 		$(document).ready(()=>{
 			window.app = new App();
@@ -431,5 +554,6 @@
 		})
 	</script>
 	<div id="metrics"></div>
+	<div class="block-boxes-holder"></div>
 </body>
 </html>

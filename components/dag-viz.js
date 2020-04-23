@@ -408,8 +408,8 @@ export class GraphNodeLink{
 		this.holder = holder;
 		this.curves = holder.curves;
 		this.data = data;
-		this.el = holder.linksEl.append("g");
-		this.el.path = this.el.append("path");
+		this.el = holder.linksEl.append("path");
+		this.el.path = this.el;//this.el.append("path");
 		this.el.path.style('opacity', 0).style('fill', 'none');
 		//this.el.attr("marker-end", "url(#endarrow)");
 		this.source = holder.nodes[data.child];
@@ -442,6 +442,8 @@ export class GraphNodeLink{
 	remove(){
 		this.el.remove();
 		//delete this.holder.links.parent[this.data.parent];
+		if(this.source.linkNodes)
+			this.source.linkNodes = this.source.linkNodes.filter(l=>l!=this)
 		this.target.removeParentLinks(this);
 		// TODO - should we check/remove children?
 	}
@@ -954,6 +956,7 @@ export class GraphNode{
 
 		if(!this.el.arrow){
 			this.el.arrow = this.el.append('polygon')
+				.attr("class", 'arrow-head')
 				.attr("fill", "#000").attr('stroke', "#000");
 		}
 		let arrow = this.el.arrow;
@@ -1191,8 +1194,24 @@ export class DAGViz extends BaseElement {
 				padding:5px;
 				border-bottom:1px solid #DDD;
 			}
-			.svg-patterns{position:absolute}
+			.svg-patterns{position:absolute;top:-300vh}
 
+			path[stroke='rgb(0, 0, 0)']{
+				stroke:var(--stoke-color-1, rgb(0, 0, 0))
+			}
+			path[stroke='rgb(0, 32, 64)']{
+				stroke:var(--stoke-color-2, rgb(0, 32, 64))
+			}
+			.arrow-head{
+				stroke:var(--arrow-head-stroke, #000);
+				fill:var(--arrow-head-fill, #000);
+			}
+			rect[stroke='rgba(0,0,0,0.5)']{
+				stroke:var(--rect-stroke-color-1, rgba(0,0,0,0.5));
+			}
+			#markers polygon{
+				fill:var(--arrow-head-fill, #000);
+			}
 			/*
 			#graph svg .tip-line{
 				transition:all 0.2s ease;

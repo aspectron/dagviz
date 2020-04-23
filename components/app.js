@@ -1,4 +1,14 @@
 import { GraphNode, GraphNodeLink } from './dag-viz.js';
+import { KAPI, kLinkStyles, KPath} from '/node_modules/k-explorer/k-explorer.js';
+
+class KApi extends KAPI{
+	constructor(options={}){
+		options = Object.assign(options, {
+			origin: window.location.origin+"/api/"
+		})
+		super(options)
+	}
+}
 
 const dpc = (t,fn)=>{
 	if(typeof(t) == 'function'){
@@ -97,6 +107,7 @@ class GraphContext {
 		this.arrows = 'multi-s';
 		this.childShift = 1;
 		this.lvariance = true;
+		this['k-theme'] = 'light';
 
 		this.dir = 'E';
 		this.directions = {
@@ -273,12 +284,12 @@ class GraphContext {
 			});
 
 			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign+offset;
-			if(node.data.name == '8f74e9')
-				console.log("aaaaaaaaa", this.offset, node[axis])
+			//if(node.data.name == '8f74e9')
+			//	console.log("aaaaaaaaa", this.offset, node[axis])
 		} else {
 			node[axis] = node.data[this.unit] * this.unitScale * this.unitDist * this.spacingFactor * sign + offset;
-			if(node.data.name == '8f74e9')
-				console.log("xxxxxxxxxx", this.offset, node[axis])
+			//if(node.data.name == '8f74e9')
+			//	console.log("xxxxxxxxxx", this.offset, node[axis])
 		}
 		node.xx = node[axis];
 		node[axis] = Math.round(node[axis] + (sign * this.offset))
@@ -604,6 +615,18 @@ export class App {
 					node.rebuildLinks();
 					node.updateStyle();
 				});
+			}
+		});
+
+		new MultiChoice(this.ctx, 'k-theme',{
+			'dark':'DARK',
+			'light':"LIGHT",
+		}, 'THEME','fa fa-palette:UI Theme', {
+			update:(v)=>{
+				if(this.kExplorer){
+					this.kExplorer.setSettings({theme: v.toLowerCase()}, true);
+					this.navigator.redraw();
+				}
 			}
 		});
 
@@ -1098,6 +1121,8 @@ export class App {
 	async initPosition() {
 
 		let url = new URL(window.location.href);
+		let expParams = KPath.parse(url);
+		console.log("expParams", expParams)
 		let params = Object.fromEntries(url.searchParams.entries());
 		console.log("initializing with params:",params);
 		//if(params.pos === 'undefined')
@@ -1112,7 +1137,9 @@ export class App {
 			chainBlocksCenter : ctx.chainBlocksCenter,
 			layout : ctx.layout,
 			quality : ctx.quality,
-			select : 'none'
+			select : 'none',
+			theme: ctx['k-theme'],
+			expParams
 		}
 		params = Object.assign(defaults, params);
 		this.initContext(params);
@@ -1192,8 +1219,8 @@ export class App {
 				//if((node.data[this.ctx.unit] < (from-eraseMargin) || node.data[this.ctx.unit] > (to+eraseMargin))) {
 					
 					node.updateStyle();
-					if(node.data.name == '8f74e9')
-						console.log("#######   node.updateStyle", node.data.name, node[axis])
+					//if(node.data.name == '8f74e9')
+					//	console.log("#######   node.updateStyle", node.data.name, node[axis])
 				//}
 			})
 		}
@@ -1327,6 +1354,9 @@ export class App {
 				//ctlSet[ctl.ident] = ctl;
 		});
 
+		let expParams = state.expParams || {};
+		this.initExplorer(expParams);
+
 		this.suspend = false;
 		this.undo = false;
 		if(updateTransform) {
@@ -1334,7 +1364,45 @@ export class App {
 		}
 		
 		this.undo = true;
+	}
 
+	initExplorer(expParams){
+		let {method, paths, params} = expParams;
+		paths = paths || [];
+		if(!this.kExplorer){
+			this.kExplorer = document.querySelector("#kExplorer");
+			this.kExplorerWin = document.querySelector("#explorerWin");
+			this.kExplorer.setApi(new KApi());
+			$(document.body).on("click", ".win .backdrop", (e, el)=>{
+				let $win = $(e.target).parent();
+				$win.removeClass("active");
+				if($win.find("k-explorer").length){
+					this.storeUndo();
+				}
+			});
+
+			$(document.body).on("k-explorer-state-changed", (e, detail)=>{
+				console.log("k-explorer-state-changed", detail);
+				this.storeUndo();
+			})
+			window.addEventListener("k-settings", e=>{
+				let {theme} = this.kExplorer.settings;
+				let ctl = this.ctls['k-theme'];
+				if(!ctl)
+					return
+				let v = ctl.getValue();
+				v = v? v.toLowerCase():'';
+				if(v != theme){
+					ctl && this.ctls['k-theme'].setValue(theme);
+					this.navigator.redraw();
+				}
+			})
+		}
+		if(!method)
+			return
+		if(this.kExplorer.callApi)
+			this.kExplorer.callApi([method, ...paths], params);
+		this.kExplorerWin.classList.add("active");
 	}
 
 	async focusOnBlock(hash) {
@@ -1348,36 +1416,55 @@ export class App {
 		}
 	}
 
+	deepClone(obj){
+		if(_.isArray(obj)){
+			return _.map(obj, (e)=>{
+				return this.deepClone(e);
+			})
+		}
+
+		if(_.isObject(obj)){
+			var r = {};
+			_.each(obj, (e, k)=>{
+				r[k] = this.deepClone(e);
+			})
+			return r;
+		}
+		return obj;
+	}
+
 	storeUndo() {
 		// console.log('storeUndo');
 		if(!this.undo || this.suspend)
 			return;
-		// console.log('storeUndo starting...');
+		if(!this.last_undo_state_)
+			this.last_undo_state_ = { };
+		//console.log('storeUndo starting...');
 
 		const state = { }
 		Object.values(this.ctls).forEach(ctl=>state[ctl.ident] = ctl.getValue(true));
+		const expParams = this.deepClone(this.kExplorer.buildUrlState());
+		//console.log("storeUndo:expParams", expParams, expParams.params)
+		const lastExpParams = this.last_undo_state_.expParams;
+		const expParamsChanged = JSON.stringify(expParams) != JSON.stringify(lastExpParams);
 
 		const pos = Math.round(this.ctx.position);
 		const k = (this.graph.paintEl.transform.k).toFixed(4);
-		if(Math.round(pos/3) == Math.round(this.last_stored_pos_/3) && k == this.last_sored_k_)
+		if(!expParamsChanged && Math.round(pos/3) == Math.round(this.last_stored_pos_/3) && k == this.last_sored_k_)
 			return;
 		this.last_stored_pos_ = pos;
 		this.last_stored_k_ = k;
 		state.pos = pos;
 		state.k = k;
 
-//		state.unit = this.ctx.unit;
-//		state.seek = this.ctx.seek;
+		//state.unit = this.ctx.unit;
+		//state.seek = this.ctx.seek;
 
 		const lseq = Object.values(this.graph.selection).map(node=>parseInt(node.data.lseq).toString(16));
 		if(lseq.length)
 			state.select = 'lseqx'+lseq.join('x');
 		else
 			state.select = 'none';
-
-		// console.log(state);
-		if(!this.last_undo_state_)
-			this.last_undo_state_ = { };
 
 		const selectChange = state.select != this.last_undo_state_.select;
 
@@ -1388,7 +1475,7 @@ export class App {
 				delete state[key];
 		});
 
-		if(!Object.keys(state).length)
+		if(!Object.keys(state).length && !expParamsChanged)
 			return;
 
 		// if(!state.select)// && this.last_undo_state_.select != 'none')
@@ -1401,6 +1488,7 @@ export class App {
 				state.k = this.last_undo_state_.k;
 		}
 
+
 		let url = new URL(window.location);
 		keys.forEach((key) => {
 			if(state[key] !== undefined) {
@@ -1410,8 +1498,12 @@ export class App {
 			}
 		});
 
-		const ts = Date.now();
-		history.pushState(state, "DAGViz", "?"+url.searchParams.toString());//+('#'+ts.toString(16)));
+		this.last_undo_state_.expParams = expParams;
+		state.expParams = expParams;
+
+		url = KPath.buildUrl(expParams, url)
+		//console.log("url", url, url.pathname+url.search)
+		history.pushState(state, "DAGViz", url.pathname+url.search);
 	}
 
 	getRegion() {
@@ -1427,7 +1519,7 @@ export class App {
 
 	fetchBlock(hash) {
 		return new Promise((resolve,reject) => {
-			$.ajax('/block/'+hash, {
+			$.ajax('/get-block/'+hash, {
 				dataType: 'json',
 				// timeout: 500,     // timeout milliseconds
 				success: (data,status,xhr) => {
@@ -1477,7 +1569,6 @@ export class App {
             range.selectNodeContents(node);
             selection.removeAllRanges();
             selection.addRange(range);
-            console.log('getSelection');
 
         } else {
             console.warn("Could not select text in node: Unsupported browser.");

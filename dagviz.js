@@ -1,15 +1,19 @@
 const crypto = require('crypto');
+const fs = require('fs');
 const mysql = require('mysql');
-const finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
 const rp = require('request-promise');
-const querystring = require('querystring');
 const MF = require('micro-fabric');
 const MySQL = require('./lib/mysql');
 const basicAuth = require('basic-auth');
 const io = require('socket.io');//(http);
 const mqtt = require('mqtt');
+const path = require('path');
+const WebApp = require('./web-app.js');
+
+const DUMMY_TX = true;
+const USE_LOCAL_KASPAROV = true;
 
  
 class DAGViz {
@@ -152,100 +156,100 @@ class DAGViz {
     }
 
     async initHTTP() {
+        const app = new WebApp();
+
+        app.use((req, res, next)=>{
+            let auth = basicAuth(req);
+            if(!req.url.startsWith('/components') && 
+                !req.url.startsWith('/build') &&
+                (!auth || auth.name != 'dag' || auth.pass != 'dag')) {
+                res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
+                return res.end();
+            }
+
+            next();
+        })
+
+        app.get('/data-slice', (req, res, next)=>{
+            this.dataSlice(req.query).then((data)=> {
+                res.sendJSON(data)
+            }, (err) => {
+                console.log('error:',err);
+                res.sendJSON({error: err.toString()}, 500)
+            });
+        });
+
+        app.get("/search", (req, res)=>{
+            let args = req.query.q || "";
+            //console.log("getting query for:",args);
+            this.doSearch(args).then((data) => {
+                console.log('resp:',data);
+                res.sendJSON(data);
+            }, (err) => {
+                console.log('error:',err);
+                res.sendJSON({error: err.toString()}, 500);
+            });
+        })
+
+        app.get("/get-block/:type/:data", (req, res)=>{
+            let {type, data} = req.params;
+            let args = type+"/"+data;
+            //console.log("getting block:", args, req.params);
+            this.getBlock(args).then((data) => {
+                res.sendJSON(data);
+            }, (err) => {
+                console.log('error:',err);
+                res.sendJSON({error: err.toString()}, 500);
+            });
+        })
+
+        app.get("/api/transactions", (req, res, next)=>{
+            if(!DUMMY_TX)
+                return next();
+            res.sendFile("./transactions-samples.json");
+        })
+
+        app.get("/api/transaction/hash/:code", (req, res, next)=>{
+            if(!DUMMY_TX)
+                return next();
+            let result = require("./transactions-samples.json");
+            let tx = result.transactions[0];
+            res.sendJSON(tx)
+        })
+
+        app.get("/api", (req, res, next)=>{
+            const _path = req.url.substring(4);
+            let url = `${this.kasparov}${_path}`;
+            if(USE_LOCAL_KASPAROV)
+                url = `http://localhost:1234${_path}`;
+            console.log('api request:',url);
+            rp(url)
+            .then(text=>{
+                res.sendJSON(text);
+            })
+            .catch(err=>{
+                res.sendJSON({"dagviz-proxy-error": err.toString()}, 500);
+            });
+        })
+
+        app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next)=>{
+            res.sendFile("./index.html");
+        })
+
+        //app.use("/k-explorer", serveStatic('./node_modules/k-explorer', { 'index': ['index.html', 'index.htm'] }))
+        app.use(serveStatic('./', { 'index': ['index.html', 'index.htm']}))
+
         return new Promise((resolve,reject) => {
-
-            // Serve up public/ftp folder
-            const serve = serveStatic('./', { 'index': ['index.html', 'index.htm'] })
-            
-            const data_slice = '/data-slice?';
-
             // Create server
             const server = http.createServer((req, res)=>{
-
-                var auth = basicAuth(req);
-                if(!req.url.startsWith('/components') && 
-                    !req.url.startsWith('/build') &&
-                    (!auth || auth.name != 'dag' || auth.pass != 'dag')) {
-                    res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
-                    return res.end();
-                }
-
-                if(req.url.startsWith(data_slice)) {
-                    let q = req.url.substring(data_slice.length);
-                    q = querystring.parse(q);
-                    this.dataSlice(q).then((data)=> {
-                        res.writeHead(200, {'Content-Type': 'application/json'});
-                        res.write(JSON.stringify(data));
-                        res.end();
-                    }, (err) => {
-                        console.log('error:',err);
-                        res.writeHead(500, {'Content-Type': 'application/json'});
-                        res.write(`{ "error":"${err.toString()}"}`);
-                        res.end();
-                    });
-                }
-                else
-                if(req.url.startsWith('/block/')) {
-                    let args = req.url.substring(7);
-                    // console.log("getting block:",args);
-                    this.getBlock(args).then((data) => {
-                        res.writeHead(200, {'Content-Type': 'application/json'});
-                        res.write(JSON.stringify(data));
-                        res.end();
-                    }, (err) => {
-                        console.log('error:',err);
-                        res.writeHead(500, {'Content-Type': 'application/json'});
-                        res.write(`{ "error":"${err.toString()}"}`);
-                        res.end();
-                    });
-                }
-                else
-                if(req.url.startsWith('/search?q=')) {
-                    let args = req.url.substring(10);
-                    // console.log("getting query for:",args);
-                    this.doSearch(args).then((data) => {
-                        console.log('resp:',data);
-                        res.writeHead(200, {'Content-Type': 'application/json'});
-                        res.write(JSON.stringify(data));
-                        res.end();
-                    }, (err) => {
-                        console.log('error:',err);
-                        res.writeHead(500, {'Content-Type': 'application/json'});
-                        res.write(`{ "error":"${err.toString()}"}`);
-                        res.end();
-                    });
-                }
-                else
-                if(req.url.startsWith('/api')) {
-                    const _path = req.url.substring(4);
-                    const url = `${this.kasparov}${_path}`;
-                    console.log('api request:',url);
-                    rp(url)
-                    .then(function (text) {
-                        // Process html...
-                        res.writeHead(200, {'Content-Type': 'application/json'});
-                        res.write(text);
-                        res.end();
-                    })
-                    .catch(function (err) {
-                        res.writeHead(200, {'Content-Type': 'application/json'});
-                        res.write(`{ "dagviz-proxy-error":"${err.toString()}"}`);
-                        res.end();
-                    });
-                }
-                else
-                    serve(req, res, finalhandler(req, res))
+                app.run(req, res);
             }).listen(8686, () => {
                 console.log('listening on 8686');
                 resolve();
             });
 
             this.io = io(server);
-
             this.io.on('connection', (socket) => {
-              //  console.log('connected',socket);
-              // this.socket = socket;
-
               if(this.lastBlock)
                   socket.emit('last-block-data', this.lastBlock);
             })
@@ -279,6 +283,8 @@ class DAGViz {
             
             this.db = {
                 query : async (sql, args) => {
+                    if(mySQL.stopped)
+                        return Promise.reject("MySQL stopped.")
                     //console.log("sql:", sql, args)
                     return new Promise((resolve,reject) => {
                         this.dbPool.getConnection((err, connection) => {
@@ -792,16 +798,15 @@ class DAGViz {
 
     async doSearch(text) {
 
-  //      console.log('text length:',text.length);
+        //console.log('text length:',text.length);
         //! WARNING - TODO: THE INPUT IS NOT SANITIZED!
         if(text.length == 64) {
             let blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=?`,text);
-//console.log(blocks);
+            //console.log(blocks);
             blocks.forEach(block => this.deserealizeBlock(block));
             // console.log("responding:",blocks);
             return Promise.resolve({blocks});
         }
-
 
         return Promise.reject('Not Found');
 

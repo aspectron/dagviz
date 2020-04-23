@@ -14,7 +14,8 @@
     "mkdirp": "*",
     "is-docker": "*",
     "basic-auth": "*",
-    "socket.io": "*"
+    "socket.io": "*",
+    "mime-types": "*"
   },
   "engines": {
     "node": "*",

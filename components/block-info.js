@@ -17,14 +17,15 @@ class BlockInfo extends BaseElement{
                 flex-direction:column;
                 margin: 8px;
                 padding: 0px;
-                background-color: rgba(255,255,255,0.9);
+                background-color: var(--block-info-bg-color, rgba(255,255,255,0.9));
+                color: var(--block-info-color, inherit)
                 max-height: 80vh;
             }
             :host(.hidden){display:none}
             .panel {
                 background-color: white;
                 border: 1px solid #ccc;
-                box-shadow: 1px 1px 2px rgba(10,10,10,0.1);
+                box-shadow: var(--block-box-shadow, 1px 1px 2px rgba(10,10,10,0.1));
                 padding: 8px;   
             }
             .toolbar {
@@ -47,12 +48,29 @@ class BlockInfo extends BaseElement{
                 opacity: 1;
                 transform: scale(1.15);
             }
+            /*
             .red { background-color: rgba(255,194,194,0.49); }
-            /*.green { background-color: rgba(194,255,204,0.49); }*/
             .blue { background-color: rgba(194,244,255,0.49); }
             .red:hover, .focus .red { background-color: rgba(255,194,194,0.79); }
-            /*.green:hover, .focus .green { background-color: rgba(194,255,204,0.79); }*/
             .blue:hover, .focus .blue  { background-color: rgba(194,244,255,0.79); }
+            */
+            
+            .red {
+                background-color:var(--block-bg-color-1, rgba(255,194,194,0.49));
+                color:var(--block-color-1, var(--block-info-color, inherit));
+            }
+            .blue {
+                background-color:var(--block-bg-color-2, rgba(194,244,255,0.49));
+                color:var(--block-color-2, var(--block-info-color, inherit));
+            }
+            .red:hover, .focus .red {
+                background-color:var(--block-hover-bg-color-1, rgba(255,194,194,0.79));
+                color:var(--block-hover-color-1, var(--block-info-color, inherit));
+            }
+            .blue:hover, .focus .blue  {
+                background-color:var(--block-hover-bg-color-2, rgba(194,244,255,0.79));
+                color:var(--block-hover-color-2, var(--block-info-color, inherit));
+            }
             .info {
                 cursor: pointer;
             }
@@ -91,11 +109,24 @@ class BlockInfo extends BaseElement{
             }
             td {
                 vertical-align: top;
-                color: #333;
             }
             strong {
                 font-weight: normal;
-                color: #000;
+            }
+            .red td{
+                color: var(--block-td-color-1, var(--block-td-color, #333));
+            }
+            .blue td{
+                color: var(--block-td-color-2, var(--block-td-color, #333));
+            }
+            .red strong{
+                color: var(--block-strong-color-1, var(--block-strong-color, #000));
+            }
+            .blue strong{
+                color: var(--block-strong-color-2, var(--block-strong-color, #000));
+            }
+            .button{
+                filter:var(--block-button-filter, none);
             }
             .is-chain-block {
                 border: 4px solid rgba(0,0,0,0.5);
