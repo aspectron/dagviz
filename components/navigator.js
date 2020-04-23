@@ -130,6 +130,9 @@ class AxisNavigator extends BaseElement{
 		const { axis, sign } = window.app.ctx.direction;
 		const horizontal = (axis == 'x');
 
+		let {track:trackCtl} = window.app.ctls || {}
+		trackCtl && trackCtl.setValue(false);
+
 		const fontSize = this.getFontSize();
 
 		const box = this.canvasBox; //this.getBoundingClientRect();
