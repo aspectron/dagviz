@@ -421,6 +421,7 @@ class GraphContext {
 	}
 
 	updateMax(max) {
+		console.log("updateMax:"+max)
 		if(max == null)
 			return
 		this.max = max;
@@ -1022,6 +1023,7 @@ export class App {
 		this.io = io();
 
 		this.io.on('dag/blocks', (blocks) => {
+			console.log("dag/blocks", blocks)
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
@@ -1595,7 +1597,7 @@ export class App {
 	regionCleanup() {
 
 		const { from, to, range } = this.getRegion();
-//		const { region : { from, to, range } } = this.getRegion();
+		//const { region : { from, to, range } } = this.getRegion();
 
 		Object.values(this.graph.nodes).forEach((node) => {
 			if(node.selected)
@@ -1811,7 +1813,7 @@ class LastBlockWidget extends BaseElement{
 		let pos = -app.ctx.graph.paintEl.transform.x / app.ctx.graph.paintEl.transform.k / app.ctx.unitDist * app.ctx.direction.sign;
 		let from = pos - this.region.range * 0.5;
 		let to = pos + this.region.range * 0.5;
-console.log(pos,from,to);
+		console.log(pos,from,to);
 		if(from < this.blueScore && this.blueScore < to ) {
 			this.halt();
 		} else {

@@ -1,7 +1,7 @@
 node_modules
 package-lock.json
-!build/node_modules
 bin
 __notes.txt
 dagviz.sublime-project
 dagviz.sublime-workspace
+__todo.txt
