@@ -1309,6 +1309,11 @@ export class DAGViz extends BaseElement {
 	}
 	firstUpdated() {
 		this.graphHolder = this.renderRoot.getElementById('graph');
+		let getBoundingClientRect = this.graphHolder.getBoundingClientRect;
+		let graphHolderRect = getBoundingClientRect.call(this.graphHolder);
+		this.graphHolder.getBoundingClientRect = ()=>{
+			return graphHolderRect;
+		}
 		this.nodeInfoEl = this.renderRoot.getElementById('nodeInfo')
 		this._updateNodeInfoPosition = this.updateNodeInfoPosition.bind(this);
 		this.nodeInfoEl.addEventListener('node-panel-resize', (e)=>{
@@ -1331,6 +1336,9 @@ export class DAGViz extends BaseElement {
 		
 		this.graphHolder.addEventListener('click', ()=>{
 			
+		})
+		window.addEventListener("resize", ()=>{
+			graphHolderRect = getBoundingClientRect.call(this.graphHolder);
 		})
 		this.initChart();
 	}
@@ -1499,7 +1507,7 @@ export class DAGViz extends BaseElement {
 			this.updateNodeInfoPosition();
 		}
 
-		this.updatePanInfo(this.paintEl.transform);
+		//this.updatePanInfo(this.paintEl.transform);
 		this.updateRegion(this.paintEl.transform);
 
 		// window.app.storeUndoPosition()

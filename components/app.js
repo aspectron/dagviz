@@ -1047,9 +1047,17 @@ export class App {
 
 				this.createBlocks(blocks);
 				this.graph.updateSimulation();
+				let oldLastBlock = this.ctx.lastBlockData;
+				let newLastBlock = blocks[blocks.length-1];
+				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
+					this.ctx.lastBlockData = newLastBlock;
+					this.ctx.lastBlockDataTS = Date.now();
+					console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
+				}
 
-				this.ctx.lastBlockData = blocks[blocks.length-1];
-				this.ctx.lastBlockDataTS = Date.now();
+				if(newLastBlock.blueScore > this.ctx.max)
+					this.ctx.updateMax(newLastBlock.blueScore)
+
 			}
 
 			if(this.ctx.track) {
