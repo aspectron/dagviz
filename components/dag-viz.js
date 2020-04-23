@@ -1919,9 +1919,12 @@ export class DAGViz extends BaseElement {
 					// console.log('coordinates:', x,y,t,v );
 					//this.ctx.position = node.data[this.ctx.unit];
 					delete this.focusTargetHash;
+					/* @Anton this code is creating issue when we navigate by block-info click
+					//what was issue behind this code ?
 					this.ctx.app.suspend = false;
 					window.app.enableUndo(true);
 					this.setChartTransform();
+					*/
 					// window.app.updatePosition();
 				}
 
