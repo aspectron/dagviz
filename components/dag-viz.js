@@ -1891,7 +1891,7 @@ export class DAGViz extends BaseElement {
 
 				let delta = 0.45;
 				if(X_ < 7 && Y_ < 7) {
-					delta = 0.1;
+					delta = 0.3;
 				}
 				
 				t.x += v.cX * delta; //0.0075;// * delta;
