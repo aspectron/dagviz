@@ -15,6 +15,7 @@ const WebApp = require('./web-app.js');
 let args = MF.utils.args();
 const DUMMY_TX = true;
 const USE_LOCAL_KASPAROV = !!args['use-local-kas'];
+const rejectUnauthorized = false;
 console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.white.bold)
 
  
@@ -225,7 +226,7 @@ class DAGViz {
             if(USE_LOCAL_KASPAROV)
                 url = `http://localhost:1234${_path}`;
             console.log('api request:',url);
-            rp(url)
+            rp({url, rejectUnauthorized})
             .then(text=>{
                 res.sendJSON(text);
             })
@@ -416,7 +417,7 @@ class DAGViz {
             
             // console.log(`${this.kasparov}/blocks?${args}`);
             
-            rp(`${this.kasparov}/blocks?${args}`).then((text) => {
+            rp({url: `${this.kasparov}/blocks?${args}`, rejectUnauthorized}).then((text) => {
                 let data = null;
                 try {
                     data = JSON.parse(text);
