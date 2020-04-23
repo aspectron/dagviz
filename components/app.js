@@ -88,7 +88,7 @@ class GraphContext {
 		this.linearScale = d3.scaleLinear()
 		this.linearScale.domain([0, 100000]).range([0, 15000]);
 		this.unitScale = 1.0;
-		this.unitDist = 120;
+		this.unitDist = 130;
 		this.position = 10;
 		this.offset = 0;
 		this.updateOffset();
@@ -110,6 +110,7 @@ class GraphContext {
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
+		//this.unit2Pos = {};
 
 		this.dir = 'E';
 		this.directions = {
@@ -285,7 +286,7 @@ class GraphContext {
 				}
 			});
 
-			node[axis] = (max + (this.unitDist*2*this.spacingFactor))*sign+offset;
+			node[axis] = (max + (this.unitDist * this.unitScale * this.spacingFactor))*sign+offset;
 			//if(node.data.name == '8f74e9')
 			//	console.log("aaaaaaaaa", this.offset, node[axis])
 		} else {
@@ -294,6 +295,7 @@ class GraphContext {
 			//	console.log("xxxxxxxxxx", this.offset, node[axis])
 		}
 		node.xx = node[axis];
+		//this.unit2Pos[node.data[this.unit]] = node.xx;
 		node[axis] = Math.round(node[axis] + (sign * this.offset))
 		//if(node.data.name == '8f74e9')
 		//	console.log("node[axis]node[axis]node[axis]node[axis]", node[axis])
@@ -386,6 +388,7 @@ class GraphContext {
 				t[axis] = t[layoutAxis] * sign * lastSign;
 				t[layoutAxis] = 0;
 				this[this.dir+"_transformed"] = 0;
+				//this.unit2Pos = {};
 				this.updateViewportTransform(t, true);
 
 			} break;
@@ -910,7 +913,15 @@ export class App {
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
-		t[axis] = - (this.ctx.position * t.k * this.ctx.unitDist) * sign;
+		let pos = Math.ceil(this.ctx.position);
+		console.log("t[axis]t[axis]t[axis]", this.ctx.position+"->"+pos, sign, this.ctx.unit2Pos[pos])
+		//if(this.ctx.unit2Pos[pos]){
+		//	t[axis] = - (this.ctx.unit2Pos[pos] * t.k);// * sign;
+		//}else{
+		//	this.ctxApproxPos = pos;
+			t[axis] = - (this.ctx.position * t.k * this.ctx.unitDist) * sign;
+		//}
+		
 		this.graph.setChartTransform(t);
 	}
 
@@ -1185,6 +1196,7 @@ export class App {
 			return Promise.resolve();
 
 		let { pos, range } = o;
+		//pos = Math.round(pos);
 		let forward = false, reverse = false;
 		let {sign, axis} = this.ctx.direction;
 		if(pos > this.ctx.position)
@@ -1193,6 +1205,7 @@ export class App {
 			reverse = true;
 
 		this.ctx.position = pos;
+		console.log("updateRegion:this.ctx.position", this.ctx.position)
 		range *= this.ctx.rangeScale;
 		this.ctx.range = range;
 		this.range_ = range;
@@ -1278,7 +1291,16 @@ export class App {
 		this.createBlocks(blocks);
 		this.graph.updateSimulation();
 		this.ctx.updateViewportTransform()
-		this.graph.style.opacity = 1;
+		/*if(this.ctxApproxPos && this.ctx.unit2Pos[this.ctxApproxPos]){
+			let pos = this.ctxApproxPos;
+			this.ctxApproxPos = null;
+
+			setTimeout(()=>{
+				this.updatePosition();
+			}, 100);
+		}else{*/
+			this.graph.style.opacity = 1;
+		/*}*/
 
 		/***** just for track issue testing *****/
 		//this.ctx.lastBlockData = blocks[blocks.length-1];
