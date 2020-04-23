@@ -344,9 +344,11 @@ class GraphContext {
 
 		switch(e) {
 			case 'track': {
+				//console.log("this.lastBlockData", this.lastBlockData)
 				if(this.lastBlockData && this.track) {
-					let v = this.lastBlockData[this.unit] * this.unitDist;
-					this.graph.translate(v,0);
+					//let v = this.lastBlockData[this.unit] * this.unitDist;
+					//this.graph.translate(v,0);
+					this.graph.centerBy(this.lastBlockData.blockHash)
 				}
 			} break;
 			case 'mass': {
@@ -1269,6 +1271,10 @@ export class App {
 		this.graph.updateSimulation();
 		this.ctx.updateViewportTransform()
 		this.graph.style.opacity = 1;
+
+		/***** just for track issue testing *****/
+		//this.ctx.lastBlockData = blocks[blocks.length-1];
+		/**************************************************/
 
 		this.lastBlockWidget.updateRegion(this.region);
 

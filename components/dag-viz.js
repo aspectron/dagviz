@@ -1443,13 +1443,19 @@ export class DAGViz extends BaseElement {
 		let cY = box.top + box.height/2;
 		cX = centerX-cX;
 		cY = centerY-cY;
+		const { axis, size, sign } = this.ctx.direction;
 		if(options && options.filter) {
 			options.filter(t,{ cX, cY });
 		} else {
-			t.x += cX;// * 0.01;
-			t.y += cY;// * 0.01;
+			if(axis == "x"){
+				t.x = t.x+sign*cX;// * 0.01;
+				t.y += cY;// * 0.01;
+			}else{
+				t.x += cX;
+				t.y = t.y+sign*cY;// * 0.01;
+			}
+
 		}
-		const { axis, size, sign } = this.ctx.direction;
 		let pos = -(t[axis] / t.k / this.ctx.unitDist) * sign;
 		this.ctx.updateOffset(pos);
 		this.setChartTransform(this.paintEl.transform);
@@ -1854,7 +1860,8 @@ export class DAGViz extends BaseElement {
 			// 	fullFetch : true,
 			// 	pos, range : this.ctx.app.range_
 			// });
-			
+			this.centerBy(this.ctx.lastBlockData.blockHash);
+			/*
 			this.centerBy(this.ctx.lastBlockData.blockHash, { 
 				filter : (t,v) => {
 					
@@ -1875,6 +1882,7 @@ export class DAGViz extends BaseElement {
 				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
 				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
 			});
+			*/
 		}
 		else if(this.focusTargetHash) {
 
