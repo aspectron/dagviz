@@ -781,9 +781,7 @@ export class App {
 
 		const $explorerImg = $('#explorer > img');
 		$explorerImg.click((e) => {
-			//const params = new URLSearchParams(window.location.search);
-			//console.log(params);
-			window.location.pathname = '/blocks';
+			this.openExplorer("blocks");
 		})
 
 		$(window).on('keydown', (e) => {
@@ -1378,6 +1376,12 @@ export class App {
 		this.undo = true;
 	}
 
+	openExplorer(pathname="blocks", params={}){
+		let paths = pathname.split("/");
+		let method = paths.shift();
+		this.initExplorer({method, paths, params})
+	}
+
 	initExplorer(expParams){
 		let {method, paths, params} = expParams;
 		paths = paths || [];
@@ -1412,9 +1416,10 @@ export class App {
 		}
 		if(!method)
 			return
+		this.kExplorerWin.classList.add("active");
 		if(this.kExplorer.callApi)
 			this.kExplorer.callApi([method, ...paths], params);
-		this.kExplorerWin.classList.add("active");
+		
 	}
 
 	async focusOnBlock(hash) {
