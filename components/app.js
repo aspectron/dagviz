@@ -913,8 +913,8 @@ export class App {
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
-		let pos = Math.ceil(this.ctx.position);
-		console.log("t[axis]t[axis]t[axis]", this.ctx.position+"->"+pos, sign, this.ctx.unit2Pos[pos])
+		//let pos = Math.ceil(this.ctx.position);
+		//console.log("t[axis]t[axis]t[axis]", this.ctx.position+"->"+pos, sign, this.ctx.unit2Pos[pos])
 		//if(this.ctx.unit2Pos[pos]){
 		//	t[axis] = - (this.ctx.unit2Pos[pos] * t.k);// * sign;
 		//}else{
