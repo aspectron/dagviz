@@ -11,6 +11,7 @@ const io = require('socket.io');//(http);
 const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
+const FlowRouter = require('flow-ux/src/router.js');
 
 let args = MF.utils.args();
 const DUMMY_TX = true;
@@ -86,8 +87,6 @@ class DAGViz {
             // console.log("MQTT message is "+ message);
             // console.log("MQTT topic is "+ topic);
         });
-
-
     }
 
     async "dag/blocks"(block) {
@@ -154,13 +153,14 @@ class DAGViz {
         //         ${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')}
         //     ) VALUES ?
         // `, [blocks]);
-
-
     }
 
     async initHTTP() {
         const app = new WebApp();
-
+        const flowRouter = new FlowRouter(app, {
+            rootFolder:path.dirname(__filename),
+            folders:['k-explorer']
+        });
         app.use((req, res, next)=>{
             let auth = basicAuth(req);
             if(!req.url.startsWith('/components') && 
@@ -186,7 +186,7 @@ class DAGViz {
             let args = req.query.q || "";
             //console.log("getting query for:",args);
             this.doSearch(args).then((data) => {
-                console.log('resp:',data);
+                console.log('search:resp:',data);
                 res.sendJSON(data);
             }, (err) => {
                 console.log('error:',err);
@@ -238,6 +238,8 @@ class DAGViz {
         app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next)=>{
             res.sendFile("./index.html");
         })
+
+        flowRouter.init();
 
         //app.use("/k-explorer", serveStatic('./node_modules/k-explorer', { 'index': ['index.html', 'index.htm'] }))
         app.use(serveStatic('./', { 'index': ['index.html', 'index.htm']}))
@@ -593,17 +595,15 @@ class DAGViz {
             this.updateRelations();
         })
 
-    //     let children = await this.sql(`
-    //     SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks 
-    //     INNER JOIN ( 
-    //         SELECT * FROM blocks WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
-    //         ORDER BY blocks.${unit} 
-    //         LIMIT ${limit}
-    //     ) X ON (blocks.blockHash = X.blockHash)
-    //     LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash 
-    // `);
-
-
+        //     let children = await this.sql(`
+        //     SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks 
+        //     INNER JOIN ( 
+        //         SELECT * FROM blocks WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} 
+        //         ORDER BY blocks.${unit} 
+        //         LIMIT ${limit}
+        //     ) X ON (blocks.blockHash = X.blockHash)
+        //     LEFT JOIN block_relations ON block_relations.parent = blocks.blockHash 
+        // `);
     }
 
     update() {

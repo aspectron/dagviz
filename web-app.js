@@ -86,7 +86,7 @@ class WebApp {
 
             let run = ()=>{
                 req.path = reqPath.substr(req.baseUrl.length);
-                console.log("req.path", req.path, req.baseUrl)
+                //console.log("req.path", req.path, req.baseUrl)
                 if(req.path.length && req.path[0] != '/')
                     return next();
                 req.url = isMiddleware? req.url.substr(req.baseUrl.length) : req.url;
