@@ -149,6 +149,7 @@ class GraphContext {
 		}
 
 		this.direction = this.directions[this.dir];
+		this.initMaxScoreEvents();
 	}
 	updateOffset(pos){
 		pos = pos!==undefined? pos : this.position;
@@ -426,7 +427,7 @@ class GraphContext {
 	}
 
 	updateMax(max) {
-		console.log("updateMax:"+max)
+		//console.log("updateMax:"+max)
 		if(max == null)
 			return
 		this.max = max;
@@ -435,7 +436,17 @@ class GraphContext {
 		this.linearScale.domain([0, max])
 		console.log("this.linearScale2222", this.linearScale(100000))
 		*/
+		let ce = new CustomEvent("max-blue-score", {detail:{maxBlueScore:this.max}})
+		document.body.dispatchEvent(ce);
 	}
+
+	initMaxScoreEvents(){
+		document.body.addEventListener("get-max-blue-score", e=>{
+			e.detail.maxBlueScore = this.max;
+		});
+	}
+
+
 
 	getIdx(node) {
 		return Math.round(node.data[this.unit] * 10);
@@ -491,7 +502,7 @@ class GraphContext {
 		if(max>0){
 			this._viewportMax = max;
 			const k = layoutSize/max;
-			console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
+			//console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
 			//if(k < t.k){
 				//t.k = k;
 			//}
@@ -787,6 +798,11 @@ export class App {
 
 		const $explorerImg = $('#explorer > img');
 		$explorerImg.click((e) => {
+			if(this.kExplorerWin && this.kExplorerWin.classList.contains("active")){
+				this.kExplorerWin.classList.remove("active");
+				this.storeUndo();
+				return
+			}
 			this.openExplorer("blocks");
 		})
 
@@ -797,6 +813,10 @@ export class App {
 					if($('#info-panel',el.renderRoot).hasClass('advanced'))
 						el.close();
 				});
+
+				if(this.kExplorerWin.classList.contains("active")){
+					this.kExplorerWin.classList.remove("active");
+				}
 				
 				//console.log(els);
 				//$('block-info').
@@ -1041,6 +1061,8 @@ export class App {
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
 			this.lastBlockWidget.updateBlocks(blocks);
+			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
+			window.dispatchEvent(ce)
 
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
@@ -1153,9 +1175,9 @@ export class App {
 
 		let url = new URL(window.location.href);
 		let expParams = KPath.parse(url);
-		console.log("expParams", expParams)
+		//console.log("expParams", expParams)
 		let params = Object.fromEntries(url.searchParams.entries());
-		console.log("initializing with params:",params);
+		//console.log("initializing with params:",params);
 		//if(params.pos === 'undefined')
 		const { ctx } = this;
 		const defaults = {
@@ -1205,7 +1227,7 @@ export class App {
 			reverse = true;
 
 		this.ctx.position = pos;
-		console.log("updateRegion:this.ctx.position", this.ctx.position)
+		//console.log("updateRegion:this.ctx.position", this.ctx.position)
 		range *= this.ctx.rangeScale;
 		this.ctx.range = range;
 		this.range_ = range;
@@ -1426,7 +1448,8 @@ export class App {
 			this.kExplorer = document.querySelector("#kExplorer");
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorer.setApi(new KApi());
-			$(document.body).on("click", ".win .backdrop", (e, el)=>{
+			let $body = $(document.body);
+			$body.on("click", ".win .backdrop", (e, el)=>{
 				let $win = $(e.target).parent();
 				$win.removeClass("active");
 				if($win.find("k-explorer").length){
@@ -1434,8 +1457,8 @@ export class App {
 				}
 			});
 
-			$(document.body).on("k-explorer-state-changed", (e, detail)=>{
-				console.log("k-explorer-state-changed", detail);
+			$body.on("k-explorer-state-changed", (e, detail)=>{
+				//console.log("k-explorer-state-changed", detail);
 				this.storeUndo();
 			})
 			window.addEventListener("k-settings", e=>{
@@ -1631,26 +1654,26 @@ export class App {
 		});
 	}
 
-    selectText(node) {
-        //node = this.shadowRoot.getElementById(node);
-    
-        if (document.body.createTextRange) {
-            const range = document.body.createTextRange();
-            range.moveToElementText(node);
-            range.select();
-            console.log('range');
-        } else if (window.getSelection) {
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(node);
-            selection.removeAllRanges();
-            selection.addRange(range);
+	selectText(node) {
+		//node = this.shadowRoot.getElementById(node);
+	
+		if (document.body.createTextRange) {
+			const range = document.body.createTextRange();
+			range.moveToElementText(node);
+			range.select();
+			console.log('range');
+		} else if (window.getSelection) {
+			const selection = window.getSelection();
+			const range = document.createRange();
+			range.selectNodeContents(node);
+			selection.removeAllRanges();
+			selection.addRange(range);
 
-        } else {
-            console.warn("Could not select text in node: Unsupported browser.");
-        }
-    }
-    
+		} else {
+			console.warn("Could not select text in node: Unsupported browser.");
+		}
+	}
+	
 	regionCleanup() {
 
 		const { from, to, range } = this.getRegion();
@@ -1688,7 +1711,7 @@ class Toggle {
 		// 	this.setValue(p==1)
 
 		$(this.el).on('click', () => {
-		 	let value = !(!!this.target[this.ident]);
+			let value = !(!!this.target[this.ident]);
 			this.setValue(value);
 			window.app.storeUndo();
 		})
@@ -1783,7 +1806,6 @@ class MultiChoice {
 	}
 }
 
-
 class LastBlockWidget extends BaseElement{
 
 	static get properties() {
@@ -1797,30 +1819,25 @@ class LastBlockWidget extends BaseElement{
 				position: absolute;
 				font-family: "Cousine";
 				font-size: 16px;
-                z-index:4;
-                display:block;
-				
+				z-index:4;
+				display:block;
 				min-width: 160px;
-				height: 22px;
-				padding-top: 6px;
-
-				
 				top: 128px;
 				right: 32px;
 				eight: 128px;
 				transition: opacity 750ms;
 				opacity: 0;
-
 				background-color: rgba(0, 150, 136, 1);
-				border: 1px solid #ccc;
+				border: 1px solid var(--last-block-widget-border-color, #ccc);
 				border-radius: 10px;
 				text-align: center;
 				color: white;
 				transform: translate3d(0,0,0);
 				perspective: 1000px;				
 				cursor: pointer;
-            }
+			}
 			:host(.visible) { opacity: 1 }
+			div{padding:6px}
 			
 			@keyframes wiggle {
 				0% { transform: rotate(0deg); }
@@ -1829,20 +1846,16 @@ class LastBlockWidget extends BaseElement{
 			   95% { transform: rotate(-5deg); }
 			  100% { transform: rotate(0deg); }
 			}
-
-
 			@keyframes shake {
 				10%, 90% { transform: translate3d(-1px, 0, 0); }
 				20%, 80% { transform: translate3d(2px, 0, 0); }
 				30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
 				40%, 60% { transform: translate3d(4px, 0, 0); }
 			}
-
-			:host.wiggle {
+			:host(.wiggle) {
 				animation: wiggle 2.5s ;
-			}			
-
-			:host.shake {
+			}
+			:host(.shake) {
 				/*animation: shake 2.5s ;*/
 				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
 			}			
@@ -1854,11 +1867,11 @@ class LastBlockWidget extends BaseElement{
 		
 		this.blocks = 0;
 		this.active = false;
-    }
+	}
 
 	render(){
 
-        return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}<div>`;
+		return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}</div>`;
 	}
 
 	updateBlocks(blocks) {
@@ -1889,13 +1902,13 @@ class LastBlockWidget extends BaseElement{
 		// })
 		// app.position = this.blueScore(); //ctx.reposition(1.0);
 		// app.updatePosition();
-//		this.graph.setFocusTargetHash(first.data.blockHash);
+		//this.graph.setFocusTargetHash(first.data.blockHash);
 
 	}
 
 	updateRegion(region) {
 		this.region = region;
-		console.log("last-block-widget::updateRegion",region);
+		//console.log("last-block-widget::updateRegion",region);
 		this.update();
 	}
 
@@ -1911,9 +1924,9 @@ class LastBlockWidget extends BaseElement{
 		if(!this.active)
 			this.classList.add('visible');
 		
-		this.classList.remove('wiggle');
+		this.classList.remove('shake');
 		dpc(300, () => {
-			this.classList.add('wiggle');
+			this.classList.add('shake');
 		})
 
 		this.active = true;

@@ -177,7 +177,7 @@ class BlockInfo extends BaseElement{
                 </div>
                 <div class='info-basic'>
                     <span class='blockHash'>${ident}</span>
-                        &Delta;${data.blueScore} <br/>
+                        &Delta;${data.blueScore} (<k-block-cfm blue-score="${data.blueScore}"></k-block-cfm>)<br/>
                         ${this.getTS(new Date(data.timestamp*1000))} 
                 </div>
                 <div class='info-advanced'>
@@ -186,7 +186,7 @@ class BlockInfo extends BaseElement{
                         <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                         <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
                         <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
-                        <tr><td>Blue Score</td><td><strong>${data.blueScore}</strong></td></tr>
+                        <tr><td>Blue Score</td><td><strong>${data.blueScore} (<block-cfm blue-score="${data.blueScore}"></block-cfm>)</strong></td></tr>
                         <tr><td>Is Chain Block</td><td><strong>${data.isChainBlock}</strong></td></tr>
                         <tr><td>Mass</td><td><strong>${data.mass}</strong></td></tr>
                         <tr><td>Nonce</td><td>${data.nonce}</td></tr>
@@ -206,6 +206,7 @@ class BlockInfo extends BaseElement{
 
     details(e) {
         e.stopPropagation();
+        /*
         $(this.el).toggleClass('advanced');
         if($(this.el).hasClass('advanced')) {
             $("block-info").toggleClass('hidden', true);
@@ -213,6 +214,8 @@ class BlockInfo extends BaseElement{
         } else {
             $("block-info").toggleClass('hidden', false);
         }
+        */
+        window.app.openExplorer("block/"+this.hash);
     }
 
     focusOnBlock_(hash) {
