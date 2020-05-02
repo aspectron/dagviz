@@ -149,6 +149,7 @@ class GraphContext {
 		}
 
 		this.direction = this.directions[this.dir];
+		this.initMaxScoreEvents();
 	}
 	updateOffset(pos){
 		pos = pos!==undefined? pos : this.position;
@@ -435,7 +436,17 @@ class GraphContext {
 		this.linearScale.domain([0, max])
 		console.log("this.linearScale2222", this.linearScale(100000))
 		*/
+		let ce = new CustomEvent("max-blue-score", {detail:{maxBlueScore:this.max}})
+		document.body.dispatchEvent(ce);
 	}
+
+	initMaxScoreEvents(){
+		document.body.addEventListener("get-max-blue-score", e=>{
+			e.detail.maxBlueScore = this.max;
+		});
+	}
+
+
 
 	getIdx(node) {
 		return Math.round(node.data[this.unit] * 10);
@@ -1783,7 +1794,6 @@ class MultiChoice {
 	}
 }
 
-
 class LastBlockWidget extends BaseElement{
 
 	static get properties() {
@@ -1824,19 +1834,15 @@ class LastBlockWidget extends BaseElement{
 			   95% { transform: rotate(-5deg); }
 			  100% { transform: rotate(0deg); }
 			}
-
-
 			@keyframes shake {
 				10%, 90% { transform: translate3d(-1px, 0, 0); }
 				20%, 80% { transform: translate3d(2px, 0, 0); }
 				30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
 				40%, 60% { transform: translate3d(4px, 0, 0); }
 			}
-
 			:host(.wiggle) {
 				animation: wiggle 2.5s ;
-			}			
-
+			}
 			:host(.shake) {
 				/*animation: shake 2.5s ;*/
 				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
