@@ -159,7 +159,7 @@ class DAGViz {
         const app = new WebApp();
         const flowRouter = new FlowRouter(app, {
             rootFolder:path.dirname(__filename),
-            folders:['k-explorer']
+            folders:['/node_modules/k-explorer', '/components']
         });
         app.use((req, res, next)=>{
             let auth = basicAuth(req);

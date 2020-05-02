@@ -1631,26 +1631,26 @@ export class App {
 		});
 	}
 
-    selectText(node) {
-        //node = this.shadowRoot.getElementById(node);
-    
-        if (document.body.createTextRange) {
-            const range = document.body.createTextRange();
-            range.moveToElementText(node);
-            range.select();
-            console.log('range');
-        } else if (window.getSelection) {
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(node);
-            selection.removeAllRanges();
-            selection.addRange(range);
+	selectText(node) {
+		//node = this.shadowRoot.getElementById(node);
+	
+		if (document.body.createTextRange) {
+			const range = document.body.createTextRange();
+			range.moveToElementText(node);
+			range.select();
+			console.log('range');
+		} else if (window.getSelection) {
+			const selection = window.getSelection();
+			const range = document.createRange();
+			range.selectNodeContents(node);
+			selection.removeAllRanges();
+			selection.addRange(range);
 
-        } else {
-            console.warn("Could not select text in node: Unsupported browser.");
-        }
-    }
-    
+		} else {
+			console.warn("Could not select text in node: Unsupported browser.");
+		}
+	}
+	
 	regionCleanup() {
 
 		const { from, to, range } = this.getRegion();
@@ -1688,7 +1688,7 @@ class Toggle {
 		// 	this.setValue(p==1)
 
 		$(this.el).on('click', () => {
-		 	let value = !(!!this.target[this.ident]);
+			let value = !(!!this.target[this.ident]);
 			this.setValue(value);
 			window.app.storeUndo();
 		})
@@ -1797,8 +1797,8 @@ class LastBlockWidget extends BaseElement{
 				position: absolute;
 				font-family: "Cousine";
 				font-size: 16px;
-                z-index:4;
-                display:block;
+				z-index:4;
+				display:block;
 				
 				min-width: 160px;
 				height: 22px;
@@ -1819,7 +1819,7 @@ class LastBlockWidget extends BaseElement{
 				transform: translate3d(0,0,0);
 				perspective: 1000px;				
 				cursor: pointer;
-            }
+			}
 			:host(.visible) { opacity: 1 }
 			
 			@keyframes wiggle {
@@ -1854,11 +1854,11 @@ class LastBlockWidget extends BaseElement{
 		
 		this.blocks = 0;
 		this.active = false;
-    }
+	}
 
 	render(){
 
-        return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}<div>`;
+		return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}<div>`;
 	}
 
 	updateBlocks(blocks) {

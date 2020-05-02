@@ -36,7 +36,7 @@
 	<style class="k-link-style"></style>
 </head>
 <body>
-	<style type="text/css">
+	<!--style type="text/css">
 		flow-pages{
 			position:absolute;left:10%;top:10%;width:80%;height:80%;
 			border:1px solid #DDD;
@@ -59,7 +59,7 @@
 
 	</style>
 
-	<!--flow-pages class="has-dots">
+	<flow-pages class="has-dots">
 		<h1 slot="title">Flow Pages</h1>
 		<flow-page><h1>Page 1</h1></flow-page>
 		<flow-page class="active"><h1>Page 2</h1></flow-page>
@@ -122,7 +122,6 @@
 		$(document).ready(()=>{
 			window.app = new App();
 			window.app.init();
-			// window.io = io;
 			return;
 			
 			if(app.argv.get('simulate-only') !== null)
