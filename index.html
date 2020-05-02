@@ -37,56 +37,11 @@
 	<style class="k-link-style"></style>
 </head>
 <body>
-	<!--style type="text/css">
-		flow-pages{
-			position:absolute;left:10%;top:10%;width:80%;height:80%;
-			border:1px solid #DDD;
-		}
-		flow-page{
-			background:no-repeat;
-			background-size:cover;
-			color:#FFF;
-		}
-
-		flow-page:nth-child(1){
-			background-image:url(https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg)
-		}
-		flow-page:nth-child(2){
-			background-image:url(https://cdn.pixabay.com/photo/2013/07/18/20/26/boat-164989_1280.jpg)
-		}
-		flow-page:nth-child(3){
-			background-image:url(https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492_1280.jpg)
-		}
-
-	</style>
-
-	<flow-pages class="has-dots">
-		<h1 slot="title">Flow Pages</h1>
-		<flow-page><h1>Page 1</h1></flow-page>
-		<flow-page class="active"><h1>Page 2</h1></flow-page>
-		<flow-page><h1>Page 3</h1></flow-page>
-
-		<div slot="buttons" class="buttons">
-			<flow-btn class="start-justifed" data-action="showNext"><span>Cancel</span></flow-btn>
-			<div class="flex"></div>
-			<flow-btn data-btn="prev">
-				<svg><use href="/node_modules/flow-ux/resources/extern/fonts/fontawesome/sprites/light.svg#arrow-alt-left"></use></svg>
-				<span>Previous</span>
-			</flow-btn>
-
-			<flow-btn data-btn="next">
-				<span>Next</span>
-				<svg><use href="/node_modules/flow-ux/resources/extern/fonts/fontawesome/sprites/light.svg#arrow-alt-right"></use></svg>
-			</flow-btn>
-		</div>
-	</flow-pages-->
-
-
 	<dag-viz id="dagViz"></dag-viz>
-	<div id='logo' tooltip="fa fa-arrow-to-left:Go to the Genesis block"></div>
 	<div id='top'>
 		<div id="menu-bar">
-			<div id="menu-anchor" class="menu-item"><i class='fal fa-sliders-h' tooltip="Settings"></i></div>
+			<div id='logo' tooltip="fa fa-arrow-to-left:Go to the Genesis block"></div>
+			<div id="menu-anchor" class="menu-item"><i class='fal fa-bars' tooltip="Settings"></i></div>
 			<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast-green.png' tooltip="Track"></div>
 			<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"></div>
 			<div id="explorer" class="menu-item"><img src='/resources/images/icons/genealogy.png' tooltip="Explorer"></div>
