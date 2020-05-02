@@ -429,7 +429,10 @@ class DAGViz {
                 // console.log(data);
                 resolve(data);
             }, (err) => {
-                console.log(err);
+                if((err+"").indexOf('ECONNREFUSED'))
+                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks?${args}`)
+                else
+                    console.log(err);
                 reject(err);
             });
             
@@ -496,7 +499,7 @@ class DAGViz {
             });
 
         }, (err) => {
-            console.log(err);
+            //console.log(err);
             const wait = 3500;
             dpc(wait, ()=> {
                 this.sync();

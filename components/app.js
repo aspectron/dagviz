@@ -427,7 +427,7 @@ class GraphContext {
 	}
 
 	updateMax(max) {
-		console.log("updateMax:"+max)
+		//console.log("updateMax:"+max)
 		if(max == null)
 			return
 		this.max = max;
@@ -502,7 +502,7 @@ class GraphContext {
 		if(max>0){
 			this._viewportMax = max;
 			const k = layoutSize/max;
-			console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
+			//console.log("#### max #####", {max, layoutSize, k:t.k, newK:k})
 			//if(k < t.k){
 				//t.k = k;
 			//}
@@ -800,6 +800,7 @@ export class App {
 		$explorerImg.click((e) => {
 			if(this.kExplorerWin && this.kExplorerWin.classList.contains("active")){
 				this.kExplorerWin.classList.remove("active");
+				this.storeUndo();
 				return
 			}
 			this.openExplorer("blocks");
@@ -1060,6 +1061,8 @@ export class App {
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
 			this.lastBlockWidget.updateBlocks(blocks);
+			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
+			window.dispatchEvent(ce)
 
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
@@ -1172,9 +1175,9 @@ export class App {
 
 		let url = new URL(window.location.href);
 		let expParams = KPath.parse(url);
-		console.log("expParams", expParams)
+		//console.log("expParams", expParams)
 		let params = Object.fromEntries(url.searchParams.entries());
-		console.log("initializing with params:",params);
+		//console.log("initializing with params:",params);
 		//if(params.pos === 'undefined')
 		const { ctx } = this;
 		const defaults = {
@@ -1224,7 +1227,7 @@ export class App {
 			reverse = true;
 
 		this.ctx.position = pos;
-		console.log("updateRegion:this.ctx.position", this.ctx.position)
+		//console.log("updateRegion:this.ctx.position", this.ctx.position)
 		range *= this.ctx.rangeScale;
 		this.ctx.range = range;
 		this.range_ = range;
@@ -1455,7 +1458,7 @@ export class App {
 			});
 
 			$body.on("k-explorer-state-changed", (e, detail)=>{
-				console.log("k-explorer-state-changed", detail);
+				//console.log("k-explorer-state-changed", detail);
 				this.storeUndo();
 			})
 			window.addEventListener("k-settings", e=>{
@@ -1905,7 +1908,7 @@ class LastBlockWidget extends BaseElement{
 
 	updateRegion(region) {
 		this.region = region;
-		console.log("last-block-widget::updateRegion",region);
+		//console.log("last-block-widget::updateRegion",region);
 		this.update();
 	}
 
