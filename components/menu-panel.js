@@ -17,6 +17,7 @@ menuPanelStyle.innerHTML = `
             0 1px 5px 0 rgba(0,0,0,.12);
         transition: all 0.3s;
         opacity:0;
+        z-index: 10003;
     }
     menu-panel .close-menu {
         position: absolute;
@@ -25,6 +26,7 @@ menuPanelStyle.innerHTML = `
         /*border: 1px solid pink;*/
         display: block;
         width: 17px;
+        cursor:pointer;
     }
 `;
 

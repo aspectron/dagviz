@@ -798,6 +798,10 @@ export class App {
 
 		const $explorerImg = $('#explorer > img');
 		$explorerImg.click((e) => {
+			if(this.kExplorerWin && this.kExplorerWin.classList.contains("active")){
+				this.kExplorerWin.classList.remove("active");
+				return
+			}
 			this.openExplorer("blocks");
 		})
 
@@ -808,6 +812,10 @@ export class App {
 					if($('#info-panel',el.renderRoot).hasClass('advanced'))
 						el.close();
 				});
+
+				if(this.kExplorerWin.classList.contains("active")){
+					this.kExplorerWin.classList.remove("active");
+				}
 				
 				//console.log(els);
 				//$('block-info').
@@ -1437,7 +1445,8 @@ export class App {
 			this.kExplorer = document.querySelector("#kExplorer");
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorer.setApi(new KApi());
-			$(document.body).on("click", ".win .backdrop", (e, el)=>{
+			let $body = $(document.body);
+			$body.on("click", ".win .backdrop", (e, el)=>{
 				let $win = $(e.target).parent();
 				$win.removeClass("active");
 				if($win.find("k-explorer").length){
@@ -1445,7 +1454,7 @@ export class App {
 				}
 			});
 
-			$(document.body).on("k-explorer-state-changed", (e, detail)=>{
+			$body.on("k-explorer-state-changed", (e, detail)=>{
 				console.log("k-explorer-state-changed", detail);
 				this.storeUndo();
 			})
