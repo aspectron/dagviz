@@ -17,7 +17,7 @@
     "serve-static": "*",
     "socket.io": "*",
     "underscore": "*",
-    "flow-ux":"*"
+    "flow-ux": "*"
   },
   "engines": {
     "node": "*",
