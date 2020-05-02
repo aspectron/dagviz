@@ -1617,11 +1617,10 @@ export class DAGViz extends BaseElement {
 		e.preventDefault();
 		e.stopPropagation();
 
-		this.selectNode(node);
-		// this._selectedNode = null;
-		// this.showNodeInfo(node.data, node);
-		// this._node = node;
-		// this._selectedNode = node;
+		if(e.ctrlKey || e.metaKey)
+			this.selectNode(node);
+		else
+			this.ctx.app.openExplorer("block/"+node.data.blockHash);
 	}
 
 	showNodeInfo(data, node){

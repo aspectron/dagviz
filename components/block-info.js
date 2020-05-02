@@ -206,6 +206,7 @@ class BlockInfo extends BaseElement{
 
     details(e) {
         e.stopPropagation();
+        /*
         $(this.el).toggleClass('advanced');
         if($(this.el).hasClass('advanced')) {
             $("block-info").toggleClass('hidden', true);
@@ -213,6 +214,8 @@ class BlockInfo extends BaseElement{
         } else {
             $("block-info").toggleClass('hidden', false);
         }
+        */
+        window.app.openExplorer("block/"+this.hash);
     }
 
     focusOnBlock_(hash) {
