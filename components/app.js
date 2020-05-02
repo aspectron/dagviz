@@ -1457,8 +1457,14 @@ export class App {
 				}
 			});
 
-			$body.on("k-explorer-state-changed", (e, detail)=>{
-				//console.log("k-explorer-state-changed", detail);
+			window.addEventListener("k-explorer-state-changed", e=>{
+				let {block} = e.detail || {};
+				//console.log("k-explorer-state-changed", block);
+				if(block){
+					//this.setPosition(block.blueScore)
+					this.ctx.position = block[this.ctx.unit];
+					this.updatePosition();
+				}
 				this.storeUndo();
 			})
 			window.addEventListener("k-settings", e=>{
@@ -1890,7 +1896,7 @@ class LastBlockWidget extends BaseElement{
 			this.post(length);
 		}
 
-		console.log("last-block-widget::updateBlocks",blocks,this);
+		//console.log("last-block-widget::updateBlocks",blocks,this);
 	}
 
 	click() {
