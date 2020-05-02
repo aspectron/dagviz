@@ -1799,20 +1799,14 @@ class LastBlockWidget extends BaseElement{
 				font-size: 16px;
 				z-index:4;
 				display:block;
-				
 				min-width: 160px;
-				height: 22px;
-				padding-top: 6px;
-
-				
 				top: 128px;
 				right: 32px;
 				eight: 128px;
 				transition: opacity 750ms;
 				opacity: 0;
-
 				background-color: rgba(0, 150, 136, 1);
-				border: 1px solid #ccc;
+				border: 1px solid var(--last-block-widget-border-color, #ccc);
 				border-radius: 10px;
 				text-align: center;
 				color: white;
@@ -1821,6 +1815,7 @@ class LastBlockWidget extends BaseElement{
 				cursor: pointer;
 			}
 			:host(.visible) { opacity: 1 }
+			div{padding:6px}
 			
 			@keyframes wiggle {
 				0% { transform: rotate(0deg); }
@@ -1838,11 +1833,11 @@ class LastBlockWidget extends BaseElement{
 				40%, 60% { transform: translate3d(4px, 0, 0); }
 			}
 
-			:host.wiggle {
+			:host(.wiggle) {
 				animation: wiggle 2.5s ;
 			}			
 
-			:host.shake {
+			:host(.shake) {
 				/*animation: shake 2.5s ;*/
 				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
 			}			
@@ -1858,7 +1853,7 @@ class LastBlockWidget extends BaseElement{
 
 	render(){
 
-		return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}<div>`;
+		return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}</div>`;
 	}
 
 	updateBlocks(blocks) {
@@ -1889,7 +1884,7 @@ class LastBlockWidget extends BaseElement{
 		// })
 		// app.position = this.blueScore(); //ctx.reposition(1.0);
 		// app.updatePosition();
-//		this.graph.setFocusTargetHash(first.data.blockHash);
+		//this.graph.setFocusTargetHash(first.data.blockHash);
 
 	}
 
@@ -1911,9 +1906,9 @@ class LastBlockWidget extends BaseElement{
 		if(!this.active)
 			this.classList.add('visible');
 		
-		this.classList.remove('wiggle');
+		this.classList.remove('shake');
 		dpc(300, () => {
-			this.classList.add('wiggle');
+			this.classList.add('shake');
 		})
 
 		this.active = true;

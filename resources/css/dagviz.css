@@ -122,7 +122,10 @@ body.orient-v #selection {
 	min-width: 120px;
 	display: inline-block;
 }
-body{padding:0px;margin:0px;overflow:hidden;}
+body{
+	padding:0px;margin:0px;overflow:hidden;
+	--last-block-widget-border-color:#009688;
+}
 
 
 #left {
@@ -430,6 +433,7 @@ body.k-theme-dark{
 	--navigator-thumb-stroke-color:#6a6a6a;
 	--navigator-thumb-fill-color:#363636;
 	--navigator-thumb-text-fill-color:#c3c2c2;
+	--last-block-widget-border-color:#FFF;
 }
 .k-theme-dark #get-multi-select-link,
 .k-theme-dark #menu-bar #explorer>img,
