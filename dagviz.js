@@ -397,7 +397,7 @@ class DAGViz {
         this.skip = this.lastTotal;
         console.log(`SELECT COUNT(*) AS total FROM blocks => ${this.skip}`);
         if(this.skip) {
-            let blocks = await this.sql('SELECT * FROM blocks ORDER BY id DESC LIMIT 1');
+            let blocks = await this.sql('SELECT * FROM blocks ORDER BY id DESC LIMIT 1'); 
             this.lastBlock = blocks.shift();
             // console.log("LAST BLOCK:",this.lastBlock);
         }
@@ -450,9 +450,8 @@ class DAGViz {
 
         this.verbose && process.stdout.write(` ...${this.lastTotal ? (skip/this.lastTotal * 100).toFixed(2)+'%' : skip}... `);
         // console.log(`fetching: ${skip}`);
-        this.fetch({ skip, limit, order }).then(async (data) => {
-
-
+        this.fetch({ skip, limit, order })
+        .then(async (data) => {
             if(this.lastTotal !== undefined && this.lastTotal > data.total+1e4) {
                 console.log(`incloming total block count ${data.total}+1e4 is less than previous total ${this.lastTotal}`);
                 console.log(`initiating database purge...`);
@@ -497,7 +496,6 @@ class DAGViz {
             dpc(wait, ()=> {
                 this.sync();
             });
-
         }, (err) => {
             //console.log(err);
             const wait = 3500;

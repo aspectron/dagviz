@@ -1446,6 +1446,7 @@ export class App {
 		paths = paths || [];
 		if(!this.kExplorer){
 			this.kExplorer = document.querySelector("#kExplorer");
+			this.kExplorer.hideSettings = true;
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorer.setApi(new KApi());
 			let $body = $(document.body);
