@@ -222,10 +222,13 @@ body.k-theme-dark{
 .k-theme-dark #menu-bar #tracking>*{opacity:0.5;}
 .k-theme-dark #menu-bar #tracking.tracking-enabled>*{opacity:1;}
 .k-theme-dark .block-info-tip tr td{text-shadow:none;}
-#orientation{display:none}
+#orientation,#tracking,
+body.tracking-enabled last-block-widget{display:none}
+body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 @media(max-width:915px){
 	#search{min-width:100px;}
 	#search::placeholder{font-size:0.5rem}
+	menu-panel>span.toggle{padding:5px 0px;}
 }
 @media(max-width:425px){
 	#top{right:8px;}

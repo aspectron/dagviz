@@ -557,9 +557,9 @@ export class App {
 		new Toggle(this.ctx,'track','TRACKING', 'fal fa-parachute-box:Track incoming blocks', {
 			update : (v) => {
 				if(v)
-					$("#tracking").addClass('tracking-enabled');
+					$("#tracking,body").addClass('tracking-enabled');
 				else
-					$("#tracking").removeClass('tracking-enabled');
+					$("#tracking,body").removeClass('tracking-enabled');
 			}
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
