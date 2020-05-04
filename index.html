@@ -42,15 +42,16 @@
 		<div id="menu-bar">
 			<div id='logo' tooltip="fa fa-arrow-to-left:Go to the Genesis block"></div>
 			<div id="menu-anchor" class="menu-item"><i class='fal fa-bars' tooltip="Settings"></i></div>
-			<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast-green.png' tooltip="Track"></div>
-			<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"></div>
-			<div id="explorer" class="menu-item"><img src='/resources/images/icons/genealogy.png' tooltip="Explorer"></div>
-			<div id="search-wrapper">
+			<!--div class="menu-items"-->
+				<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast-green.png' tooltip="Track"><span>Track</span></div>
+				<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"><span>Orientation</span></div>
+				<div id="explorer" class="menu-item"><img src='/resources/images/icons/genealogy.png' tooltip="Explorer"><span>Explorer</span></div>
+			<!--/div-->
+			<div id="search-wrapper" class="menu-items">
 				<div class='icon-wrapper'><i class='fal fa-search' style='font-size:22px;' tooltip="Search for blue score of block "></i></div>
-				<div><input type="text" id="search" placeholder="Enter blue score or hash..."></div>
+				<input type="text" id="search" placeholder="Enter blue score or hash...">
 				<div id="search-execute" class="menu-item search-btn"><i class='fal fa-arrow-alt-right'></i></div>
 				<div id="search-clear" class="menu-item search-btn"><i class='fal fa-times'></i></div>
-				<div style="flex:1;"></div>
 			</div>
 		</div>
 		<div id='info'></div>

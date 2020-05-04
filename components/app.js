@@ -790,13 +790,13 @@ export class App {
 			});
 		});
 
-		const $trackingImg = $('#tracking > img');
+		const $trackingImg = $('#tracking');
 		// $trackingImg.addClass(`orient-${this.ctx.dir}`);
 		$trackingImg.click((e) => {
 			this.ctls.track.toggle();
 		});
 
-		const $explorerImg = $('#explorer > img');
+		const $explorerImg = $('#explorer');
 		$explorerImg.click((e) => {
 			if(this.kExplorerWin && this.kExplorerWin.classList.contains("active")){
 				this.kExplorerWin.classList.remove("active");
@@ -1012,17 +1012,6 @@ export class App {
 		this.graph.addNode(block);
 		return block;
 	}
-
-	// onDagSelectedTip(data) {
-	// 	//block.name = block.blockHash.replace(/^0+/,'').substring(0,4);
-	// 	if(this.connect && !data.acceptingBlockHash && this.lastBlock) {
-	// 		data.acceptingBlockHash = this.lastBlock.blockHash;
-	// 	}
-
-	// 	this.lastBlock = data;
-	// 	this.createBlock(data);
-	// 	this.graph.updateSimulation();
-	// }
 
 	afterInit(){
 		document.body.classList.remove("initilizing");
@@ -1460,7 +1449,7 @@ export class App {
 
 			window.addEventListener("k-explorer-state-changed", e=>{
 				let {block} = e.detail || {};
-				//console.log("k-explorer-state-changed", block);
+				//console.log("k-explorer-state-changed", e.detail);
 				if(block){
 					//this.setPosition(block.blueScore)
 					this.ctx.position = block[this.ctx.unit];
@@ -1549,7 +1538,7 @@ export class App {
 
 		const state = { }
 		Object.values(this.ctls).forEach(ctl=>state[ctl.ident] = ctl.getValue(true));
-		const expParams = this.deepClone(this.kExplorer.buildUrlState());
+		const expParams = $(this.kExplorerWin).hasClass('active')?this.deepClone(this.kExplorer.buildUrlState()):{};
 		//console.log("storeUndo:expParams", expParams, expParams.params)
 		const lastExpParams = this.last_undo_state_.expParams;
 		const expParamsChanged = JSON.stringify(expParams) != JSON.stringify(lastExpParams);
