@@ -597,7 +597,7 @@ export class App {
 			N:'Portrait'
 		},'ORIENTATION','Orientation', {
 			limit : ['E','N'],
-			update : (v) => {
+			update : (text, v) => {
 				const $orientationImg = $('#orientation > img, body');
 				$orientationImg.removeClass('orient-N orient-E orient-S orient-W');
 				$orientationImg.addClass(`orient-${v}`);
@@ -1803,7 +1803,7 @@ class MultiChoice {
 		const value = this.choices[this.target[this.ident]];
 		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${ value }</span>`);
 		if(this.options && this.options.update)
-			this.options.update(value);
+			this.options.update(value, this.target[this.ident]);
 	}
 }
 
