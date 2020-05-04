@@ -1,0 +1,11 @@
+{
+	"name": "k-explorer",
+	"description": " ",
+	"dependencies": {
+		"lit-element": "*",
+		"express": "*"
+	},
+	"scripts": {
+		"start": "node web-app.js"
+	}
+}

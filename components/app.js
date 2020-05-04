@@ -1,5 +1,5 @@
 import { GraphNode, GraphNodeLink } from './dag-viz.js';
-import { KAPI, kLinkStyles, KPath} from '/node_modules/k-explorer/k-explorer.js';
+import { KAPI, kLinkStyles, KPath} from '/components/k-explorer/k-explorer.js';
 
 import { html, BaseElement, css } from './base-element.js';
 
