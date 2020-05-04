@@ -590,7 +590,12 @@ export class App {
 			'low' : 'LOW',
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
-		new MultiChoice(this.ctx,'dir',['E','S','W','N'],'ORIENTATION','Orientation', {
+		new MultiChoice(this.ctx,'dir',{
+			E:'Lanscape',
+			S:'Portrait',
+			W:'Lanscape',
+			N:'Portrait'
+		},'ORIENTATION','Orientation', {
 			limit : ['E','N'],
 			update : (v) => {
 				const $orientationImg = $('#orientation > img, body');

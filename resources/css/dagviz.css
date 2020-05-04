@@ -222,13 +222,13 @@ body.k-theme-dark{
 .k-theme-dark #menu-bar #tracking>*{opacity:0.5;}
 .k-theme-dark #menu-bar #tracking.tracking-enabled>*{opacity:1;}
 .k-theme-dark .block-info-tip tr td{text-shadow:none;}
+#orientation{display:none}
 @media(max-width:915px){
 	#search{min-width:100px;}
 	#search::placeholder{font-size:0.5rem}
 }
 @media(max-width:425px){
 	#top{right:8px;}
-	#orientation{display:none}
 	menu-panel{
 		left:5px !important;right:5px !important;box-sizing:border-box;
 		width:100% !important;top:80px !important;
