@@ -76,7 +76,7 @@ class AxisNavigator extends BaseElement{
 			this.resizeObserver.observe(this);
 		}
 
-		['mousedown','mouseup','mousemove','click', 'pointerdown', 'pointerup', 'pointermove'].forEach((event) => {
+		['mousedown','mouseup','mousemove','click', 'pointerdown', 'pointerup', 'pointermove','mouseenter','mouseleave'].forEach((event) => {
 			this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
 		})
 
@@ -96,6 +96,7 @@ class AxisNavigator extends BaseElement{
 	}
 
 	onMouseEvent(event, e) {
+		console.log(event,e);
 		switch(event) {
 			case 'pointerdown': {
 				this.drag = true;
@@ -121,6 +122,16 @@ class AxisNavigator extends BaseElement{
 
 			case 'click': {
 				this.handleMouse(e);
+			} break;
+
+			case 'mouseenter': {
+				this.hover = true;
+				this.redraw();
+			} break;
+
+			case 'mouseleave': {
+				this.hover = false;
+				this.redraw();
 			} break;
 		}
 	}
@@ -308,18 +319,19 @@ class AxisNavigator extends BaseElement{
 
 		ctx.strokeStyle = this.thumbStrokeColor;//`rgba(0,0,0,0.75)`;
 		ctx.fillStyle = this.thumbFillColor;//`rgba(255,255,255,1)`;
-//		if(horizontal) {
-			ctx.beginPath();
+			//ctx.beginPath();
 			thumb.rect = horizontal ? 
 				[pos-thumb.width/2*sign, height/2-thumb.height/2, thumb.width, thumb.height] :
 				[width/2-thumb.width/2, pos-(thumb.height/2)*sign, thumb.width, thumb.height];
 			this.verbose && console.log('thumb rect:',thumb.rect);
-			ctx.fillRect(...this.adapt(thumb.rect));
-				ctx.rect(...this.adapt(thumb.rect));
-			ctx.stroke();
-		// } else {
+			// ctx.fillRect(...this.adapt(thumb.rect));
+			// 	ctx.rect(...this.adapt(thumb.rect));
+			// ctx.stroke();
 
-		// }
+		this.roundRect(ctx,...this.adapt(thumb.rect),5,true,true);
+
+
+
 
 		ctx.fillStyle = this.thumbTextFillColor;//`rgba(0,0,0,1.0)`;
 		ctx.fillText(text.content, ...this.adapt(horizontal ? 
@@ -330,69 +342,128 @@ class AxisNavigator extends BaseElement{
 		// ctx.fillStyle = `rgba(0,0,0,1)`;
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.moveTo(...this.adapt(horizontal ? [pos, 0] : [0, pos]));
-		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2-thumb.height/2] : [4, pos]));
+
+		if(this.hover) {
+			ctx.moveTo(...this.adapt(horizontal ? [pos, 0] : [0, pos]));
+			ctx.lineTo(...this.adapt(horizontal ? [pos, height/2-thumb.height/2] : [4, pos]));
+		}
 		ctx.moveTo(...this.adapt(horizontal ? [pos, height] : [width,pos]));
 		ctx.lineTo(...this.adapt(horizontal ? [pos, height/2+thumb.height/2] : [width-4, pos]));
 		ctx.stroke();
 		
+		if(this.hover) {
 
-		let dist = this.size[size]/3;// / 3;
-		let begin = pos - dist;
-		let end = pos + dist;
-		let invert = sign > 0;
-		const grad = ctx.createLinearGradient(...(horizontal ? 
-			[!invert ? width - begin : begin,0,!invert ? width - end : end,0] : 
-			[0,!invert ? height - begin : begin,0,!invert ? height - end : end]));
-		grad.addColorStop(0.0,`rgba(0,0,0,0)`);
-		grad.addColorStop(0.35,`rgba(0,0,0,0.75)`);
-		grad.addColorStop(0.65,`rgba(0,0,0,0.75)`);
-		grad.addColorStop(1.0,`rgba(0,0,0,0)`);
-		ctx.strokeStyle = grad;
-		ctx.beginPath();
-		ctx.moveTo(...this.adapt(horizontal ? [begin, 0] : [0, begin]));
-		ctx.lineTo(...this.adapt(horizontal ? [end, 0] : [0, end]));
-		ctx.stroke();
+			let dist = this.size[size]/3;// / 3;
+			let begin = pos - dist;
+			let end = pos + dist;
+			let invert = sign > 0;
+			const grad = ctx.createLinearGradient(...(horizontal ? 
+				[!invert ? width - begin : begin,0,!invert ? width - end : end,0] : 
+				[0,!invert ? height - begin : begin,0,!invert ? height - end : end]));
+			grad.addColorStop(0.0,`rgba(0,0,0,0)`);
+			grad.addColorStop(0.35,`rgba(0,0,0,0.75)`);
+			grad.addColorStop(0.65,`rgba(0,0,0,0.75)`);
+			grad.addColorStop(1.0,`rgba(0,0,0,0)`);
+			ctx.strokeStyle = grad;
+			ctx.beginPath();
+			ctx.moveTo(...this.adapt(horizontal ? [begin, 0] : [0, begin]));
+			ctx.lineTo(...this.adapt(horizontal ? [end, 0] : [0, end]));
+			ctx.stroke();
 
-		// this.app.ctx.position 
-		let d = (this.app.ctx.max - this.app.ctx.min) / 15;
-		d = Math.pow(10, Math.floor(Math.log(d)/Math.log(10))) * 10;
-		
-		let range = (this.size[size]-thumb[size]);
-		for(let v = 0; v < this.app.ctx.max; v+=d) {
-			let p = range * v / this.app.ctx.max + thumb[size] / 2;
+				// this.app.ctx.position 
+			let d = (this.app.ctx.max - this.app.ctx.min) / 15;
+			d = Math.pow(10, Math.floor(Math.log(d)/Math.log(10))) * 10;
+			
+			let range = (this.size[size]-thumb[size]);
+			for(let v = 0; v < this.app.ctx.max; v+=d) {
+				let p = range * v / this.app.ctx.max + thumb[size] / 2;
 
-			ctx.moveTo(...this.adapt(horizontal ? [p, 0] : [0, p]));
-			ctx.lineTo(...this.adapt(horizontal ? [p, 3] : [3, p]));
+				ctx.moveTo(...this.adapt(horizontal ? [p, 0] : [0, p]));
+				ctx.lineTo(...this.adapt(horizontal ? [p, 3] : [3, p]));
+			}
+
+			let tristep = 64 * this.scale;
+			let trimargin = 4;
+			let tri = 3;
+			let trioffset = 32*this.scale;
+			for(let i = 0; i < 5; i++) {
+				let p = pos + thumb[size]*0.5+tristep*i + trioffset;
+
+				ctx.moveTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+				ctx.lineTo(...this.adapt(horizontal ? [p+tri, trimargin+tri] : [trimargin+tri, p+tri]));
+				ctx.lineTo(...this.adapt(horizontal ? [p, trimargin+tri+tri] : [trimargin+tri+tri, p]));
+				ctx.lineTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+
+				p = pos - (thumb[size]*0.5+tristep*i + trioffset+tri);
+
+				ctx.moveTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+				ctx.lineTo(...this.adapt(horizontal ? [p+tri, trimargin+tri] : [trimargin+tri, p+tri]));
+				ctx.lineTo(...this.adapt(horizontal ? [p, trimargin+tri+tri] : [trimargin+tri+tri, p]));
+				ctx.lineTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
+
+
+			}
+			ctx.stroke();
 		}
-
-		let tristep = 64 * this.scale;
-		let trimargin = 4;
-		let tri = 3;
-		let trioffset = 32*this.scale;
-		for(let i = 0; i < 5; i++) {
-			let p = pos + thumb[size]*0.5+tristep*i + trioffset;
-
-			ctx.moveTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
-			ctx.lineTo(...this.adapt(horizontal ? [p+tri, trimargin+tri] : [trimargin+tri, p+tri]));
-			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin+tri+tri] : [trimargin+tri+tri, p]));
-			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
-
-			p = pos - (thumb[size]*0.5+tristep*i + trioffset+tri);
-
-			ctx.moveTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
-			ctx.lineTo(...this.adapt(horizontal ? [p+tri, trimargin+tri] : [trimargin+tri, p+tri]));
-			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin+tri+tri] : [trimargin+tri+tri, p]));
-			ctx.lineTo(...this.adapt(horizontal ? [p, trimargin] : [trimargin, p]));
-
-
-		}
-
-
-		ctx.stroke();
 
 		/////////////////////
 	}
+
+
+	/**
+	 * Draws a rounded rectangle using the current state of the canvas.
+	 * If you omit the last three params, it will draw a rectangle
+	 * outline with a 5 pixel border radius
+	 * @param {CanvasRenderingContext2D} ctx
+	 * @param {Number} x The top left x coordinate
+	 * @param {Number} y The top left y coordinate
+	 * @param {Number} width The width of the rectangle
+	 * @param {Number} height The height of the rectangle
+	 * @param {Number} [radius = 5] The corner radius; It can also be an object 
+	 *                 to specify different radii for corners
+	 * @param {Number} [radius.tl = 0] Top left
+	 * @param {Number} [radius.tr = 0] Top right
+	 * @param {Number} [radius.br = 0] Bottom right
+	 * @param {Number} [radius.bl = 0] Bottom left
+	 * @param {Boolean} [fill = false] Whether to fill the rectangle.
+	 * @param {Boolean} [stroke = true] Whether to stroke the rectangle.
+	 */
+	roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+		if (typeof stroke === 'undefined') {
+		stroke = true;
+		}
+		if (typeof radius === 'undefined') {
+		radius = 5;
+		}
+		if (typeof radius === 'number') {
+		radius = {tl: radius, tr: radius, br: radius, bl: radius};
+		} else {
+		var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+		for (var side in defaultRadius) {
+			radius[side] = radius[side] || defaultRadius[side];
+		}
+		}
+		ctx.beginPath();
+		ctx.moveTo(x + radius.tl, y);
+		ctx.lineTo(x + width - radius.tr, y);
+		ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+		ctx.lineTo(x + width, y + height - radius.br);
+		ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+		ctx.lineTo(x + radius.bl, y + height);
+		ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+		ctx.lineTo(x, y + radius.tl);
+		ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+		ctx.closePath();
+		if (fill) {
+		ctx.fill();
+		}
+		if (stroke) {
+		ctx.stroke();
+		}
+	
+	}
+
+
 
 	getTS(src_date) {
 		var a = src_date || (new Date());
