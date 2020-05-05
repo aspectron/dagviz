@@ -94,12 +94,12 @@ class GraphContext {
 		this.updateOffset();
 		this.min = 0;
 		this.max = 0;
-		this.mass = true;
+		this.mass = false;
 		this.curves = true;
 		this.initZoom = 0.5; // initial zoom
 		this.rangeScale = 1.4;  // fog of war vs viewport window coefficient (default)
 		this.chainBlocksDistinct = 'border';
-		this.chainBlocksCenter = 'force';
+		this.chainBlocksCenter = 'fixed';
 		this.selectionMode = 'linking';
 		this.track = false;
 		this.shape = 'square';
@@ -591,10 +591,10 @@ export class App {
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
 		new MultiChoice(this.ctx,'dir',{
-			E:'Lanscape',
-			S:'Portrait',
-			W:'Lanscape',
-			N:'Portrait'
+			E:'LANDSCAPE',
+			S:'PORTRAIT',
+			W:'LANDSCAPE',
+			N:'PORTRAIT'
 		},'ORIENTATION','Orientation', {
 			limit : ['E','N'],
 			update : (text, v) => {
