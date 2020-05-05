@@ -1415,6 +1415,8 @@ export class DAGViz extends BaseElement {
 
 			this.updateTracking();
 		});
+
+		/*
        	this.tipLine2 = this.svg.append('path')
         	.attr('stroke', 'rgba(0,0,0,0.5)')
             .attr('stroke-width', 1)
@@ -1430,6 +1432,7 @@ export class DAGViz extends BaseElement {
 				.attr('class', 'tip-line')
 				.attr('d', `M${this.xMargin-(60*i*this.tdist)} -1000 L ${this.xMargin-(60*i*this.tdist)} 1000`)
 		}
+		*/
 
 		window.addEventListener("resize", this.updateSVGSize.bind(this))
 		this.fire("ready", {})
@@ -1642,7 +1645,7 @@ export class DAGViz extends BaseElement {
 		this._node = null;
 		this.nodeInfoEl.classList.remove("active");
 		this.renderInfo();
-		this.tipLine2.attr("opacity", 0);
+		//this.tipLine2.attr("opacity", 0);
 	}
 	pinNodeInfoTo(pinTo){
 		this.tip.pinned = pinTo;
@@ -1741,9 +1744,9 @@ export class DAGViz extends BaseElement {
 		x2 = x2-hW+iW/2;
 		y2 = y2-hH+iH/2;
 
-		this.tipLine2
-            .attr('d', `M${f(x2)} ${f(y2)} L${f(x1)} ${f(y1)}` )
-            .attr('opacity', 1);
+		// this.tipLine2
+        //     .attr('d', `M${f(x2)} ${f(y2)} L${f(x1)} ${f(y1)}` )
+        //     .attr('opacity', 1);
         this.debounce("nodeInfoEl-ts", ()=>{
 			this.nodeInfoEl.style.pointerEvents = 'inherit';
 		}, 100)
