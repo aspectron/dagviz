@@ -18,6 +18,9 @@ class KAPI {
 		}, params)
 		return {params, req:this.get("blocks", params)}
 	}
+	getBlockCount(){
+		return {req:this.get(`blocks/count`)}
+	}
 
 	getBlock(hash){
 		return {hash, req:this.get(`block/${hash}`)}

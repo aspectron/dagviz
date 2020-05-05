@@ -881,17 +881,20 @@ export class KExplorer extends LitElement{
 	}
 
 	async blocksApi(paths, params={}){
+
+
+		let total = await this.api.getBlockCount().req;
 		let result = this.api.getBlocks(params);
 		let {params:reqParams, req} = result;
 		let res = await req;
 		let {skip, limit} = reqParams;
-		let pagination = buildPagination(res.total, skip, limit);
+		let pagination = buildPagination(total, skip, limit);
 		pagination.type = "blocks";
 		this.state['blocks'] = {params: reqParams, pagination};
 
 		//console.log("blocksApi:result", res, result);//JSON.stringify(pagination, null, "\t"))
 		let blocks = [];
-		(res.blocks||[]).forEach(b=>{
+		(res||[]).forEach(b=>{
 			b.name = b.blockHash.replace(/^[0]{1,}/g, '').substr(0, 6);
 			blocks.push(b)
 			this.blocksMap[b.blockHash] = b;
