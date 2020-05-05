@@ -37,7 +37,7 @@ class DAGViz {
 
         this.verbose = this.args.verbose ? true : false;
 
-        this.KASPA_FINALITY = 60 * 60;
+        this.REWIND_BLOCK_PADDING = 60 * 60;
         this.skip = 0;
 
     }
@@ -55,11 +55,40 @@ class DAGViz {
 
     async init() {
         await this.initRTBS();
-        await this.initDatabase()
+        await this.initDatabase();
+        await this.initDatabaseSchema();
+        await this.initLastBlockTracking();
         await this.initMQTT();
         await this.initHTTP();
 
         return this.main();
+    }
+
+    async initLastBlockTracking() {
+
+        this.lastBlockHash = await this.restoreLastBlockHash();
+        // await this.rewindToLastBlockHash();
+    }
+
+    async rewindToLastBlockHash() {
+        if(this.lastBlockHash) {
+            let rows = await this.sql(`SELECT * FROM blocks WHERE blockHash = '${this.lastBlockHash}'`);
+            if(rows.length) {
+                let id = parseInt(rows.shift().id);
+                id -= this.REWIND_BLOCK_PADDING;
+                this.skip = id;
+                console.log(`RESYNCING FROM ${id}`);
+            } else {
+                console.log("WARNING: last block hash is not available in db".brightRed);
+            }
+        } else {
+            console.log("WARNING: last block hash is not initialized".brightRed);
+        }
+
+        // this.lbt = setInterval(async ()=>{
+        //     if(this.lastBlockHash)
+        //         await this.storeLastBlockHash();
+        // }, 1000 * 60 * 1); // flush every 1 minte
     }
 
     async initMQTT() {
@@ -77,7 +106,7 @@ class DAGViz {
             console.log("MQTT connected");
 
             // this.resync(this.last_block_hash);
-            this.rewind(this.KASPA_FINALITY);
+            this.rewindToLastBlockHash();
 
 
 
@@ -103,7 +132,9 @@ class DAGViz {
         // console.log('received: dag/blocks',blocks);
         this.io.emit("dag/blocks",[block]);
 
-//        this.lastBlockHash = block.blockHash;
+        this.lastBlockHash = block.blockHash;
+        
+        await this.storeLastBlockHash(block.blockHash);
 
 
         await this.postRTB(block);
@@ -346,7 +377,9 @@ class DAGViz {
         });
     }
 
-    async sql(...args) { return this.db.query(...args); }
+    async sql(...args) { 
+        // console.log('SQL:'.brightGreen,args[0]);
+        return this.db.query(...args); }
 
     static DB_TABLE_BLOCKS_ORDER = [
         'blockHash', 
@@ -365,8 +398,7 @@ class DAGViz {
         'childBlockHashes'
     ];
 
-    async main() {
-
+    async initDatabaseSchema() {
         await this.sql(`CREATE DATABASE IF NOT EXISTS ${this.uid} DEFAULT CHARACTER SET utf8;`);
         await this.sql(`USE ${this.uid}`);
         await this.sql(`
@@ -406,23 +438,26 @@ class DAGViz {
             );
         `);
         
-        // await this.sql(`
-        //     CREATE TABLE IF NOT EXISTS last_block (
-        //         id                      BIGINT UNSIGNED NOT NULL,
-        //         block  CHAR(64) NOT NULL,
-        //         PRIMARY KEY (id)
-        //     );
-        // `);
+        await this.sql(`
+            CREATE TABLE IF NOT EXISTS last_block_hash (
+                id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                hash  CHAR(64) NOT NULL,
+                PRIMARY KEY (id)
+            );
+        `);        
+    }
+
+    async main() {
         
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
         this.lastTotal = result.shift().total;
-        this.skip = this.lastTotal - this.KASPA_FINALITY;
+        this.skip = this.lastTotal - this.REWIND_BLOCK_PADDING;
         if(this.skip < 0)
                 this.skip = 0;
         console.log(`SELECT COUNT(*) AS total FROM blocks => ${this.skip}`);
         if(this.skip) {
-            let blocks = await this.sql(`SELECT * FROM blocks ORDER BY id DESC LIMIT ${this.KASPA_FINALITY}`); 
+            let blocks = await this.sql(`SELECT * FROM blocks ORDER BY id DESC LIMIT ${this.REWIND_BLOCK_PADDING}`); 
             this.lastBlock = blocks.shift();
             // console.log("LAST BLOCK:",this.lastBlock);
         }
@@ -436,6 +471,22 @@ class DAGViz {
         console.log(...args);
     }
 
+    storeLastBlockHash(hash) {
+        return this.sql(`
+            REPLACE INTO last_block_hash (
+                id : 1, hash
+            ) VALUES ?
+        `, [hash]);
+    }
+
+    async restoreLastBlockHash() {
+        let rows = await this.sql(`SELECT hash FROM last_block_hash WHERE id = 1`);
+        let row = rows.shift();
+        if(!row)
+            return Promise.resolve(null);
+        console.log('restoring last block hash:', row.hash);
+        return row.hash;
+    }
 
     getBlockCount() {
         return new Promise((resolve, reject) => {
