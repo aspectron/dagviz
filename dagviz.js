@@ -37,6 +37,9 @@ class DAGViz {
 
         this.verbose = this.args.verbose ? true : false;
 
+        this.KASPA_FINALITY = 60 * 60;
+        this.skip = 0;
+
     }
     
     async initRTBS() {
@@ -72,6 +75,13 @@ class DAGViz {
         client.subscribe("dag/selected-parent-chain",{qos:1});
         client.on("connect",() => {
             console.log("MQTT connected");
+
+            // this.resync(this.last_block_hash);
+            this.rewind(this.KASPA_FINALITY);
+
+
+
+            // TODO @aspect - resync from last known
         })
         
         client.on('message',(topic, message, packet) => {
@@ -90,8 +100,11 @@ class DAGViz {
     }
 
     async "dag/blocks"(block) {
-        // console.log('received: dag/blocks');
+        // console.log('received: dag/blocks',blocks);
         this.io.emit("dag/blocks",[block]);
+
+//        this.lastBlockHash = block.blockHash;
+
 
         await this.postRTB(block);
     }
@@ -387,17 +400,27 @@ class DAGViz {
                 child CHAR(64) NOT NULL,
                 linked TINYINT NOT NULL,
                 PRIMARY KEY (id),
-                INDEX idx_child (child)
+                UNIQUE INDEX idx_child (child)
             );
         `);
+        
+        // await this.sql(`
+        //     CREATE TABLE IF NOT EXISTS last_block (
+        //         id                      BIGINT UNSIGNED NOT NULL,
+        //         block  CHAR(64) NOT NULL,
+        //         PRIMARY KEY (id)
+        //     );
+        // `);
         
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
         this.lastTotal = result.shift().total;
-        this.skip = this.lastTotal;
+        this.skip = this.lastTotal - this.KASPA_FINALITY;
+        if(this.skip < 0)
+                this.skip = 0;
         console.log(`SELECT COUNT(*) AS total FROM blocks => ${this.skip}`);
         if(this.skip) {
-            let blocks = await this.sql('SELECT * FROM blocks ORDER BY id DESC LIMIT 1'); 
+            let blocks = await this.sql(`SELECT * FROM blocks ORDER BY id DESC LIMIT ${this.KASPA_FINALITY}`); 
             this.lastBlock = blocks.shift();
             // console.log("LAST BLOCK:",this.lastBlock);
         }
@@ -411,6 +434,28 @@ class DAGViz {
         console.log(...args);
     }
 
+
+    getBlockCount() {
+        return new Promise((resolve, reject) => {
+            rp({url: `${this.kasparov}/blocks/count`, rejectUnauthorized}).then((text) => {
+                let data = null;
+                try {
+                    data = JSON.parse(text);
+                } catch(ex) {
+                    reject(ex);
+                }
+                // console.log(data);
+                resolve(data);
+            }, (err) => {
+                if((err+"").indexOf('ECONNREFUSED'))
+                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks?${args}`)
+                else
+                    console.log(err);
+                reject(err);
+            });
+
+        });
+    }
 
     fetch(options) {
         return new Promise((resolve,reject) => {
@@ -449,15 +494,14 @@ class DAGViz {
             limit = parseInt(this.args['rate-limit']) || 100;
 
         this.verbose && process.stdout.write(` ...${this.lastTotal ? (skip/this.lastTotal * 100).toFixed(2)+'%' : skip}... `);
-        // console.log(`fetching: ${skip}`);
-        this.fetch({ skip, limit, order })
-        .then(async (data) => {
-            if(this.lastTotal !== undefined && this.lastTotal > data.total+1e4) {
-                console.log(`incloming total block count ${data.total}+1e4 is less than previous total ${this.lastTotal}`);
+
+        this.getBlockCount().then(async (total) => {
+            if(this.lastTotal !== undefined && this.lastTotal > total+1e4) {
+                console.log(`incloming total block count ${total}+1e4 is less than previous total ${this.lastTotal}`);
                 console.log(`initiating database purge...`);
                 await this.sql(`TRUNCATE TABLE blocks`);
                 await this.sql(`TRUNCATE TABLE block_relations`);
-                this.lastTotal = data.total;
+                this.lastTotal = total;
                 this.skip = 0;
                 this.initRTBS();
                 this.io.emit('chain-reset');
@@ -467,47 +511,81 @@ class DAGViz {
                 return;
             }
 
-            if(data.total && data.total != this.lastTotal)
-                this.lastTotal = data.total;
-
-            if(data.blocks && data.blocks.length) {
-
-                if(data.blocks.length < 100)
-                    this.io.emit('blocks',data.blocks);
-    
-                this.skip += data.blocks.length;
-
-                const pre_ = data.blocks.length;
-                const blocks = data.blocks.filter(block=>!this.rtbsMap[block.blockHash]);
-                const post_ = blocks.length;
-                if(!this.tracking && pre_ != post_)
-                    this.tracking = true;
-                if(blocks.length) {
-                    if(this.tracking) {
-                        console.log('WARNING: detected ${blocks.length} database blocks not visible in MQTT feed!');
-                        console.log(' ->'+blocks.map(data=>data.blockHash).join('\n'));
-                    }
-
-                    await this.post(blocks);
-                }
+            if(!total) {
+                console.log(`error: nullish total received from /blocks/count received value is: "${total}"`);
             }
-            const wait = (!data || !data.blocks || data.blocks.length != 100) ? 1000 : 0;
-            //(data.blocks && data.blocks.length != 100) ? 1000 : 0;
-            dpc(wait, ()=> {
-                this.sync();
+
+            if(total && total != this.lastTotal)
+                this.lastTotal = total;
+
+            if(this.skip > total) {
+                console.log(`ERROR: this.skip ${this.skip} > total ${total}`);
+            }
+
+            if(!total || this.skip == total) {
+                const wait = 2500;
+                return dpc(wait, () => {
+                    this.sync();
+                });
+            }
+                
+            // console.log(`fetching: ${skip}`);
+            this.fetch({ skip, limit, order })
+            .then(async (blocks) => {
+
+
+                if(blocks && blocks.length) {
+
+                    if(blocks.length < 100)
+                        this.io.emit('blocks',blocks);
+        
+                    this.skip += blocks.length;
+
+                    const pre_ = blocks.length;
+                    blocks = blocks.filter(block=>!this.rtbsMap[block.blockHash]);
+                    const post_ = blocks.length;
+                    if(!this.tracking && pre_ != post_)
+                        this.tracking = true;
+                    if(blocks.length) {
+                        if(this.tracking) {
+                            console.log('WARNING: detected ${blocks.length} database blocks not visible in MQTT feed!');
+                            console.log(' ->'+blocks.map(block=>block.blockHash).join('\n'));
+                        }
+
+                        await this.post(blocks);
+                    }
+                }
+                const wait = (!blocks || blocks.length != 100) ? 1000 : 0;
+                //(blocks && blocks.length != 100) ? 1000 : 0;
+                dpc(wait, ()=> {
+                    this.sync();
+                });
+            }, (err) => {
+                //console.log(err);
+                const wait = 3500;
+                dpc(wait, ()=> {
+                    this.sync();
+                })
             });
+            // .catch(e=>{
+            //     this.sync();
+            // })
+           
         }, (err) => {
-            //console.log(err);
             const wait = 3500;
             dpc(wait, ()=> {
                 this.sync();
             })
-        }).catch(e=>{
-            this.sync();
-        })
-
-
+        });
     }
+
+    rewind(nblocks) {
+        this.skip -= nblocks;
+        if(this.skip < 0)
+            this.skip = 0;
+        console.log(`warning: rewinding ${nblocks}; new position ${this.skip}`);
+    }
+
 
     post(blocks) {
         // console.log("DATA:",data);
@@ -541,6 +619,7 @@ class DAGViz {
                 //delete block.acceptingBlockHash;
             });
 
+            // sort fields for REPLACE INTO ... VALUES ? injection below
             blocks = blocks.map(block => DAGViz.DB_TABLE_BLOCKS_ORDER.map(field => block[field]));
                 //Object.values(block));
 
