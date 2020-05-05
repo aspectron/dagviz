@@ -219,6 +219,7 @@ class DAGViz {
             });
         })
 
+        /*
         app.get("/api/transactions", (req, res, next)=>{
             if(!DUMMY_TX)
                 return next();
@@ -232,6 +233,7 @@ class DAGViz {
             let tx = result.transactions[0];
             res.sendJSON(tx)
         })
+        */
 
         app.get("/api", (req, res, next)=>{
             const _path = req.url.substring(4);

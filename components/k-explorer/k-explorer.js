@@ -10,7 +10,7 @@ import {KBlockCfm} from "./k-block-cfm.js";
 import {KAPI} from "./k-api.js";
 import {isElementVisible, paginationStyle, scollbarStyle, loadingImgStyle, isString} from "./k-utils.js";
 import {buildPagination, getTS, copyToClipboard, renderPagination, btnStyle} from "./k-utils.js";
-import {debounce} from "./k-utils.js";
+import {debounce, basePath} from "./k-utils.js";
 import {KLastBlocks} from './k-last-blocks.js';
 
 export {KAPI, KLink, kLinkStyles, KBlock, KBlockCfm, KPath, KLastBlocks};
@@ -56,6 +56,7 @@ export class KExplorer extends LitElement{
     			border-bottom:2px solid #2489da;
     			border-color:var(--k-heading-border-color, #2489da);
     			display:flex;
+    			align-items:center;
 			}
 			.heading>span{
 				flex:1;
@@ -167,7 +168,8 @@ export class KExplorer extends LitElement{
 				text-overflow: ellipsis;
 			}
 			td.script-sig,
-			td.id{
+			td.id,
+			td.payload{
 				max-width:200px;overflow:hidden;
 				text-overflow: ellipsis;
 			}
@@ -214,6 +216,27 @@ export class KExplorer extends LitElement{
 				100% {background: transparent;}
 			}
 
+			[class*="mask-icon-"]{
+				background-color:var(--k-block-color, #c7c7c7);
+				-webkit-mask-size:contain;
+				-webkit-mask-repeat: no-repeat;
+				-webkit-mask-size: 100%;
+			    border: 0px;
+			    -webkit-mask-position: center;
+			}
+
+			.heading .btn.mask-icon-close{
+				display:block;
+				width:30px;
+				height:30px;
+				padding:0px;
+				position:absolute;
+				margin-left:10px;
+				right:20px;
+				top:-50px;
+				-webkit-mask-image:url("${basePath}resources/mask/close-2.png");
+			}
+
 			[hidden]{display:none}
 
 		`];
@@ -225,6 +248,7 @@ export class KExplorer extends LitElement{
 		this.blocksMap = {};
 		this.state = {};
 		this.highlightHashed = [];
+		this.showCloseBtn = true;
 		this.settings = {
 			theme:'light',
 			themes:['dark', 'light']
@@ -395,7 +419,11 @@ export class KExplorer extends LitElement{
 			return html``;
 		return html`
 		<div class="holder block" @click="${this.onBlockClick}">
-			<div class="heading"><span>Block</span> <a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a></div>
+			<div class="heading">
+				<span>Block</span>
+				${this.showBackBtn ? html`<a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a>`:''}
+				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+			</div>
 			<div class="sbar-top"></div>
 			<div class="items sbar" >
 				<!--div style="width:2500px">xxx</div-->
@@ -479,6 +507,7 @@ export class KExplorer extends LitElement{
 					<a part="setting-icon" class="btn btn-settings" data-action="settings">&#9881;</a>
 					<div class="settings"><k-settings class="sm-text"></k-settings></div>
 				</div>`}
+				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
 				<!--a part="btn btn-refresh" class="btn btn-refresh primary" data-action="refresh-blocks">REFRESH</a-->
 			</div>
 			<div class="items sbar" >
@@ -526,6 +555,7 @@ export class KExplorer extends LitElement{
 			<div class="heading">
 				<span>Fee Estimates</span>
 				<a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a>
+				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
 			</div>
 			<div class="items sbar" >
 				<table>
@@ -537,17 +567,18 @@ export class KExplorer extends LitElement{
         </div>
 		`
 	}
-	renderTransactions(title="Transactions", hideSettings=false){
+	renderTransactions(title="Transactions"){
 		const items = this.transactions || [];
 		return html`
 		<div class="holder transactions" @click="${this.onTXsClick}">
 			<div class="heading">
 				<span>${title}</span>
-				${hideSettings?'':html`
+				${this.hideSettings?'':html`
 				<div class="settings-outer">
 					<a part="setting-icon" class="btn btn-settings" data-action="settings">&#9881;</a>
 					<div class="settings"><k-settings class="sm-text"></k-settings></div>
 				</div>`}
+				${(this.showCloseBtn && this._action=='transactions') ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
 				<!--a part="btn btn-refresh" class="btn btn-refresh primary" data-action="refresh-tx">REFRESH</a-->
 			</div>
 			<div class="items sbar" >
@@ -561,7 +592,7 @@ export class KExplorer extends LitElement{
 							<th class="ins-outs">Confirmations</th>
 							<th class="mass">Mass</th>
 							<th class="payload-hash">Payload hash</th>
-							<th class="payload">Payload</th>
+							<th class="payload" width="10%">Payload</th>
 							<th class="lock-time">Lock Time</th>
 							<th class="gas">GAS</th>
 							<th class="sub-network-id">Sub-Network id</th>
@@ -577,7 +608,7 @@ export class KExplorer extends LitElement{
 								<td class="ins-outs">${t.inputs.length} / ${t.outputs.length}</td>
 								<td class="mass">${t.mass}</td>
 								<td class="payload-hash">${t.payloadHash}</td>
-								<td class="payload">${t.payload}</td>
+								<td class="payload" width="10%">${t.payload}</td>
 								<td class="lock-time">${getTS(t.lockTime)} (${t.lockTime})</td>
 								<td class="gas">${t.gas}</td>
 								<td class="sub-network-id">${t.subnetworkId}</td>
@@ -597,7 +628,11 @@ export class KExplorer extends LitElement{
 			return html``;
 		return html`
 		<div class="holder block" @click="${this.onTXClick}">
-			<div class="heading"><span>Transaction</span> <a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a></div>
+			<div class="heading">
+				<span>Transaction</span>
+				${this.showBackBtn ? html`<a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a>`:''}
+				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+			</div>
 			<div class="items sbar" >
 				${this.debug?html`<pre>${this.renderJSON(t)}</pre>`:''}
 				<table>
@@ -751,6 +786,9 @@ export class KExplorer extends LitElement{
 			hash = $dataTPageHash.attr("data-t-page-hash");
 		}
 		switch(action){
+			case 'close':
+				this.close()
+			break;
 			case 'back':
 				this.openLastPage();
 			break;
@@ -910,9 +948,11 @@ export class KExplorer extends LitElement{
 		let result = this.api.getBlock(paths.join("/"));
 		let {req} = result;
 		let block = await req;
+		if(!block)
+			return false
 
 		
-		let {items, pagination} = await this.getTransactions([], {});
+		let {items, pagination} = await this.getTransactions(['block', block.blockHash], {});
 		this.transactions = items;
 		this.transactionsPagination = pagination;
 		this.block = block;
@@ -976,6 +1016,11 @@ export class KExplorer extends LitElement{
 
 			resolve({items, pagination, reqParams})
 		})
+	}
+
+	close(){
+		let ce = new CustomEvent('k-explorer-close', {detail:this})
+		window.dispatchEvent(ce);
 	}
 
 	fireKEvent(data){

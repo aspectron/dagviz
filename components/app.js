@@ -804,7 +804,7 @@ export class App {
 		const $explorerImg = $('#explorer');
 		$explorerImg.click((e) => {
 			if(this.kExplorerWin && this.kExplorerWin.classList.contains("active")){
-				this.kExplorerWin.classList.remove("active");
+				this.kExplorerWin.close();
 				this.storeUndo();
 				return
 			}
@@ -819,9 +819,7 @@ export class App {
 						el.close();
 				});
 
-				if(this.kExplorerWin.classList.contains("active")){
-					this.kExplorerWin.classList.remove("active");
-				}
+				this.kExplorerWin.close();
 				
 				//console.log(els);
 				//$('block-info').
@@ -1442,6 +1440,12 @@ export class App {
 			this.kExplorer = document.querySelector("#kExplorer");
 			this.kExplorer.hideSettings = true;
 			this.kExplorerWin = document.querySelector("#explorerWin");
+			this.kExplorerWin.close = ()=>{
+				if(this.kExplorerWin.classList.contains("active")){
+					this.kExplorerWin.classList.remove("active");
+					this.storeUndo()
+				}
+			}
 			this.kExplorer.setApi(new KApi());
 			let $body = $(document.body);
 			$body.on("click", ".win .backdrop", (e, el)=>{
@@ -1451,6 +1455,10 @@ export class App {
 					this.storeUndo();
 				}
 			});
+
+			window.addEventListener("k-explorer-close", ()=>{
+				this.kExplorerWin.close();
+			})
 
 			window.addEventListener("k-explorer-state-changed", e=>{
 				let {block} = e.detail || {};
