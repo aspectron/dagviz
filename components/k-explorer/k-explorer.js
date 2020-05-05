@@ -478,14 +478,14 @@ export class KExplorer extends LitElement{
                     		)}
                     	</td>
                     </tr>
-                    <tr>
+                    <!--tr>
                     	<td>Child Block Hashes</td>
                     	<td>
                     		${(data.childBlockHashes||[]).map(v=>
                     			html`<div class="k-link" data-b-hash="${v}">${v}</div>`
                     		)}
                     	</td>
-                    </tr>
+                    </tr-->
                 </table>
             </div>
             <div class="sbar-bottom"></div>
