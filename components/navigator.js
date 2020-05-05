@@ -96,7 +96,6 @@ class AxisNavigator extends BaseElement{
 	}
 
 	onMouseEvent(event, e) {
-		console.log(event,e);
 		switch(event) {
 			case 'pointerdown': {
 				this.drag = true;
