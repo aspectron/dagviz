@@ -101,7 +101,7 @@ class GraphContext {
 		this.chainBlocksDistinct = 'border';
 		this.chainBlocksCenter = 'fixed';
 		this.selectionMode = 'linking';
-		this.track = false;
+		this.track = true;
 		this.shape = 'square';
 		this.layout = 'determ';
 		this.quality = 'high';
