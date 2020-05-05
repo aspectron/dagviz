@@ -589,7 +589,7 @@ export class KExplorer extends LitElement{
 							<th class="id">ID</th>
 							<th class="name">Hash</th>
 							<th class="confirmations">Confirmations</th>
-							<th class="ins-outs">Confirmations</th>
+							<th class="ins-outs">Inputs / Outputs</th>
 							<th class="mass">Mass</th>
 							<th class="payload-hash">Payload hash</th>
 							<th class="payload" width="10%">Payload</th>
