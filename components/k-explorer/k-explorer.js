@@ -647,7 +647,7 @@ export class KExplorer extends LitElement{
 					<tr class="sub-network-id"><td>Subnetwork Id</td><td>${t.subnetworkId}</td></tr>
 					<tr class="accepting-block-hash">
 						<td>Accepting Block Hash</td>
-						<td data-b-hash="${t.acceptingBlockHash}">${t.acceptingBlockHash}</td>
+						<td class="k-link" data-b-hash="${t.acceptingBlockHash}">${t.acceptingBlockHash}</td>
 					</tr>
 					<tr class="ins-outs">
 						<td>Inputs / Outputs</td>
