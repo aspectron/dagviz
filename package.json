@@ -18,7 +18,7 @@
     "serve-static": "*",
     "socket.io": "*",
     "underscore": "*",
-    "flow-utils": "git+https://github.com/aspectron/flow-utils.git"
+    "@aspectron/flow-utils": "*"
   },
   "engines": {
     "node": "*",
