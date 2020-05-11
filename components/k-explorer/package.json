@@ -2,9 +2,10 @@
 	"name": "k-explorer",
 	"description": " ",
 	"dependencies": {
-		"lit-element": "*",
+		"@webcomponents/webcomponentsjs": "*",
+		"lit-element":"*",
 		"flow-utils":"*",
-		"express": "*"
+		"express":"*"
 	},
 	"scripts": {
 		"start": "node web-app.js"
