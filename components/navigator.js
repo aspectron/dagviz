@@ -136,7 +136,8 @@ class AxisNavigator extends BaseElement{
 	}
 
 	handleMouse(e, skipUpdates) {
-
+		if(!this.thumb)
+			return
 		const { axis, sign } = window.app.ctx.direction;
 		const horizontal = (axis == 'x');
 
