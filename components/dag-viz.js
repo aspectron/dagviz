@@ -1,5 +1,5 @@
 // Import BaseElement base class and html helper function
-import { html, BaseElement, css, render } from './base-element.js';
+import { html, BaseElement, css, render, svg} from './base-element.js';
 import './node-panel.js';
 
 const D3x = { }
@@ -466,18 +466,23 @@ export class GraphNodeLink{
 		if(this.arrowType == this.holder.ctx._arrows+this.holder.ctx.dir)
 			return
 		this.arrowType = this.holder.ctx._arrows+this.holder.ctx.dir;
+		this._updateArrow(this._lastArrowType || "");
+	}
+
+	_updateArrow(type=""){
+		this._lastArrowType = type;
 		if(this.holder.ctx._arrows == 'multi') {
-			this.updateArrow();
+			this.updateArrow(type);
 		}else{
 			this.removeArrow();
 		}
 	}
 	
-	updateArrow() {
+	updateArrow(type="") {
 		let dir = this.holder.ctx.dir.toLowerCase();
 		if(this.holder.ctx.arrows == "multir")
 			dir = 'w'
-		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir})`:`url(#endarrow-${dir})`)
+		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir}${type})`:`url(#endarrow-${dir}${type})`)
 	}
 
 	removeArrow() {
@@ -546,23 +551,28 @@ export class GraphNodeLink{
 		//console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
 		//console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
-		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth)
+		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth);
+		let arrowType = '';
 		//if(color) {
 			if(this.isChainBlockLink) {
 				strokeWidth = 7;
-				if(this.source.selected && this.target.selected)
+				if(this.source.selected && this.target.selected){
 					stroke = 'var(--graph-link-selected-color)';
+					arrowType = '-selected';
+				}
 			}
 			else
 			if(this.source.selected && this.target.selected){
 				stroke = 'var(--graph-link-selected-color)';
 				strokeWidth = 5;
+				arrowType = '-selected';
 			}
 			else
 			if((isTealing || this.source.selected) && this.source.data.blockHash == this.target.data.acceptingBlockHash){
 				stroke = 'var(--graph-link-tealing-color)';
 				strokeWidth = 3;
 				isTealing = true;
+				arrowType = '-teal';
 			}
 			else if(color){
 				if(node.selected)
@@ -590,6 +600,8 @@ export class GraphNodeLink{
 			.attr('stroke', stroke)
 			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
 			.attr('stroke-width', strokeWidth)
+
+		this._updateArrow(arrowType)
 	}
 }
 
@@ -1208,8 +1220,15 @@ export class DAGViz extends BaseElement {
 				stroke:var(--arrow-head-stroke);
 				fill:var(--arrow-head-fill);
 			}
-			#markers polygon{
+			marker polygon{
 				fill:var(--arrow-head-fill);
+			}
+
+			marker[id$="teal"] polygon{
+				fill:var(--graph-link-tealing-color);
+			}
+			marker[id$="selected"] polygon{
+				fill:var(--graph-link-selected-color);
 			}
 			/*
 			#graph svg .tip-line{
@@ -1262,38 +1281,41 @@ export class DAGViz extends BaseElement {
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100" fill="#000" id="markers">
 			<defs>
-			    <marker id="endarrow-e" markerWidth="6" markerHeight="6" 
+				${
+				['', '-teal', '-selected'].map(c=>svg`
+			    <marker id="endarrow-e${c}" markerWidth="6" markerHeight="6" 
 			    	refX="6" refY="3" markerUnits="userSpaceOnUse">
 			        <polygon points="6 6, 0 3, 6 0"/>
 			    </marker>
-			    <marker id="endarrow-w" markerWidth="6" markerHeight="6" 
+			    <marker id="endarrow-w${c}" markerWidth="6" markerHeight="6" 
 			    	refX="0" refY="3" markerUnits="userSpaceOnUse">
 			        <polygon points="0 0, 6 3, 0 6"/>
 			    </marker>
-			    <marker id="endarrow-n" markerWidth="6" markerHeight="6" 
+			    <marker id="endarrow-n${c}" markerWidth="6" markerHeight="6" 
 			    	refX="3" refY="0" markerUnits="userSpaceOnUse">
 			        <polygon points="0 0, 6 0, 3 6"/>
 			    </marker>
-			    <marker id="endarrow-s" markerWidth="6" markerHeight="6" 
+			    <marker id="endarrow-s${c}" markerWidth="6" markerHeight="6" 
 			    	refX="3" refY="6" markerUnits="userSpaceOnUse">
 			        <polygon points="3 0, 6 6, 0 6"/>
 			    </marker>
-			    <marker id="endarrowsm-e" markerWidth="2" markerHeight="2" 
+			    <marker id="endarrowsm-e${c}" markerWidth="2" markerHeight="2" 
 			    	refX="1" refY="1">
 			        <polygon points="2 2, 0 1, 2 0"/>
 			    </marker>
-			    <marker id="endarrowsm-w" markerWidth="2" markerHeight="2" 
+			    <marker id="endarrowsm-w${c}" markerWidth="2" markerHeight="2" 
 			    	refX="1" refY="1">
 			        <polygon points="0 0, 2 1, 0 2"/>
 			    </marker>
-			    <marker id="endarrowsm-n" markerWidth="2" markerHeight="2" 
+			    <marker id="endarrowsm-n${c}" markerWidth="2" markerHeight="2" 
 			    	refX="1" refY="1">
 			        <polygon points="0 0, 2 0, 1 2"/>
 			    </marker>
-			    <marker id="endarrowsm-s" markerWidth="2" markerHeight="2" 
+			    <marker id="endarrowsm-s${c}" markerWidth="2" markerHeight="2" 
 			    	refX="1" refY="1">
 			        <polygon points="1 0, 2 2, 0 2"/>
-			    </marker>
+			    </marker>`
+			)}
 		  </defs>
 		</svg>
 		</div>
@@ -1382,7 +1404,7 @@ export class DAGViz extends BaseElement {
 			.attr("class", "link")
 			.attr("stroke", "#999")
 			.attr("stroke-width", 1)
-			.attr("stroke-opacity", 0.6)
+			//.attr("stroke-opacity", 0.6)
 		this.svgLink = this.linksEl.selectAll("line")
 		this.nodesEl = this.paintEl.append("g")
 			.attr("fill", "#fff")
