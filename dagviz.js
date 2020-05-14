@@ -440,8 +440,8 @@ class DAGViz {
         
         await this.sql(`
             CREATE TABLE IF NOT EXISTS last_block_hash (
-                id                      BIGINT UNSIGNED NOT NULL,
-                xid                     BIGINT UNSIGNED NOT NULL,
+                id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                xid                     INT UNSIGNED,
                 hash  CHAR(64) NOT NULL,
                 PRIMARY KEY (id),
                 UNIQUE INDEX idx_xid (xid)
@@ -474,11 +474,7 @@ class DAGViz {
     }
 
     storeLastBlockHash(hash) {
-        return this.sql(`
-            REPLACE INTO last_block_hash (
-                id, xid, hash
-            ) VALUES ?
-        `, [1, 1, hash]);
+        return this.sql(`REPLACE INTO last_block_hash ( xid, hash ) VALUES (1, '${hash}')`);//, [[ 1, hash]]);
     }
 
     async restoreLastBlockHash() {
