@@ -79,6 +79,7 @@ export class Block extends GraphNode {
 	}
 }
 
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 class GraphContext {
 	constructor(app, options) {
@@ -113,6 +114,11 @@ class GraphContext {
 		//this.unit2Pos = {};
 
 		this.dir = 'E';
+
+		if(isMobile) {
+			this.dir = 'N';
+		}
+
 		this.directions = {
 			'E' : {
 				h : true,
