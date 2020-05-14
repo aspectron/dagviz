@@ -183,8 +183,8 @@ body.k-theme-dark{
 	color:#c3c2c2;
 }
 body.k-theme-dark{
-	--stoke-color-1:#FFF;
-	--stoke-color-2:#F00;
+	--stoke-color-1:rgba( 0, 119, 194, 1.0);
+	--stoke-color-2:rgba( 186, 45, 101, 1.0);
 	--arrow-head-fill:#c3c2c2;
 	--arrow-head-stroke:#c3c2c2;
 	--rect-stroke-color-1:rgba(255,255,255,0.7);
