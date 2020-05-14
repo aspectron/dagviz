@@ -11,7 +11,7 @@ const io = require('socket.io');//(http);
 const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
-const FlowRouter = require('flow-ux/src/router.js');
+const {FlowRouter} = require('@aspectron/flow-utils');
 
 let args = MF.utils.args();
 const DUMMY_TX = true;
