@@ -225,7 +225,7 @@ D3x.shape.square = function(el, o) {
 		//.attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
 		//.attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
 		//.attr('fill', o.rgba) // D3x.rgba(o.rgba))
-        .attr("stroke", D3x.rgba([0,0,0], 0.5))
+        .attr("stroke", 'var(--graph-square-stroke)')
 		//.attr("stroke-width", 1)
 		//.attr('class',['block'])
 	root.blockBox = node;
@@ -242,8 +242,11 @@ D3x.shape.square = function(el, o) {
 			.attr('y',-size)
 			.attr('width', size*2)
 			.attr('height', size*2)
+			.attr("stroke", 'var(--graph-square-stroke)')
 			.attr('opacity', o.patternOpacity || 0.125)
 			.attr('fill', `url(#${o.pattern})`)
+		if(o.strokeWidth)
+			pattern.attr('stroke-width', o.strokeWidth);
 	}
 
     root.setPosition = (x, y)=>{
@@ -273,9 +276,9 @@ D3x.shape.square = function(el, o) {
 				.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
 				.endAngle( 6.29 )//2*Pi = 6.28 = top
 			)
-			.attr('stroke', 'rgba(0,0,0,0.5)')
+			.attr('stroke', 'var(--graph-node-selector-stroke)')
 			.attr('stroke-width', 1)
-			.attr('fill', `rgba(0,0,0,0.5)`);
+			.attr('fill', 'var(--graph-node-selector-fill)');
 	}
 
 	root.setSelected(o.selected);
@@ -421,12 +424,12 @@ export class GraphNodeLink{
 
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
-			this.defaultColor = 'rgba(0,32,64,1)';
+			this.defaultColor = 'var(--graph-node-link-default-color-1)';
 			this.defaultStrokeWidth = 7;
 			this.defaultOpacity = 0.95;
 		} else 
 		{
-			this.defaultColor = 'black';
+			this.defaultColor = 'var(--graph-node-link-default-color-2)';
 			this.defaultStrokeWidth = 1;
 			this.defaultOpacity = 0.65;
 		}
@@ -548,16 +551,16 @@ export class GraphNodeLink{
 			if(this.isChainBlockLink) {
 				strokeWidth = 7;
 				if(this.source.selected && this.target.selected)
-					stroke = 'blue';
+					stroke = 'var(--graph-link-selected-color)';
 			}
 			else
 			if(this.source.selected && this.target.selected){
-				stroke = 'blue';
+				stroke = 'var(--graph-link-selected-color)';
 				strokeWidth = 5;
 			}
 			else
 			if((isTealing || this.source.selected) && this.source.data.blockHash == this.target.data.acceptingBlockHash){
-				stroke = 'rgba(0, 150, 136, 1)';
+				stroke = 'var(--graph-link-tealing-color)';
 				strokeWidth = 3;
 				isTealing = true;
 			}
@@ -662,7 +665,7 @@ export class GraphNode{
 		    "txgen" : { shape : 'hexagonB', rgba : [17,221,187,1] },
 		    "mqtt" : { shape : 'square', rgba : [187,209,36,1] },
 		    "simulator" : { shape : 'hexagonB', rgba : [226,204,216,1] },
-		    "unknown" : { shape : 'circle', rgba : [184,163,136,1] },
+		    "unknown" : { shape : 'circle', rgba : 'var(--graph-shape-unknown-color)' },
 		    "tbd2" : { shape : 'circle', rgba : [1,255,255,1] },
 		    "tbd3" : { shape : 'circle', rgba : [136,170,255,1] },
 		    "block" : { shape : 'square', rgba : [243,243,0,1] },
@@ -772,18 +775,16 @@ export class GraphNode{
 		const isBlue = !!data.acceptingBlockHash;
 		const isRed = !isBlue;
 		if(isBlue){
-			data.color = `rgba(155,207,255,0.99)`;
-			//data.color = `rgba(194,244,255,0.99)`;
-			data.highlightColor_before = 'rgba(107, 198, 250,1)'
-			data.highlightColor = 'rgba(83, 191, 252,1)'
-			data.highlightColor_after = 'rgba(43, 179, 255,1)'
+			data.color = 'var(--graph-color-a-1)';
+			data.highlightColor_before = 'var(--graph-color-a-2)'
+			data.highlightColor = 'var(--graph-color-a-3)'
+			data.highlightColor_after = 'var(--graph-color-a-4)'
 		}
 		else{
-			data.color = `rgba(249,164,192,0.99)`;
-			//data.color = `rgba(255,194,194,0.99)`;
-			data.highlightColor_before = 'rgba(251,116,118,1)'
-			data.highlightColor = 'rgba(251,116,118,1)'
-			data.highlightColor_after = 'rgba(251,116,118,1)'
+			data.color = 'var(--graph-color-b-1)';
+			data.highlightColor_before = 'var(--graph-color-b-2)'
+			data.highlightColor = 'var(--graph-color-b-3)'
+			data.highlightColor_after = 'var(--graph-color-b-4)'
 		}
 
 		this.shape 	= data.shape;
@@ -819,7 +820,7 @@ export class GraphNode{
 			return this.data.color;
 		})
 
-		const textColor = data.textColor || '#000';
+		const textColor = data.textColor || 'var(--graph-node-text-color)';
 
 		if(this.textEl)
 	        this.textEl.remove();
@@ -827,6 +828,7 @@ export class GraphNode{
 		if(this.quality != 'low') {
 			this.textEl = this.el.append("text")
 		    	.attr("class", "node-text")
+				.attr("stroke", textColor)
 				.attr("fill", textColor)
 				.attr("class", ["node-name", this.data.type].join(' '))
 				.text(data.name);
@@ -846,6 +848,7 @@ export class GraphNode{
 		if(this.quality == 'high') {
 			this.heightEl = this.el.append("text")
 				.attr("class", "node-text")
+				.attr("stroke", textColor)
 				.attr("fill", textColor)
 				.attr("class", ["node-name", this.data.type].join(' '))
 				.text(data.blueScore+'');
@@ -859,11 +862,13 @@ export class GraphNode{
 
 		this.bindElEvents();
 
+		/*
 		this.el
-			.style('opacity', 0)
+			.style('opacity', 0.5)
 			.transition()
-			.duration(500)
+			.duration(10)
 			.style('opacity', 1);
+		*/
 
 		if(this.selected)
 			this.highlightLinks(true);
@@ -873,9 +878,9 @@ export class GraphNode{
 		const data = this.data;
 
 		if(isBlue)
-			data.color = `rgba(194,244,255,0.99)`;
+			data.color = 'var(--graph-color-a-5)';
 		else
-			data.color = `rgba(255,194,194,0.99)`;
+			data.color = 'var(--graph-color-b-5)';
 
 		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
 			this.initElements();
@@ -1039,8 +1044,9 @@ export class GraphNode{
 			color = highlightColor || '#f00';
 
 		}
-		this.el.blockBox.transition().duration(500)
+		this.el.blockBox
 			.attr('fill', color)
+			.transition().duration(500)
 			.style("transform", highlight?"scale(1.1)":null)
 	}
 
@@ -1177,10 +1183,10 @@ export class DAGViz extends BaseElement {
 			#nodeInfo{
 				pointer-events: none;
 				border-radius:5px;
-				border:1px solid rgba(0,0,0,.12);
+				border:1px solid var(--node-info-border-color);
 				display:none;position:absolute;
-				background-color:#FFF;
-				box-shadow: 0 1px 1.5px 0 rgba(0,0,0,.12), 0 1px 1px 0 rgba(0,0,0,.24);
+				background-color:var(--node-info-bg-color);
+				box-shadow:var(--node-info-box-shadow);
 				z-index:10;
 				transition:left 0.1s ease,top 0.1s ease;
 				left:0px;
@@ -1194,25 +1200,16 @@ export class DAGViz extends BaseElement {
 			}
 			#nodeInfo .title{
 				padding:5px;
-				border-bottom:1px solid #DDD;
+				border-bottom:1px solid var(--node-info-title-border-color);
 			}
 			.svg-patterns{position:absolute;top:-300vh}
 
-			path[stroke='rgb(0, 0, 0)']{
-				stroke:var(--stoke-color-1, rgb(0, 0, 0))
-			}
-			path[stroke='rgb(0, 32, 64)']{
-				stroke:var(--stoke-color-2, rgb(0, 32, 64))
-			}
 			.arrow-head{
-				stroke:var(--arrow-head-stroke, #000);
-				fill:var(--arrow-head-fill, #000);
-			}
-			rect[stroke='rgba(0,0,0,0.5)']{
-				stroke:var(--rect-stroke-color-1, rgba(0,0,0,0.5));
+				stroke:var(--arrow-head-stroke);
+				fill:var(--arrow-head-fill);
 			}
 			#markers polygon{
-				fill:var(--arrow-head-fill, #000);
+				fill:var(--arrow-head-fill);
 			}
 			/*
 			#graph svg .tip-line{
@@ -1256,7 +1253,7 @@ export class DAGViz extends BaseElement {
 		<div id="graph"></div>
 		<div id="nodeInfo"></div>
 		<div class="svg-patterns">
-		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzEnLz4KPC9zdmc+Cg==" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>		
+		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PHBhdGggZD0iTTAsMTBMMTAsMCIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>		
 		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-2" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzInLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>
 		<svg height="8" width="8" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="crosshatch" patternUnits="userSpaceOnUse" width="8" height="8"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4JyBoZWlnaHQ9JzgnPgogIDxyZWN0IHdpZHRoPSc4JyBoZWlnaHQ9JzgnIGZpbGw9JyNmZmYnLz4KICA8cGF0aCBkPSdNMCAwTDggOFpNOCAwTDAgOFonIHN0cm9rZS13aWR0aD0nMC41JyBzdHJva2U9JyNhYWEnLz4KPC9zdmc+Cg==" x="0" y="0" width="8" height="8"> </image> </pattern> </defs> </svg>
 		<svg height="6" width="6" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="whitecarbon" patternUnits="userSpaceOnUse" width="6" height="6"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbG5zOnhsaW5rPSdodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rJyB3aWR0aD0nNicgaGVpZ2h0PSc2Jz4KICA8cmVjdCB3aWR0aD0nNicgaGVpZ2h0PSc2JyBmaWxsPScjZWVlZWVlJy8+CiAgPGcgaWQ9J2MnPgogICAgPHJlY3Qgd2lkdGg9JzMnIGhlaWdodD0nMycgZmlsbD0nI2U2ZTZlNicvPgogICAgPHJlY3QgeT0nMScgd2lkdGg9JzMnIGhlaWdodD0nMicgZmlsbD0nI2Q4ZDhkOCcvPgogIDwvZz4KICA8dXNlIHhsaW5rOmhyZWY9JyNjJyB4PSczJyB5PSczJy8+Cjwvc3ZnPg==" x="0" y="0" width="6" height="6"> </image> </pattern> </defs> </svg>
@@ -1361,7 +1358,7 @@ export class DAGViz extends BaseElement {
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
-    			this.nodesEl.attr("stroke", 'rgba(0,0,0,0.5)');
+    			this.nodesEl.attr("stroke", 'var(--graph-stroke)');
 				this.linksEl.attr("stroke-width", w);
 			})
 			.on('start', (e)=>{
