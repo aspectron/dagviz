@@ -772,13 +772,15 @@ export class GraphNode{
 		const isBlue = !!data.acceptingBlockHash;
 		const isRed = !isBlue;
 		if(isBlue){
-			data.color = `rgba(194,244,255,0.99)`;
+			data.color = `rgba(155,207,255,0.99)`;
+			//data.color = `rgba(194,244,255,0.99)`;
 			data.highlightColor_before = 'rgba(107, 198, 250,1)'
 			data.highlightColor = 'rgba(83, 191, 252,1)'
 			data.highlightColor_after = 'rgba(43, 179, 255,1)'
 		}
 		else{
-			data.color = `rgba(255,194,194,0.99)`;
+			data.color = `rgba(249,164,192,0.99)`;
+			//data.color = `rgba(255,194,194,0.99)`;
 			data.highlightColor_before = 'rgba(251,116,118,1)'
 			data.highlightColor = 'rgba(251,116,118,1)'
 			data.highlightColor_after = 'rgba(251,116,118,1)'
