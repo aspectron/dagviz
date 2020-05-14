@@ -13,9 +13,9 @@
 	<script src="/resources/scripts/notify.dagviz.js"></script>
 	<link rel="stylesheet" type="text/css" href="/resources/css/notify.css" />
 
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.min.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.min.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/regular.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/all.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/light.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/regular.min.css" />
 
 	<!-- TODO switch to express, migrate to http/ as root -->
 	<script src="/socket.io/socket.io.js"></script>
@@ -25,18 +25,21 @@
 	<!--script src="https://d3js.org/d3.v3.min.js"></script-->
 	<!--script src="/resources/mqttws31.js"></script-->
 	<script src="/resources/scripts/mqtt.min.js"></script>
+	<script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
 
-	<script type="module" src="/node_modules/flow-ux/flow-ux.js"></script>
+	<script type="module" src="/node_modules/@aspectron/flow-ux/flow-ux.js"></script>
 	<script type="module" src="/components/app.js" crossorigin></script>
+	<script type="module" src="/components/app-tutorial.js" crossorigin></script>
 	<script type="module" src="/components/navigator.js" crossorigin></script>
 	<script type="module" src="/components/block-info.js" crossorigin></script>
 	<script type="module" src="/components/menu-panel.js" crossorigin></script>
 	<script type="module" src="/components/k-explorer/k-explorer.js" crossorigin></script>
 	<link rel="stylesheet" type="text/css" href="/resources/css/dagviz.css"/>
-	<link rel="stylesheet" type="text/css" href="/node_modules/flow-ux/flow-ux.css" />
+	<link rel="stylesheet" type="text/css" href="/node_modules/@aspectron/flow-ux/flow-ux.css" />
 	<style class="k-link-style"></style>
 </head>
 <body>
+	<app-tutorial></app-tutorial>
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='top'>
 		<div id="menu-bar">
@@ -73,6 +76,11 @@
 		</div>
 	</div>
 	<script type="module">
+		if(window.localStorage && window.localStorage.tutorial!=1){
+			localStorage.tutorial = 1;
+			window.tutorial();
+		}
+
 		import { App } from '/components/app.js';
 		$(document).ready(()=>{
 			window.app = new App();

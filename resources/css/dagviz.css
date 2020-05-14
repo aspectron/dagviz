@@ -32,8 +32,12 @@ body{
 
 	--arrow-head-fill:#000;
 	--arrow-head-stroke:#000;
+
+	opacity:0;
+	transition:opacity 0.2s ease;
 }
 body.k-theme-dark{
+	opacity:1;
 	--bg-color:#202020;
 	background-color:var(--bg-color);
 	--graph-node-link-default-color-1:#c6c6c6;
@@ -44,10 +48,14 @@ body.k-theme-dark{
 	--graph-color-b-1:#ba2d65;
 	--graph-color-b-2:#540323;/*hover*/
 	--graph-color-b-3:#540323;
+	/*--graph-link-selected-color:rgba(0, 119, 194,1);*/
 
 	--arrow-head-fill:#c3c2c2;
 	--arrow-head-stroke:#c3c2c2;
 	--graph-node-text-color:#FFF;
+}
+body.k-theme-light{
+	opacity:1;
 }
 #dagViz{height:100vh;}
 #address{

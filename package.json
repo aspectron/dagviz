@@ -3,10 +3,12 @@
   "version": "2.1.0",
   "private": true,
   "dependencies": {
+    "@aspectron/flow-utils": "*",
+    "@aspectron/flow-ux": "*",
+    "@webcomponents/webcomponentsjs": "*",
     "basic-auth": "*",
     "finalhandler": "*",
     "is-docker": "*",
-    "@webcomponents/webcomponentsjs": "*",
     "lit-element": "*",
     "micro-fabric": "*",
     "mime-types": "*",
@@ -17,8 +19,7 @@
     "request-promise": "*",
     "serve-static": "*",
     "socket.io": "*",
-    "underscore": "*",
-    "@aspectron/flow-utils": "*"
+    "underscore": "*"
   },
   "engines": {
     "node": "*",
