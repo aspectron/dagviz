@@ -14,12 +14,13 @@ class AppTutorial extends BaseElement{
 			:host(.active){opacity:1;z-index:100000}
 			:host{
 				position:fixed;top:0px;left:0px;width:100%;height:100%;
-				background-color:#FFF;
+				background-color:rgba(255, 255, 255, 0.5);
 			}
 			[slot="title"]{font-size:1.5rem;padding:10px;}
 			flow-pages{
 				position:absolute;left:10%;top:10%;width:80%;height:80%;
-				border:0px solid #DDD;
+				border:2px solid var(--flow-primary-color);
+				background-color:#FFF;box-sizing:border-box;
 			}
 			flow-pages .buttons flow-btn{
 				display:flex;align-items:center;
