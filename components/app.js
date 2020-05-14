@@ -836,6 +836,24 @@ export class App {
 			this.$info = $("#info");
 		
 		this.generateTooltips();
+
+		this.isDevicePortrait = window.innerWidth < window.innerHeight;
+		console.log(`${this.isDevicePortrait?'portrait':'landscape'} device detected`)
+		window.addEventListener("orientationchange", () => {
+			// Announce the new orientation number
+			// alert(window.orientation);
+			let isPortrait = window.orientation > 45 ? this.isDevicePortrait : !this.isDevicePortrait;
+
+			if(isPortrait !== this.isPortrait) {
+
+				this.ctls.dir.setValue(isPortrait ? 'N' : 'E');
+				// this.ctls.dir.toggle({
+				// 	disableLimit : (e.ctrlKey || e.shiftKey)				
+				// });
+			}
+
+			this.isPortrait = isPortrait;
+		}, false);		
 	}
 
 	search(v_) {
