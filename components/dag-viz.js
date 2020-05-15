@@ -555,7 +555,7 @@ export class GraphNodeLink{
 		let arrowType = '';
 		//if(color) {
 			if(this.isChainBlockLink) {
-				strokeWidth = 7;
+				strokeWidth = color?7:strokeWidth;
 				if(this.source.selected && this.target.selected){
 					stroke = 'var(--graph-link-selected-color)';
 					arrowType = '-selected';
@@ -564,7 +564,7 @@ export class GraphNodeLink{
 			else
 			if(this.source.selected && this.target.selected){
 				stroke = 'var(--graph-link-selected-color)';
-				strokeWidth = 5;
+				strokeWidth = color?5:strokeWidth;
 				arrowType = '-selected';
 			}
 			else
