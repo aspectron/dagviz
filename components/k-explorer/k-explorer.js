@@ -225,15 +225,22 @@ export class KExplorer extends LitElement{
 			    -webkit-mask-position: center;
 			}
 
-			.heading .btn.mask-icon-close{
-				display:block;
-				width:30px;
-				height:30px;
-				padding:0px;
+			.heading .btn.close-btn{
 				position:absolute;
 				margin-left:10px;
 				right:20px;
 				top:-50px;
+				padding:0px;
+				width:30px;
+				height:30px;
+				border:0px;
+				background-color:var(--k-close-btn-bg-color, var(--k-bg-color1, #323232));
+			}
+			.heading .btn .mask-icon-close{
+				display:block;
+				width:100%;
+				height:100%;
+				box-sizing:border-box;
 				-webkit-mask-image:url("${basePath}resources/mask/close-2.png");
 			}
 
@@ -422,7 +429,7 @@ export class KExplorer extends LitElement{
 			<div class="heading">
 				<span>Block</span>
 				${this.showBackBtn ? html`<a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a>`:''}
-				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+				${this.showCloseBtn ? html`<a class="btn close-btn" data-action="close"><i class="mask-icon-close"></i></a>`:''}
 			</div>
 			<div class="sbar-top"></div>
 			<div class="items sbar" >
@@ -507,7 +514,7 @@ export class KExplorer extends LitElement{
 					<a part="setting-icon" class="btn btn-settings" data-action="settings">&#9881;</a>
 					<div class="settings"><k-settings class="sm-text"></k-settings></div>
 				</div>`}
-				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+				${this.showCloseBtn ? html`<a class="btn close-btn" data-action="close"><i class="mask-icon-close"></i></a>`:''}
 				<!--a part="btn btn-refresh" class="btn btn-refresh primary" data-action="refresh-blocks">REFRESH</a-->
 			</div>
 			<div class="items sbar" >
@@ -555,7 +562,7 @@ export class KExplorer extends LitElement{
 			<div class="heading">
 				<span>Fee Estimates</span>
 				<a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a>
-				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+				${this.showCloseBtn ? html`<a class="btn close-btn" data-action="close"><i class="mask-icon-close"></i></a>`:''}
 			</div>
 			<div class="items sbar" >
 				<table>
@@ -578,7 +585,7 @@ export class KExplorer extends LitElement{
 					<a part="setting-icon" class="btn btn-settings" data-action="settings">&#9881;</a>
 					<div class="settings"><k-settings class="sm-text"></k-settings></div>
 				</div>`}
-				${(this.showCloseBtn && this._action=='transactions') ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+				${(this.showCloseBtn && this._action=='transactions') ? html`<a class="btn close-btn" data-action="close"><i class="mask-icon-close"></i></a>`:''}
 				<!--a part="btn btn-refresh" class="btn btn-refresh primary" data-action="refresh-tx">REFRESH</a-->
 			</div>
 			<div class="items sbar" >
@@ -631,7 +638,7 @@ export class KExplorer extends LitElement{
 			<div class="heading">
 				<span>Transaction</span>
 				${this.showBackBtn ? html`<a part="btn btn-back" class="btn btn-back" data-action="back">BACK</a>`:''}
-				${this.showCloseBtn ? html`<a class="btn mask-icon-close" data-action="close"></a>`:''}
+				${this.showCloseBtn ? html`<a class="btn close-btn" data-action="close"><i class="mask-icon-close"></i></a>`:''}
 			</div>
 			<div class="items sbar" >
 				${this.debug?html`<pre>${this.renderJSON(t)}</pre>`:''}

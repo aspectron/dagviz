@@ -15,6 +15,7 @@ let kThemeLight = css`
 
 	.k-theme-light{
 		--k-bg-color1:#FFF;
+		--k-close-btn-bg-color:#FFF;
 		--k-color1:#212529;
 		--k-border-color1:#e5e5e5;
 		--k-btn-border-color:#cccccc;

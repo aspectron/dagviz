@@ -39,6 +39,7 @@ body{
 body.k-theme-dark{
 	opacity:1;
 	--bg-color:#202020;
+	--k-close-btn-bg-color:#202020;
 	background-color:var(--bg-color);
 	--graph-node-link-default-color-1:#c6c6c6;
 	--graph-node-link-default-color-2:#c6c6c6;
@@ -295,6 +296,8 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 	body.orient-v .menu-items{width:calc(100% - 64px);box-sizing:border-box;}
 	body.orient-v .menu-items+.flex{display:none}
 
-	last-block-widget{top:20px;right:64px}
+	last-block-widget{top:20px;right:68px}
 }
+
+body.orient-v last-block-widget{right:68px;z-index:10}
 
