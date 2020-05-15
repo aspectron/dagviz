@@ -1735,7 +1735,7 @@ class Toggle {
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip}></span>`);
-		$("menu-panel").append(this.el);
+		$("menu-panel .items").append(this.el);
 
 		// let url = new URL(window.location.href);
 		// let params = url.searchParams;
@@ -1792,7 +1792,7 @@ class MultiChoice {
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
-		$("menu-panel").append(this.el);
+		$("menu-panel .items").append(this.el);
 
 		$(this.el).on('click', (e) => {
 			this.toggle({
@@ -1857,7 +1857,6 @@ class LastBlockWidget extends BaseElement{
 				min-width: 160px;
 				top: 128px;
 				right: 32px;
-				eight: 128px;
 				transition: opacity 750ms;
 				opacity: 0;
 				background-color: rgba(0, 150, 136, 1);
