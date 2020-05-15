@@ -425,12 +425,12 @@ export class GraphNodeLink{
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
 			this.defaultColor = 'var(--graph-node-link-default-color-1)';
-			this.defaultStrokeWidth = 7;
+			this.defaultStrokeWidth = 4;
 			this.defaultOpacity = 0.95;
 		} else 
 		{
 			this.defaultColor = 'var(--graph-node-link-default-color-2)';
-			this.defaultStrokeWidth = 1;
+			this.defaultStrokeWidth = 2;
 			this.defaultOpacity = 0.65;
 		}
 
