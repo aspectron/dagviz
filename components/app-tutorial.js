@@ -31,12 +31,12 @@ class AppTutorial extends BaseElement{
 			}
 			flow-page{
 				overflow:auto;
-				padding:10px;box-sizing:border-box;display:flex;flex-direction:column;
+				padding:10px;box-sizing:border-box;display:flex;flex-direction:row; justify-content: flex-start; align-items: center;
 				padding-bottom:35px;background-color:var(--bg-color, #FFF);
 			}
 			flow-page img{
-				display:block;max-width:90%;max-height:90%;margin:auto;flex:1;
-				margin-bottom:10px;object-fit:contain;height:100px;
+				display:flex;max-width:90%;max-height:90%;margin:auto;
+				object-fit:contain;height:100px;
 			}
 
 			.dagviz-slide{
@@ -83,30 +83,33 @@ class AppTutorial extends BaseElement{
 		<flow-pages class="has-dots" @change="${this.onSlideChange}">
 			<div slot="title">${this.slideTitle||'Kaspa Tutorial'}</div>
 			<flow-page class="active">
-				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>Kaspa is a PoW-based ledger organized in a DAG of blocks -- a blockDAG.</p>
+			<img src="/resources/images/tutorial/slide-1.jpg" />
+				<p>Kaspa is a PoW-based ledger organized in a DAG of blocks -- a blockDAG. </br>
+				A new block gets added to the blockDAG every second.</br>
+				Many blocks are created in parallel</p>
+				
 			</flow-page>
 			<flow-page>
 				<img src="/resources/images/tutorial/slide-2.jpg" />
-				<p>A new block gets added to the blockDAG every second. Many blocks are 
+				<p>A new block gets added to the blockDAG every second. <br> Many blocks are 
 				created in parallel</p>
 			</flow-page>
 			<flow-page>
 				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>Unlike a blockchain, blocks are not orphaned. Kaspa integrates all 
-				blocks into one blockDAG, by allowing them to reference multiple parents</p>
+				<p>Unlike a blockchain, blocks are not orphaned. <br> Kaspa integrates all 
+				blocks into one blockDAG, <br> by allowing them to reference multiple parents</p>
 			</flow-page>
 			<flow-page>
 				<img src="/resources/images/tutorial/slide-2.jpg" />
-				<p>Rather than agreeing which blocks should be discarded, the consensus 
-				decides on the order of blocks created in parallel. The ordering is 
-				governed by the PHANTOM consensus protocol, which is a generalization 
+				<p>Rather than agreeing which blocks should be discarded, <br> the consensus 
+				decides on the order of blocks created in parallel. <br> The ordering is 
+				governed by the PHANTOM consensus protocol, <br> which is a generalization 
 				of Nakamoto Consensus.</p>
 			</flow-page>
 			<flow-page>
 				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>PHANTOM favours blocks that mined up-to-date blocks, and propagated 
-				them sufficiently fast, “blue blocks”, over those withheld or propagated 
+				<p>PHANTOM favours blocks that mined up-to-date blocks, <br> and propagated 
+				them sufficiently fast, “blue blocks”, <br> over those withheld or propagated 
 				over too slow communication channels, “red blocks”.</p>
 			</flow-page>
 			<flow-page>
