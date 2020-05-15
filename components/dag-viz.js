@@ -824,7 +824,7 @@ export class GraphNode{
             rgba : data.color || shapeConfig.color,
 			opacity : 0.5,
 			pattern, patternOpacity,
-			strokeWidth : data.isChainBlock ? 7 : 1,
+			strokeWidth : data.isChainBlock ? 5 : 1,
 			selected : this.selected
 		})
 
