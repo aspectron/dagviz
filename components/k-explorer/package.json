@@ -2,10 +2,10 @@
 	"name": "k-explorer",
 	"description": " ",
 	"dependencies": {
+		"@aspectron/flow-utils": "*",
 		"@webcomponents/webcomponentsjs": "*",
-		"lit-element":"*",
-		"flow-utils":"*",
-		"express":"*"
+		"express": "*",
+		"lit-element": "*"
 	},
 	"scripts": {
 		"start": "node web-app.js"

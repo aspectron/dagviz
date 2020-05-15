@@ -1,8 +1,9 @@
+import {isString, pick} from './k-utils.js';
 export class KPath{
 
 	static getUrl(url){
 		url =  url || location.href;
-		if(_.isString(url))
+		if(isString(url))
 			url = new URL(url);
 
 		return url;
@@ -54,7 +55,7 @@ export class KPath{
 	}
 
 	static blocks_params(params){
-		return _.pick(params, ['limit', 'skip', 'order']);
+		return pick(params, ['limit', 'skip', 'order']);
 	}
 	static blocks_url(paths, params){
 		return {params:this.blocks_params(params)}

@@ -643,8 +643,8 @@ export class KExplorer extends LitElement{
 			<div class="items sbar" >
 				${this.debug?html`<pre>${this.renderJSON(t)}</pre>`:''}
 				<table>
-                    <tr class="id k-link"><td>ID</td><td data-t-page-id="${t.transactionId}">${t.transactionId}</td></tr>
-					<tr class="hash k-link"><td>Hash</td><td data-t-page-hash="${t.transactionHash}">${t.transactionHash}</td></tr>
+                    <tr class="id"><td>ID</td><td class="k-link" data-t-page-id="${t.transactionId}">${t.transactionId}</td></tr>
+					<tr class="hash"><td>Hash</td><td class="k-link"  data-t-page-hash="${t.transactionHash}">${t.transactionHash}</td></tr>
 					<tr class="confirmations"><td>Confirmations</td><td>${t.confirmations}</td></tr>
 					<tr class="mass"><td>Mass</td><td>${t.mass}</td></tr>
 					<tr class="payload-hash"><td>Payload Hash</td><td>${t.payloadHash}</td></tr>

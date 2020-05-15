@@ -321,6 +321,16 @@ const debounce = (obj, key, fn) => {
     } 
 };
 
-export {debounceFrameMap, debounce}
+const pick = (obj, keys)=>{
+    let result = {}, v;
+    keys.forEach(k=>{
+        v = obj[k];
+        if(v!== undefined)
+            result[k] = v
+    });
+    return result;
+}
+
+export {debounceFrameMap, debounce, pick}
 export {isElementVisible, paginationStyle, scollbarStyle, loadingImgStyle, selectText};
 export {copyToClipboard, getTS, buildPagination, renderPagination, btnStyle, isString, isNumber};
