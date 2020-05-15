@@ -1465,6 +1465,7 @@ export class App {
 			this.kExplorer.hideSettings = true;
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorerWin.close = ()=>{
+				document.body.classList.toggle("explorer-active", false);
 				if(this.kExplorerWin.classList.contains("active")){
 					this.kExplorerWin.classList.remove("active");
 					this.storeUndo()
@@ -1532,6 +1533,7 @@ export class App {
 		if(!method)
 			return
 		this.kExplorerWin.classList.add("active");
+		document.body.classList.toggle("explorer-active", true);
 		if(this.kExplorer.callApi)
 			this.kExplorer.callApi([method, ...paths], params);
 		

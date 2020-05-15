@@ -230,6 +230,9 @@ body.orient-v #dagViz{height:100vh;width:100vw;}
 .block-boxes-holder{z-index:10000;bottom:10px;left:10px;}
 menu-panel{z-index:100;}
 
+body:not(.explorer-active) #explorer .vis,
+body.explorer-active #explorer .exp{display:none}
+
 .k-theme-dark menu-panel{background-color:#383737;}
 .k-theme-dark .toggle:hover{color:#009688;}
 .k-theme-dark #top,
