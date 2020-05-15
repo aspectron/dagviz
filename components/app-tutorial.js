@@ -31,12 +31,19 @@ class AppTutorial extends BaseElement{
 			}
 			flow-page{
 				overflow:auto;
-				padding:10px;box-sizing:border-box;display:flex;flex-direction:row; justify-content: flex-start; align-items: center;
+				padding:10px;box-sizing:border-box;display:flex;flex-direction:row; justify-content: space-evenly; /*align-items: center;*/
 				padding-bottom:35px;background-color:var(--bg-color, #FFF);
 			}
-			flow-page img{
+			@media(max-width:425px){
+				flow-page{
+					flex-direction:column;
+				}
+			}
+			flow-page div{
+				/*
 				display:flex;max-width:90%;max-height:90%;margin:auto;
 				object-fit:contain;height:100px;
+				*/
 			}
 
 			.dagviz-slide{
@@ -69,6 +76,30 @@ class AppTutorial extends BaseElement{
 			td img{border:1px solid rgba(0, 0, 0, 0.1);height:auto;}
 			div.items{margin-bottom:20px;}
 			flow-page p{margin-bottom:10px;}
+
+
+			flow-page div img{
+				max-width:100%;max-height:100%; /*margin:auto;*/
+				/*object-fit:contain;*/ /*height:100px;*/
+				
+			}
+
+
+			flow-page > div:nth-child(1)
+			 {
+				object-fit: contain;
+
+				width: 40%;
+				text-align: center;
+				padding: 32px;
+			}
+
+			flow-page > div:nth-child(2)
+			 {
+				padding: 32px;
+				flex: 1;
+				text-align: justify;
+			}
 		`];
 	}
 
@@ -83,59 +114,54 @@ class AppTutorial extends BaseElement{
 		<flow-pages class="has-dots" @change="${this.onSlideChange}">
 			<div slot="title">${this.slideTitle||'Kaspa Tutorial'}</div>
 			<flow-page class="active">
-			<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>Kaspa is a PoW-based ledger organized in a DAG of blocks -- a blockDAG. </br>
-				A new block gets added to the blockDAG every second.</br>
-				Many blocks are created in parallel</p>
-				
+				<div><img src="/resources/images/tutorial/slide-1.jpg" /></div>
+				<div>Kaspa is a PoW-based ledger organized in a DAG <br> of blocks -- a blockDAG. 
+				A new block gets added to the blockDAG every second.
+				Many blocks are created in parallel.</div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-2.jpg" />
-				<p>A new block gets added to the blockDAG every second. <br> Many blocks are 
-				created in parallel</p>
+				<div><img src="/resources/images/tutorial/legend.png" /></div>
+				<div>Unlike a blockchain, blocks are not orphaned.
+				Kaspa integrates all blocks into one blockDAG,by allowing them 
+				to reference multiple parents.</div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>Unlike a blockchain, blocks are not orphaned. <br> Kaspa integrates all 
-				blocks into one blockDAG, <br> by allowing them to reference multiple parents</p>
-			</flow-page>
-			<flow-page>
-				<img src="/resources/images/tutorial/slide-2.jpg" />
-				<p>Rather than agreeing which blocks should be discarded, <br> the consensus 
-				decides on the order of blocks created in parallel. <br> The ordering is 
+				<div><img src="/resources/images/tutorial/slide-2.jpg" /></div>
+				<div><p>Rather than agreeing which blocks should be discarded, the consensus 
+				decides on the order of blocks created in parallel.The ordering is 
 				governed by the PHANTOM consensus protocol, <br> which is a generalization 
-				of Nakamoto Consensus.</p>
+				of Nakamoto Consensus.</div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>PHANTOM favours blocks that mined up-to-date blocks, <br> and propagated 
+				<div><img src="/resources/images/tutorial/blue-red-blocks.png" /></div>
+				<div>PHANTOM favours blocks that mined up-to-date blocks, <br> and propagated 
 				them sufficiently fast, “blue blocks”, <br> over those withheld or propagated 
-				over too slow communication channels, “red blocks”.</p>
+				over too slow <br> communication channels, “red blocks”.</div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-2.jpg" />
-				<p>The “blue score” of a block is a generalization of the block height 
-				in a chain; it represents the number of blue blocks in the block’s 
-				past. The iterative process of selecting the parent with the highest 
-				blue score, “the selected parent”, results in the identification of 
-				a chain within the blockDAG, “the selected parent chain”.</p>
+				<div><img src="/resources/images/tutorial/slide-2.jpg" /></div>
+				<div><p>The “blue score” of a block is a generalization of the block height <br> 
+				in a chain; it represents the number of blue blocks in the block’s <br>
+				past. The iterative process of selecting the parent with the highest <br>
+				blue score, “the selected parent”, results in the identification of <br>
+				a chain within the blockDAG, “the selected parent chain”.</p></div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>Each new block inherits the colouring of its past from its selected 
-				parent, and adds blocks created in parallel to the selected parent, 
-				following a colouring procedure defined by the protocol.</p>
+				<div><img src="/resources/images/tutorial/slide-1.jpg" /></div>
+				<div><p>Each new block inherits the colouring of its past from its selected <br>
+				parent, and adds blocks created in parallel to the selected parent, <br>
+				following a colouring procedure defined by the protocol.</p></div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-2.jpg" />
-				<p>Confirmations in PHANTOM are a generalization of confirmations 
-				in a chain, and are defined by the blue score of the chain blocks 
-				atop the transaction. The fast block rate enables fast confirmation 
-				of transactions.</p>
+				<div><img src="/resources/images/tutorial/slide-2.jpg" /></div>
+				<div><p>Confirmations in PHANTOM are a generalization of confirmations <br>
+				in a chain, and are defined by the blue score of the chain blocks <br>
+				atop the transaction. The fast block rate enables fast confirmation <br>
+				of transactions.</p></div>
 			</flow-page>
 			<flow-page>
-				<img src="/resources/images/tutorial/slide-1.jpg" />
-				<p>Blocks contain transactions in the UTXO-model format.</p>
+				<div><img src="/resources/images/tutorial/slide-1.jpg" /></div>
+				<div><p>Blocks contain transactions in the UTXO-model format.</p></div>
 			</flow-page>
 			<flow-page class="dagviz-slide" data-title='Dagviz Tutorial'>
 				<div class="items">
@@ -162,7 +188,7 @@ class AppTutorial extends BaseElement{
 						</tbody>
 					</table>
 				</div>
-				<img src="/resources/images/tutorial/legend.png" />
+				<div><img src="/resources/images/tutorial/legend.png" /></div>
 			</flow-page>
 
 			<div slot="buttons" class="buttons">
