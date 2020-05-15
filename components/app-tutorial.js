@@ -18,7 +18,7 @@ class AppTutorial extends BaseElement{
 			}
 			[slot="title"]{font-size:1.5rem;padding:10px;}
 			flow-pages{
-				position:absolute;left:10%;top:10%;width:80%;height:80%;
+				position:absolute;left:25%;top:25%;width:50%;height:50%;
 				border:2px solid var(--flow-primary-color);
 				background-color:var(--bg-color, #FFF);box-sizing:border-box;
 			}
