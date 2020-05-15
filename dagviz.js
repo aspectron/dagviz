@@ -208,7 +208,7 @@ class DAGViz {
         app.use((req, res, next)=>{
             let auth = basicAuth(req);
             if(!req.url.startsWith('/components') && 
-                !req.url.startsWith('/build') &&
+                !req.url.startsWith('/node_modules') &&
                 (!auth || auth.name != 'dag' || auth.pass != 'dag')) {
                 res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
                 return res.end();
