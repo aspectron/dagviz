@@ -1300,19 +1300,19 @@ export class DAGViz extends BaseElement {
 			        <polygon points="3 0, 6 6, 0 6"/>
 			    </marker>
 			    <marker id="endarrowsm-e${c}" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    	refX="2" refY="1">
 			        <polygon points="2 2, 0 1, 2 0"/>
 			    </marker>
 			    <marker id="endarrowsm-w${c}" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    	refX="0" refY="1">
 			        <polygon points="0 0, 2 1, 0 2"/>
 			    </marker>
 			    <marker id="endarrowsm-n${c}" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    	refX="1" refY="0">
 			        <polygon points="0 0, 2 0, 1 2"/>
 			    </marker>
 			    <marker id="endarrowsm-s${c}" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    	refX="-2" refY="1">
 			        <polygon points="1 0, 2 2, 0 2"/>
 			    </marker>`
 			)}
