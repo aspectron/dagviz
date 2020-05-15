@@ -492,7 +492,7 @@ export class GraphNodeLink{
 		const {h, sign} = this.holder.ctx.direction;
 		const {_arrows:arrows} = this.holder.ctx;
 		if(arrows != 'off') {
-			let tSize = this.target.data.size+(this.target.data.isChainBlock?9:6)
+			let tSize = this.target.data.size+(this.target.data.isChainBlock?8:6)
 			const sSize = this.source.data.size
 			let boxHSize = tSize;
 			const margin = (boxHSize*2)/(this.target.parentLinksLength+1);
