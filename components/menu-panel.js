@@ -71,8 +71,14 @@ class MenuPanel extends BaseElement{
             <div class="menu-item"><i class="close-menu fal fa-times"></i></div>
         </div>
         <div class="items"></div>
+        <a class="toggle tutorial-link" title="Open Tutorial" @click="${this.openTutorial}">Tutorial</a>
         `;
 	}
+
+    openTutorial(){
+        this.toggle();
+        window.tutorial(0);
+    }
 
     toggle() {
         this.hidden_ = !this.hidden_;

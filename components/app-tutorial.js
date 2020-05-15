@@ -20,7 +20,7 @@ class AppTutorial extends BaseElement{
 			flow-pages{
 				position:absolute;left:10%;top:10%;width:80%;height:80%;
 				border:2px solid var(--flow-primary-color);
-				background-color:#FFF;box-sizing:border-box;
+				background-color:var(--bg-color, #FFF);box-sizing:border-box;
 			}
 			flow-pages .buttons flow-btn{
 				display:flex;align-items:center;
@@ -32,7 +32,7 @@ class AppTutorial extends BaseElement{
 			flow-page{
 				overflow:auto;
 				padding:10px;box-sizing:border-box;display:flex;flex-direction:column;
-				padding-bottom:35px;background-color:#FFF;
+				padding-bottom:35px;background-color:var(--bg-color, #FFF);
 			}
 			flow-page img{
 				display:block;max-width:90%;max-height:90%;margin:auto;flex:1;
@@ -48,9 +48,11 @@ class AppTutorial extends BaseElement{
 			th{
 				background-color:#FFF;
 				position:sticky;top:0px;box-shadow:3px 2px 2px 0px rgba(0, 0, 0, 0.4);
+				color:var(--flow-primary-color);
 			}
 			td,th{border-bottom:1px solid #DDD;padding:5px;box-sizing:border-box;}
-			tr:nth-child(2n) td{background-color:#EDEDED}
+			th{border-bottom:0px;}
+			tr:nth-child(2n) td{background-color:rgba(200,200,200, 0.3)}
 			th:last-child:after{
 				content:"";
 				position:absolute;
@@ -62,6 +64,7 @@ class AppTutorial extends BaseElement{
 				margin-right:-7px;
 				z-index:1000;
 			}
+			tr:last-child td{border-bottom:0px;}
 			.shadow{box-shadow:2px 2px 4px 0px rgba(0, 0, 0, 0.3);}
 			td img{border:1px solid rgba(0, 0, 0, 0.1);height:auto;}
 			div.items{margin-bottom:20px;}
