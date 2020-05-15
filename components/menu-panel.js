@@ -3,7 +3,7 @@ const menuPanelStyle = document.createElement('style');
 menuPanelStyle.innerHTML = `
     menu-panel{
         position: absolute;
-        width:300px;
+        width:314px;
         /*height: 240px;*/
         padding: 12px;
         /*border: 1px solid #333;*/
