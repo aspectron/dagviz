@@ -294,10 +294,12 @@ class DAGViz {
         app.use(serveStatic('./', { 'index': ['index.html', 'index.htm']}))
 
         return new Promise((resolve,reject) => {
+
+            let port = this.args.port || 8686;
             // Create server
             const server = http.createServer((req, res)=>{
                 app.run(req, res);
-            }).listen(8686, () => {
+            }).listen(port, () => {
                 console.log('listening on 8686');
                 resolve();
             });
