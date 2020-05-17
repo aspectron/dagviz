@@ -300,7 +300,7 @@ class DAGViz {
             const server = http.createServer((req, res)=>{
                 app.run(req, res);
             }).listen(port, () => {
-                console.log('listening on 8686');
+                console.log(`listening on ${port}`);
                 resolve();
             });
 
