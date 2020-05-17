@@ -93,6 +93,9 @@ class DAGViz {
 
     async initMQTT() {
 
+        if(this.args['disable-mqtt'])
+            return Promise.resolve();
+
         const client = mqtt.connect(this.mqtt.address,{
             clientId:"mqtt_"+Math.round(Date.now()*Math.random()).toString(16),
             username: this.mqtt.username, //'user',
