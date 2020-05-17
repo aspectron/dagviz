@@ -23,7 +23,7 @@ menuPanelStyle.innerHTML = `
         box-sizing:border-box;
     }
     .items{
-        height:100px;
+        min-height:100px;
         flex:1;
         overflow:auto;
     }
