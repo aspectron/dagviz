@@ -1871,7 +1871,11 @@ class LastBlockWidget extends BaseElement{
 				cursor: pointer;
 			}
 			:host(.visible) { opacity: 1 }
-			div{padding:6px}
+			div[wrapper]{
+				padding:6px;
+				display: flex;
+				flex-direction: column;
+			}
 			
 			@keyframes wiggle {
 				0% { transform: rotate(0deg); }
@@ -1892,7 +1896,7 @@ class LastBlockWidget extends BaseElement{
 			:host(.shake) {
 				/*animation: shake 2.5s ;*/
 				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
-			}			
+			}
 		`;
 	}
 
@@ -1905,7 +1909,14 @@ class LastBlockWidget extends BaseElement{
 
 	render(){
 
-		return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}</div>`;
+		return html`<div wrapper @click=${this.click}>
+				<div>
+					${this.blocks} new block${this.blocks!=1?'s':''}
+				</div>
+				<div>
+					<fa-icon icon="fal:arrow-right"></fa-icon>
+				</div>
+			</div>`;
 	}
 
 	updateBlocks(blocks) {
