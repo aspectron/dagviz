@@ -1914,7 +1914,9 @@ class LastBlockWidget extends BaseElement{
 					${this.blocks} new block${this.blocks!=1?'s':''}
 				</div>
 				<div>
-					<fa-icon icon="fal:arrow-right"></fa-icon>
+					<fa-icon icon="/resources/images/k-subtract.svg" color="red" size="48"></fa-icon>
+					<fa-icon icon="/resources/images/arrow-right.svg#arrow-right" color="red" size="48"></fa-icon>
+					<fa-icon icon="fal:arrow-right" size="24" color="red"></fa-icon>
 				</div>
 			</div>`;
 	}
