@@ -1897,6 +1897,13 @@ class LastBlockWidget extends BaseElement{
 				/*animation: shake 2.5s ;*/
 				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
 			}
+
+			.arrow {
+				width: 36px;
+				height: auto;
+				margin: 2px;
+				opacity: 0.8;
+			}
 		`;
 	}
 
@@ -1914,9 +1921,15 @@ class LastBlockWidget extends BaseElement{
 					${this.blocks} new block${this.blocks!=1?'s':''}
 				</div>
 				<div>
+					<img class='arrow' src="/resources/images/arrow-right-white.png" />
+					<!--
+
+					// TODO @surinder
+
 					<fa-icon icon="/resources/images/k-subtract.svg" color="red" size="48"></fa-icon>
 					<fa-icon icon="/resources/images/arrow-right.svg#arrow-right" color="red" size="48"></fa-icon>
 					<fa-icon icon="fal:arrow-right" size="24" color="red"></fa-icon>
+					-->
 				</div>
 			</div>`;
 	}
