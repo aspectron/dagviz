@@ -5,7 +5,7 @@ then
     #sudo docker run --net host dagviz --port=18686 
 elif [ $1 == 'testnet' ]
 then
-    echo need testnet address
+    sudo docker run --net host dagviz --port=18787 --kasparov=https://testnet-kasparovd.kas.pa/ --disable-mqtt
     #sudo docker run --net host dagviz --port=18787 -- 
 elif [ $1 == 'devnet' ]
 then
