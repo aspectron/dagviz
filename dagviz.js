@@ -157,7 +157,7 @@ class DAGViz {
         const { addedChainBlocks, removedBlockHashes } = args;
 
         if(removedBlockHashes && removedBlockHashes.length)
-            this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN %L`, removedBlockHashes));
+            this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
 
         if(addedChainBlocks && addedChainBlocks.length) {
             // let addedHashes = addedChainBlocks.map(v=>v.hash);
@@ -168,7 +168,7 @@ class DAGViz {
                 const { hash, acceptedBlockHashes } = instr;
                 //console.log('UPDATE blocks SET parentBlockHashes =  WHERE blockHash IN ?', [acceptedBlockHashes], [hash]);
                 this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${hash}'`);
-                this.sql(format(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN %L`, acceptedBlockHashes));
+                this.sql(format(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (%L)`, acceptedBlockHashes));
             })
         }
     }
