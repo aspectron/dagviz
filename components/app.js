@@ -1904,6 +1904,12 @@ class LastBlockWidget extends BaseElement{
 				margin: 2px;
 				opacity: 0.8;
 			}
+
+			.subtitle {
+				font-size: 10.4px;
+				opacity: 0.8;
+
+			}
 		`;
 	}
 
@@ -1931,6 +1937,7 @@ class LastBlockWidget extends BaseElement{
 					<fa-icon icon="fal:arrow-right" size="24" color="red"></fa-icon>
 					-->
 				</div>
+				<div class='subtitle'>CLICK TO TRACK</div>
 			</div>`;
 	}
 
@@ -1939,6 +1946,8 @@ class LastBlockWidget extends BaseElement{
 
 		this.blueScore = blocks[0].blueScore;
 
+		if(this.region === undefined)
+			return;
 
 		let pos = -app.ctx.graph.paintEl.transform.x / app.ctx.graph.paintEl.transform.k / app.ctx.unitDist * app.ctx.direction.sign;
 		let from = pos - this.region.range * 0.5;
