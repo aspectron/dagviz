@@ -15,6 +15,7 @@ const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
 const {FlowRouter} = require('@aspectron/flow-utils');
+//const ejs = require('ejs')
 
 let args = MF.utils.args();
 const DUMMY_TX = true;
@@ -218,6 +219,8 @@ class DAGViz {
         app.use((req, res, next)=>{
             if(this.args['no-auth'])
                 return next();
+            //if(req.url.match(/dag\-viz\.js$/))
+            //    console.log("req", req.query._h)
 
             let auth = basicAuth(req);
             if(!req.url.startsWith('/components') && 
@@ -294,14 +297,48 @@ class DAGViz {
             });
         })
 
+        /*
+        let sendHtmlFile = (args={})=>{
+            let {res, next, file, data, options, contentType} = args;
+            if(!options)
+                options = {};
+            if(!data)
+                data = {};
+            if(!contentType)
+                contentType = 'text/html';
+
+            ejs.renderFile(file, data, options, (err, html)=>{
+                if(err)
+                    return next(err);
+                res.writeHead(200, {'Content-Type': contentType});
+                res.write(html);
+                res.end();
+            })
+        }
+        this._hashMap = {};
+        let _H = ()=>{
+            let hash = this.hash(crypto.randomBytes(32));
+            this._hashMap[hash] = 1;
+            return hash;
+        }
+        */
+
         app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next)=>{
             res.sendFile("./index.html");
+            //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
+        })
+
+        app.get('/', (req, res, next)=>{
+            res.sendFile("./index.html");
+            //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 
         flowRouter.init();
 
         //app.use("/k-explorer", serveStatic('./node_modules/k-explorer', { 'index': ['index.html', 'index.htm'] }))
-        app.use(serveStatic('./', { 'index': ['index.html', 'index.htm']}))
+        app.use('/resources', serveStatic('./resources'))
+        app.use('/node_modules', serveStatic('./node_modules'))
+
 
         return new Promise((resolve,reject) => {
 

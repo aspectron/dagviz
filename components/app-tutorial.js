@@ -293,8 +293,7 @@ class AppTutorial extends BaseElement{
 		this.renderRoot.querySelector('flow-pages').setActive(index);
 		this.classList.add('active');
 	}
-// span.innerText = 'fin';
-// nextBtn.querySelector("span")
+
 	skipTutorial(){
 		this.classList.remove('active');
 	}
@@ -304,9 +303,9 @@ class AppTutorial extends BaseElement{
 		dpc(1000, ()=>{
 
 			let pages = this.shadowRoot.getElementById("pages");
-			console.log("Pages1", pages);
+			//console.log("Pages1", pages);
 			let wrapper = pages.shadowRoot.querySelector(".wrapper");
-			console.log("Pages2", wrapper);
+			//console.log("Pages2", wrapper);
 			$(wrapper).touchwipe({
 				wipeLeft: function() { pages.showNext(); },
 				wipeRight: function() {pages.showPrevious(); },

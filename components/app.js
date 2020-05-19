@@ -1072,7 +1072,6 @@ export class App {
 		this.io = io();
 
 		this.io.on('dag/blocks', (blocks) => {
-			console.log("dag/blocks", blocks)
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
@@ -1101,7 +1100,7 @@ export class App {
 				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
 					this.ctx.lastBlockData = newLastBlock;
 					this.ctx.lastBlockDataTS = Date.now();
-					console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
+					this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
 				}
 
 				if(newLastBlock.blueScore > this.ctx.max)
@@ -1710,7 +1709,6 @@ export class App {
 	}
 	
 	regionCleanup() {
-
 		const { from, to, range } = this.getRegion();
 		//const { region : { from, to, range } } = this.getRegion();
 
