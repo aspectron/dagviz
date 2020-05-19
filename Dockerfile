@@ -1,5 +1,5 @@
 # -----
-FROM node:13.8-alpine AS build
+FROM node:14.2-alpine AS build
 
 RUN apk update
 RUN apk add --no-cache bash file postgresql nano 
@@ -13,8 +13,16 @@ COPY . .
 RUN npm install
 
 #RUN mv /usr/src/dagviz/k-explorer /usr/src/dagviz/k-explorer
-RUN cd /usr/src/dagviz/k-explorer && npm install && npm link
-RUN npm link k-explorer
+#RUN cd /usr/src/dagviz/k-explorer && npm install && npm link
+#RUN npm link k-explorer
+
+RUN addgroup -S dagviz && adduser -S dagviz -G dagviz
+
+RUN mkdir -p /run/postgresql
+RUN chown dagviz:dagviz /run/postgresql
+
+# Tell docker that all future commands should run as the appuser user
+USER dagviz
 
 EXPOSE 8686 
 EXPOSE 18686-20000
