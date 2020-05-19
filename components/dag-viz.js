@@ -976,7 +976,8 @@ export class GraphNode{
 		if(!this.el.arrow){
 			this.el.arrow = this.el.append('polygon')
 				.attr("class", 'arrow-head')
-				.attr("fill", "#000").attr('stroke', "#000");
+				.attr("fill", "#333").attr('stroke', "#333");
+//				.attr("fill", "#000").attr('stroke', "#000");
 		}
 		let arrow = this.el.arrow;
 		if(arrow._type == arrows+dir)
