@@ -93,8 +93,12 @@ class DAGViz {
 
     async initMQTT() {
 
-        if(this.args['disable-mqtt'])
+        if(this.args['disable-mqtt']) {
+            // console.log(`!!! WARNING: MQTT IS DISABLED`.redBG.brightWhite);
             return Promise.resolve();
+        }
+
+        console.log("MQTT connecting to:", this.mqtt);
 
         const client = mqtt.connect(this.mqtt.address,{
             clientId:"mqtt_"+Math.round(Date.now()*Math.random()).toString(16),
@@ -209,6 +213,9 @@ class DAGViz {
             folders:['/components']
         });
         app.use((req, res, next)=>{
+            if(this.args['no-auth'])
+                return next();
+
             let auth = basicAuth(req);
             if(!req.url.startsWith('/components') && 
                 !req.url.startsWith('/node_modules') &&
@@ -504,7 +511,7 @@ class DAGViz {
                 resolve(data);
             }, (err) => {
                 if((err+"").indexOf('ECONNREFUSED'))
-                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks?${args}`)
+                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
                 else
                     console.log(err);
                 reject(err);
@@ -515,11 +522,7 @@ class DAGViz {
 
     fetch(options) {
         return new Promise((resolve,reject) => {
-
             let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
-            
-            // console.log(`${this.kasparov}/blocks?${args}`);
-            
             rp({url: `${this.kasparov}/blocks?${args}`, rejectUnauthorized}).then((text) => {
                 let data = null;
                 try {
@@ -527,7 +530,6 @@ class DAGViz {
                 } catch(ex) {
                     reject(ex);
                 }
-                // console.log(data);
                 resolve(data);
             }, (err) => {
                 if((err+"").indexOf('ECONNREFUSED'))
