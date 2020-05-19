@@ -715,8 +715,35 @@ export class GraphNode{
 		return this;
 	}
 	rebuildLinks() {
-		this.removeLinks();
-		this.buildLinks();
+		//this.removeLinks();
+		//this.buildLinks();
+		let {data} = this;
+		if(!data.parentBlockHashes || !data.parentBlockHashes.length){
+			this.removeLinks();
+			return;
+		}
+		let map = {};
+		if(this.linkNodes)
+			this.linkNodes.forEach(l=>{
+				map[l.data.parent] = l;
+			})
+		let ids = {};
+		this.linkNodes = data.parentBlockHashes.map(parent => {
+			if(!this.holder.nodes[parent]){
+				this.partialLinks = true;
+				return null;
+			}
+			ids[parent] = 1;
+			if(map[parent])
+				return map[parent];
+
+			return new GraphNodeLink(this.holder, {child:this.id, parent});
+		}).filter(nl=>nl);
+
+		Object.values(map).forEach(link=>{
+			if(!ids[link.data.parent])
+				link.remove();
+		})
 	}
 	buildLinks(){
 		let {data, holder} = this;
