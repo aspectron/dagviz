@@ -15,6 +15,8 @@
     "mkdirp": "*",
     "mqtt": "*",
     "mysql": "*",
+    "pg": "*",
+    "pg-format": "*",
     "request": "*",
     "request-promise": "*",
     "serve-static": "*",
