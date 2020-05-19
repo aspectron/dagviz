@@ -264,8 +264,7 @@ class AppTutorial extends BaseElement{
 		this.renderRoot.querySelector('flow-pages').setActive(index);
 		this.classList.add('active');
 	}
-// span.innerText = 'fin';
-// nextBtn.querySelector("span")
+
 	skipTutorial(){
 		this.classList.remove('active');
 	}

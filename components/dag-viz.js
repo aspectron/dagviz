@@ -977,7 +977,7 @@ export class GraphNode{
 			this.el.arrow = this.el.append('polygon')
 				.attr("class", 'arrow-head')
 				.attr("fill", "#333").attr('stroke', "#333");
-//				.attr("fill", "#000").attr('stroke', "#000");
+		//.attr("fill", "#000").attr('stroke', "#000");
 		}
 		let arrow = this.el.arrow;
 		if(arrow._type == arrows+dir)
@@ -1468,9 +1468,12 @@ export class DAGViz extends BaseElement {
 
 		let pBox = this.getBoundingClientRect();
 		let centerX = pBox.left + pBox.width/2;
+		let centerY = pBox.top + pBox.height/2;
 		if(options && options.offsetX)
 			centerX += options.offsetX * pBox.width;
-		let centerY = pBox.top + pBox.height/2;
+		if(options && options.offsetY)
+			centerY += options.offsetY * pBox.height;
+		
 		let box = node.getBoundingClientRect();
 		let cX = box.left + box.width/2;
 		let cY = box.top + box.height/2;
@@ -1490,8 +1493,12 @@ export class DAGViz extends BaseElement {
 			t.x = +t.x.toFixed(4);
 			t.y = +t.y.toFixed(4);
 		}
+		//console.log("t", t.x, t.y)
 		let pos = -(t[axis] / t.k / this.ctx.unitDist) * sign;
+		//console.log("pos", pos.toFixed(0))
 		this.ctx.updateOffset(pos);
+		this.simulationNodes.forEach(n=>n.updateStyle());
+		
 		this.setChartTransform(this.paintEl.transform);
 	}
 
@@ -1893,29 +1900,35 @@ export class DAGViz extends BaseElement {
 			// 	fullFetch : true,
 			// 	pos, range : this.ctx.app.range_
 			// });
-			this.centerBy(this.ctx.lastBlockData.blockHash);
-			/*
+			//this.centerBy(this.ctx.lastBlockData.blockHash);
+			
 			this.centerBy(this.ctx.lastBlockData.blockHash, { 
 				filter : (t,v) => {
 					
 					let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
 					let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
-
-					let delta = 0.015;
-					if(X_ > 256 || Y_ > 256)
-						delta = 0.75;
+					
+					//let _cX = Math.abs(v.cX);
+					let delta = 0.1;
+					if(X_ > 200 || Y_ > 200)
+						delta = 0.8;
 					else
 					if(X_ > 16 || Y_ > 16)
-						delta = 0.25;
+						delta = 0.5;
+
+					//console.log("X_", X_, _cX, delta)
+
 				
 					t.x += v.cX * delta;
 					t.y += v.cY * delta;
+
+					t.x = +t.x.toFixed(4);
+					t.y = +t.y.toFixed(4);
 				}, 
-				[offset] : (this.ctx.direction.h ? 0.3 : 0.3) * this.ctx.direction.sign
+				//[offset] : (this.ctx.direction.h ? 0.3 : 0.3) * this.ctx.direction.sign
 				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
 				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
 			});
-			*/
 		}
 		else if(this.focusTargetHash) {
 

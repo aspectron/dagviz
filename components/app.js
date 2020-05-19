@@ -159,7 +159,10 @@ class GraphContext {
 	}
 	updateOffset(pos){
 		pos = pos!==undefined? pos : this.position;
-		this.offset = this.linearScale(pos/this.unitDist) - pos * this.unitDist;
+		this.offset = Math.ceil(this.linearScale(pos/this.unitDist) - pos * this.unitDist);
+		//console.log("this.offset", this.offset)
+		//if(Math.abs(offset - this.offset) > 10)
+		//	this.offset = offset;
 	}
 	/*
 	get position(){
@@ -315,7 +318,7 @@ class GraphContext {
 
 		this.position = x * this.max;
 		this.updateOffset();
-		// console.log('position:',this.position,'x:',x,'max:',this.max);
+		//console.log('updateOffset:',this.position,'x:', x,'max:',this.max);
 		if(skipUpdate)
 			return;
 
@@ -1072,7 +1075,6 @@ export class App {
 		this.io = io();
 
 		this.io.on('dag/blocks', (blocks) => {
-			console.log("dag/blocks", blocks)
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
@@ -1101,7 +1103,7 @@ export class App {
 				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
 					this.ctx.lastBlockData = newLastBlock;
 					this.ctx.lastBlockDataTS = Date.now();
-					console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
+					this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
 				}
 
 				if(newLastBlock.blueScore > this.ctx.max)
@@ -1710,7 +1712,6 @@ export class App {
 	}
 	
 	regionCleanup() {
-
 		const { from, to, range } = this.getRegion();
 		//const { region : { from, to, range } } = this.getRegion();
 
@@ -1952,7 +1953,7 @@ class LastBlockWidget extends BaseElement{
 		let pos = -app.ctx.graph.paintEl.transform.x / app.ctx.graph.paintEl.transform.k / app.ctx.unitDist * app.ctx.direction.sign;
 		let from = pos - this.region.range * 0.5;
 		let to = pos + this.region.range * 0.5;
-		console.log(pos,from,to);
+		//console.log(pos,from,to);
 		if(from < this.blueScore && this.blueScore < to ) {
 			this.halt();
 		} else {
