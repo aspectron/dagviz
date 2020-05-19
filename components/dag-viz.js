@@ -1531,7 +1531,15 @@ export class DAGViz extends BaseElement {
 			y += -sign * this.ctx.offset * k
 		}
 
-		this.paintEl.attr('transform', `translate(${x}, ${y}) scale(${k})`);
+		if(this.__x && Math.abs(this.__x - x) < 1)
+			x = this.__x;
+		if(this.__y && Math.abs(this.__y - y) < 1)
+			y = this.__y;
+
+		this.__x = x;
+		this.__y = y;
+
+		this.paintEl.attr('transform', `translate(${x.toFixed(4)}, ${y.toFixed(4)}) scale(${k})`);
 
 		if(skipUpdates)
 			return;
