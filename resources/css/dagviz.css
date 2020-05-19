@@ -4,7 +4,7 @@ body{
 	--graph-stroke:rgba(0,0,0,0.5);
 	--graph-node-link-default-color-1:#000;
 	--graph-node-link-default-color-2:rgba(0,0,0,1);
-	--graph-square-stroke:#000;
+	--graph-square-stroke:#333;
 	--graph-color-a-1:rgba(155,207,255,0.99);
 	--graph-color-a-2:rgba(107, 198, 250,1);
 	--graph-color-a-3:rgba(83, 191, 252,1);
