@@ -71,7 +71,7 @@ class MenuPanel extends BaseElement{
             <div class="menu-item"><i class="close-menu fal fa-times"></i></div>
         </div>
         <div class="items"></div>
-        <a class="toggle tutorial-link" title="Open Tutorial" @click="${this.openTutorial}">Tutorial</a>
+        <a class="toggle tutorial-link" title="Open Tutorial" @click="${this.openTutorial}">TUTORIAL</a>
         `;
 	}
 
