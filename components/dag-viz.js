@@ -813,7 +813,12 @@ export class GraphNode{
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash;
 		const isRed = !isBlue;
-		if(isBlue){
+		if(data.isNew){
+			data.color = 'var(--graph-color-new-1)';
+			data.highlightColor_before = 'var(--graph-color-new-2)'
+			data.highlightColor = 'var(--graph-color-new-3)'
+			data.highlightColor_after = 'var(--graph-color-new-4)'
+		}else if(isBlue){
 			data.color = 'var(--graph-color-a-1)';
 			data.highlightColor_before = 'var(--graph-color-a-2)'
 			data.highlightColor = 'var(--graph-color-a-3)'
@@ -915,8 +920,9 @@ export class GraphNode{
 	updateStyle(force){
 		const isBlue = !!this.data.acceptingBlockHash;
 		const data = this.data;
-
-		if(isBlue)
+		if(data.isNew)
+			data.color = 'var(--graph-color-new-5)';
+		else if(isBlue)
 			data.color = 'var(--graph-color-a-5)';
 		else
 			data.color = 'var(--graph-color-b-5)';

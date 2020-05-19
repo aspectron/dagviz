@@ -111,6 +111,7 @@ class GraphContext {
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
+		this.highlightNewBlock = 3;//seconds
 		//this.unit2Pos = {};
 
 		this.dir = 'E';
@@ -664,6 +665,18 @@ export class App {
 			}
 		});
 
+		new MultiChoice(this.ctx, 'highlightNewBlock',{
+			15:'15 sec',
+			10:'10 sec',
+			5:'5 sec',
+			3:'3 sec',
+			0:'OFF'
+		}, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
+			update:(text, v)=>{
+				this.updateNewBlockTimer(+v)
+			}
+		});
+
 
 	}
 
@@ -1074,10 +1087,24 @@ export class App {
 	initIO() {
 		this.io = io();
 
+		this.newBlocks = {};
+
+
+
 		this.io.on('dag/blocks', (blocks) => {
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
+			
+			if(this.ctx.highlightNewBlock>0){
+				let cTS = Date.now();
+				blocks.forEach(b=>{
+					b.cTS = cTS;
+					b.isNew = 1;
+					this.newBlocks[b.blockHash] = {cTS};
+				})
+			}
+
 			this.lastBlockWidget.updateBlocks(blocks);
 			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
 			window.dispatchEvent(ce)
@@ -1210,6 +1237,7 @@ export class App {
 			quality : ctx.quality,
 			select : 'none',
 			theme: ctx['k-theme'],
+			highlightNewBlock: ctx.highlightNewBlock,
 			expParams
 		}
 		params = Object.assign(defaults, params);
@@ -1358,6 +1386,38 @@ export class App {
 	restoreUndo(state) {
 		this.initContext(state);
 	}
+
+	highlightNewBlockTimer(ts){
+		ts = ts || Date.now() - this.ctx.highlightNewBlock;
+		let {nodes} = this.graph;
+		Object.entries(this.newBlocks).forEach(([blockHash, o])=>{
+			if(o.cTS >= ts)
+				return
+			if(nodes[blockHash]){
+				nodes[blockHash].data.isNew = false;
+				nodes[blockHash].updateStyle();
+			}
+			delete this.newBlocks[blockHash];
+		})
+	}
+
+	updateNewBlockTimer(highlightNewBlock, time=0){
+		if(highlightNewBlock){
+			if(this.highlightNewBlockTimerId)
+				clearInterval(this.highlightNewBlockTimerId);
+
+			this.highlightNewBlockTimerId = setInterval(()=>{
+				this.highlightNewBlockTimer();
+			}, (time || highlightNewBlock) * 1000)
+			return
+		}
+
+		if(this.highlightNewBlockTimerId){
+			this.highlightNewBlockTimer(Date.now() + 100000)
+			clearInterval(this.highlightNewBlockTimerId);
+		}
+
+	}
 	
 	async initContext(state) {
 		// pos, k, select, all ctls
@@ -1378,6 +1438,7 @@ export class App {
 				this.ctx.updateOffset();
 			}
 		}
+		this.updateNewBlockTimer(+state.highlightNewBlock);
 
 		if(state.k) {
 			const t = this.graph.paintEl.transform;
@@ -1823,9 +1884,8 @@ class MultiChoice {
 	}	
 
 	setValue(value){
-		//console.log(value);
 		const choices = Object.keys(this.choices);
-		if(!choices.includes(value))
+		if(this.choices[value] === undefined)
 			value = choices[0];
 
 		this.target[this.ident] = value;
