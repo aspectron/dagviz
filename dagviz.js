@@ -68,6 +68,12 @@ class DAGViz {
         return this.main();
     }
 
+    async shutdown() {
+        if(this.pgSQL)
+            await this.pgSQL.stop();
+            process.exit(0);
+    }
+
     async initLastBlockTracking() {
 
         this.lastBlockHash = await this.restoreLastBlockHash();
@@ -216,6 +222,14 @@ class DAGViz {
             rootFolder:path.dirname(__filename),
             folders:['/components']
         });
+
+        if(this.args.kdx) {
+            app.get('/halt', (req, res, next)=>{
+                res.sendJSON({ status : 'ok' }, 200);
+                this.shutdown();
+            })
+        }
+
         app.use((req, res, next)=>{
             if(this.args['no-auth'])
                 return next();
@@ -366,7 +380,7 @@ class DAGViz {
         const port = this.args.dbport || this.args['pgsql-port'] || 8309;
 
 //        const mySQL = new MySQL({ port, database : this.uid });
-        const pgSQL = new PgSQL({ port, database : this.uid });
+        const pgSQL = this.pgSQL = new PgSQL({ port, database : this.uid });
 //        await mySQL.start()
         await pgSQL.start()
 
@@ -626,7 +640,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
         this.verbose && process.stdout.write(` ...${this.lastTotal ? (skip/this.lastTotal * 100).toFixed(2)+'%' : skip}... `);
 
         this.getBlockCount().then(async (total) => {
-            if(this.lastTotal !== undefined && this.lastTotal > total+1e4) {
+            if(this.lastTotal !== undefined && this.lastTotal > total+1e4 || this.skip > total+1e3) {
                 console.log(`incloming total block count ${total}+1e4 is less than previous total ${this.lastTotal}`);
                 console.log(`initiating database purge...`);
                 await this.sql(`TRUNCATE TABLE blocks`);
