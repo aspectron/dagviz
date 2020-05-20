@@ -1,5 +1,6 @@
 {
   "name": "dagviz",
+  "description": "blockDAG Visualizer and Explorer",
   "version": "2.1.0",
   "private": true,
   "dependencies": {

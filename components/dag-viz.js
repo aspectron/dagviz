@@ -1430,7 +1430,7 @@ export class DAGViz extends BaseElement {
     	this.paintEl.transform = d3.zoomIdentity.translate(0, 0).scale(1);
 
 		this.graphHolder.addEventListener('mouseup', (e) => {
-			console.log("YES!!!!!!!!!!!!!!!");
+			// console.log("graphHolder mouseup");
 		})
 
 		this.updateSVGSize();
