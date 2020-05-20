@@ -4,7 +4,7 @@
   "version": "2.1.0",
   "private": true,
   "dependencies": {
-    "@aspectron/flow-utils": "*",
+    "@aspectron/flow-router": "*",
     "@aspectron/flow-ux": "*",
     "@webcomponents/webcomponentsjs": "*",
     "basic-auth": "*",
