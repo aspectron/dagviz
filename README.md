@@ -83,12 +83,13 @@ You can run DAGViz under KDX using the following configuration entry:
 ```json
 
 	"app:dagviz": {
-		"disable": true,
+		"disable": false,
 		"folder": "c:/dev/daglabs/dagviz",
 		"location": "http://localhost:8689",
 		"args": [
 			"node",
-			"dagviz",
+            "dagviz",
+            "--kdx",
             "--no-auth",
 			"--port=8689",
 			"--kasparov=http://localhost:11224",
