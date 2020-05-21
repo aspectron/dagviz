@@ -89,6 +89,7 @@ let scollbarStyle = css `
 let paginationStyle = css`
 	.pagination-box{text-align:center;padding:10px 5px;}
 	.pagination{display: inline-block;}
+    .pagination-box[disabled]{display:none}
 	.pagination a{
 		color: var(--k-pagination-color);
 		float: left;
@@ -216,7 +217,7 @@ let isElementVisible = (elem)=>{
     })
     return result;
 }
-
+let isSmallScreen = navigator.userAgent.toLowerCase().includes("mobi");
 let buildPagination = (total, skip=0, limit=25)=>{
     skip = +skip;
     limit = +limit;
@@ -224,7 +225,7 @@ let buildPagination = (total, skip=0, limit=25)=>{
 
     let totalPages = Math.ceil(total/limit);
     let activePage = Math.min(Math.ceil((skip+1)/limit), totalPages);
-    let maxPages = Math.min(10, totalPages);
+    let maxPages = Math.min(isSmallScreen?3:10, totalPages);
     let half = Math.floor(maxPages/2);
     let prev = Math.max(activePage-1, 1);
     let next = Math.min(activePage+1, totalPages)
@@ -331,6 +332,6 @@ const pick = (obj, keys)=>{
     return result;
 }
 
-export {debounceFrameMap, debounce, pick}
+export {debounceFrameMap, debounce, pick, isSmallScreen}
 export {isElementVisible, paginationStyle, scollbarStyle, loadingImgStyle, selectText};
 export {copyToClipboard, getTS, buildPagination, renderPagination, btnStyle, isString, isNumber};

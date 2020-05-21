@@ -94,7 +94,7 @@ export class KExplorer extends LitElement{
 			}
 			.pagination-box{
 				border-top:1px solid var(--k-border-color1, #555);
-				min-height:40px;
+				min-height:33px;
 				background-color:rgba(255,255,255, 0.05)
 			}
 			.mask{
@@ -245,6 +245,11 @@ export class KExplorer extends LitElement{
 			}
 
 			[hidden]{display:none}
+			@media(max-width:425px){
+				.heading{padding:5px 10px}
+				th,td{padding:5px}
+				.items{padding-left:0px;margin-top:0px;}
+			}
 
 		`];
 	}

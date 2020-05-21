@@ -3,7 +3,9 @@
 	"description": " ",
 	"dependencies": {
 		"@aspectron/flow-utils": "*",
+		"@aspectron/flow-router": "*",
 		"@webcomponents/webcomponentsjs": "*",
+		"ejs": "*",
 		"express": "*",
 		"lit-element": "*"
 	},
