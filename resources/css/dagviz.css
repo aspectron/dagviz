@@ -2,8 +2,8 @@ body{
 	font-family:'Exo 2','Consolas','Roboto Mono','Open Sans','Ubuntu Mono',courier-new,courier,monospace;font-size:17px;
 	--bg-color:#FFF;
 	--graph-stroke:rgba(0,0,0,0.5);
-	--graph-node-link-default-color-1:#000;
-	--graph-node-link-default-color-2:rgba(0,0,0,1);
+	--graph-node-link-default-color-1:rgba(0,0,0,0.65);
+	--graph-node-link-default-color-2:rgba(0,0,0,0.65);
 	--graph-square-stroke:#333;
 	--graph-color-a-1:rgba(155,207,255,0.99);
 	--graph-color-a-2:rgba(107, 198, 250,1);
@@ -46,8 +46,8 @@ body.k-theme-dark{
 	--bg-color:#202020;
 	--k-close-btn-bg-color:#202020;
 	background-color:var(--bg-color);
-	--graph-node-link-default-color-1:#c6c6c6;
-	--graph-node-link-default-color-2:#c6c6c6;
+	--graph-node-link-default-color-1:rgba(255,255,255,0.95);
+	--graph-node-link-default-color-2:rgba(255,255,255,0.95);
 	--graph-square-stroke:#c6c6c6;
 	--graph-color-a-1:#0077c2;
 	--graph-color-a-3:#022338;
