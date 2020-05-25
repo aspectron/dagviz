@@ -79,19 +79,27 @@
 		</div>
 	</div>
 	<script type="module">
-		if(window.localStorage && window.localStorage.tutorial!=1){
-			localStorage.tutorial = 1;
-			window.tutorial();
+		if(!localStorage.loaded){
+			localStorage.loaded = 'true';
+			window.location.reload();
 		}
-
 		import { App } from '/components/app.js';
-		$(document).ready(()=>{
-			window.app = new App();
-			window.app.init();
-			return;
+		window.addEventListener("WebComponentsReady", ()=>{
+			console.log("WebComponentsReady")
+		
+			if(window.localStorage && window.localStorage.tutorial!=1){
+				localStorage.tutorial = 1;
+				window.tutorial();
+			}
 			
-			if(app.argv.get('simulate-only') !== null)
+			$(document).ready(()=>{
+				window.app = new App();
+				window.app.init();
 				return;
+				
+				if(app.argv.get('simulate-only') !== null)
+					return;
+			})
 		})
 	</script>
 	<div id="metrics"></div>
