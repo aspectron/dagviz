@@ -1037,9 +1037,11 @@ export class GraphNode{
 	}
 
 	onNodeClick(e) {
+		this.$info.html('');
 		if (d3.event.defaultPrevented)
 			return
 		this.holder.onNodeClick(this, d3.event);
+		
 	}
 	onNodeHover(){
 		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
