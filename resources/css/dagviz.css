@@ -297,7 +297,7 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 
 
 #track {display:none;}
-
+.advanced {display:none;}
 
 @media(max-width:425px){
 	#top{right:8px;right:8px;z-index:10}

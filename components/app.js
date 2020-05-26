@@ -574,33 +574,14 @@ export class App {
 					$("#tracking,body").removeClass('tracking-enabled');
 			}
 		});
-		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines',{advanced:false});
-		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)',{advanced:false});
-		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain',{advanced:true});
-		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
-		// 	'border' : 'BORDER',
-		// 	'green' : 'GREEN',
-		// 	'none' : 'NO',
-		// 	'yellow' : 'YELLOW',
-		// 	'cyan' : 'CYAN'
-		// },'CHAIN BLOCKS DISTINCT','fal fa-highlighter:Highlight chain blocks');
-		new MultiChoice(this.ctx,'chainBlocksCenter', {
-			'disable':'OFF',
-			'force':"FORCE",
-			'fixed' : "FIXED"
-		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center', {advanced:true});
-
-		new MultiChoice(this.ctx,'layout', {
-			'determ' : 'DETERMINISTIC',
-			// 'random' : 'RANDOM',
-			'free' : 'FREE',
-		},'LAYOUT', 'fal fa-bring-front:Block layout', {advanced:true});
-
+		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
+		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
+		
 		new MultiChoice(this.ctx,'quality', {
 			'high' : 'HIGH',
 			'medium' : 'MEDIUM',
 			'low' : 'LOW',
-		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance',{advanced:false});
+		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
 		new MultiChoice(this.ctx,'dir', {
 			E:'LANDSCAPE',
@@ -608,7 +589,6 @@ export class App {
 			W:'LANDSCAPE',
 			N:'PORTRAIT'
 		},'ORIENTATION','Orientation', {
-			advanced : false,
 			limit : ['E','N'],
 			update : (text, v) => {
 				const $orientationImg = $('#orientation > img, body');
@@ -626,13 +606,41 @@ export class App {
 			}
 		});
 
+		new Toggle (this.ctx, 'advanced', 'ADVANCED', '',{
+			menu:'advanced',
+		});
+
+		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain',{advanced:true});
+
+		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
+		// 	'border' : 'BORDER',
+		// 	'green' : 'GREEN',
+		// 	'none' : 'NO',
+		// 	'yellow' : 'YELLOW',
+		// 	'cyan' : 'CYAN'
+		// },'CHAIN BLOCKS DISTINCT','fal fa-highlighter:Highlight chain blocks');
+
+		new MultiChoice(this.ctx,'chainBlocksCenter', {
+			'disable':'OFF',
+			'force':"FORCE",
+			'fixed' : "FIXED"
+		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center', {advanced:true});
+
+		new MultiChoice(this.ctx,'layout', {
+			'determ' : 'DETERMINISTIC',
+			// 'random' : 'RANDOM',
+			'free' : 'FREE',
+		},'LAYOUT', 'fal fa-bring-front:Block layout', {advanced:true});
+
+
 		new MultiChoice(this.ctx,'spacingFactor',[1,1.5,2.0,2.5,3.0],'SPACING','Spacing Factor', {
+			advanced: true,
 			update : (v) => {
 				this.graph.restartSimulation();
 			}
 		});
 
-		new Toggle(this.ctx,'childShift','CHILD SHIFT','Child Shift');
+		new Toggle(this.ctx,'childShift','CHILD SHIFT','Child Shift', {advanced:true});
 
 		new MultiChoice(this.ctx, 'arrows', {
 			'off' : 'OFF',
@@ -640,6 +648,7 @@ export class App {
 			'multis' : 'MULTI-S',
 			'multir': 'MULTI-R'
 		},'ARROWS','fal fa-location-arrow:Display Arrows', {
+			advanced: true,
 			update : (v) => {
 				//d3.select('node-text').attr("stroke-width", 0.5);
 				let {arrows} = this.ctx;
@@ -660,6 +669,7 @@ export class App {
 			'dark':'DARK',
 			'light':"LIGHT",
 		}, 'THEME','fa fa-palette:UI Theme', {
+			advanced: true,
 			update:(v)=>{
 				if(this.kExplorer){
 					this.kExplorer.setSettings({theme: v.toLowerCase()}, true);
@@ -675,6 +685,7 @@ export class App {
 			3:'3 sec',
 			0:'OFF'
 		}, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
+			advanced:true,
 			update:(text, v)=>{
 				this.updateNewBlockTimer(+v)
 			}
@@ -1813,10 +1824,16 @@ class Toggle {
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.options = options;
+		this.options = options || {};
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
-		this.el = $(`<span id="${ident}" class='toggle' ${tooltip}></span>`);
+
+		let cls = ["toggle"];
+
+		if(this.options.advanced)
+			cls.push("advanced");
+
+		this.el = $(`<span id="${ident}" class='${cls.join(" ")}' ${tooltip}></span>`);
 		$("menu-panel .items").append(this.el);
 
 		// let url = new URL(window.location.href);
@@ -1843,6 +1860,11 @@ class Toggle {
 		if(this.target.onToggle)
 			this.target.onToggle(this.ident, value);
 		this.update();
+
+		if(this.options.menu){
+			let selector = "." + this.options.menu;
+			$(selector).css("display", value ? "inline-block" : "none" );
+		}
 	}
 
 	getValue(storage) {
@@ -1856,7 +1878,14 @@ class Toggle {
 
 	update() {
 		const value = this.target[this.ident];
-		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${value ? 'ON' : 'OFF' }</span>`);
+		const {menu} = this.options;
+		let onV = "ON";
+		let offV = "OFF";
+		if(menu) {
+			onV = `<i class="fas fa-caret-down"></i>`;
+			offV = `<i class="fas fa-caret-right"></i>`;
+		}
+		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${value ? onV : offV }</span>`);
 		if(this.options && this.options.update)
 			this.options.update(value);
 	}
@@ -1868,14 +1897,18 @@ class MultiChoice {
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.options = options;
+		this.options = options || {};
 		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v,v])) : choices;
 		this.limit = options && options.limit ? (Array.isArray(options.limit) ? Object.fromEntries(options.limit.map(v=>[v,v])) : options.limit) : null;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
 		//const hidden = isMobile&&options.isMobile===false?"hidden":"";
-		
-		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
+		let cls = ["toggle"];
+
+		if(this.options.advanced)
+			cls.push("advanced");
+
+		this.el = $(`<span id="${ident}" class='${cls.join(" ")}' ${tooltip||''}></span>`);
 		$("menu-panel .items").append(this.el);
 
 		$(this.el).on('click', (e) => {
