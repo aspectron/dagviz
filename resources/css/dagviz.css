@@ -294,6 +294,11 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 		bottom:10px;
 	}
 }
+
+
+#track {display:none;}
+
+
 @media(max-width:425px){
 	#top{right:8px;right:8px;z-index:10}
 	#logo{margin-right:0px;}
@@ -315,7 +320,6 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 }
 
 @media(max-width:425px), (max-height:425px){
-	#track {display:none;}
 	#dir {display:none;}
 	#mass {display:none;}
 	#quality {display:none;}

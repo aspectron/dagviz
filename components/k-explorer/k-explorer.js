@@ -527,7 +527,7 @@ export class KExplorer extends LitElement{
 					<thead>
 						<tr>
 							<th class="blue-score">Blue Score</th>
-							<th class="name">Name</th>
+							<th class="name">Hash</th>
 							<th class="confirmations">Confirmations</th>
 							<th class="mass">Mass</th>
 							<th class="is-chain-block">Chain Block</th>

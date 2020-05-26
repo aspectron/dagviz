@@ -107,12 +107,13 @@ class GraphContext {
 		this.shape = 'square';
 		this.layout = 'determ';
 		this.quality = 'high';
-		this.spacingFactor = 1;
+		this.spacingFactor = 1.5;
 		this.arrows = 'multis';
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
 		this.highlightNewBlock = 3;//seconds
+		this.advanced = false;
 		//this.unit2Pos = {};
 
 		this.dir = 'E';
@@ -573,9 +574,9 @@ export class App {
 					$("#tracking,body").removeClass('tracking-enabled');
 			}
 		});
-		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
-		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
-		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain');
+		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines',{advanced:false});
+		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)',{advanced:false});
+		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain',{advanced:true});
 		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
 		// 	'border' : 'BORDER',
 		// 	'green' : 'GREEN',
@@ -583,31 +584,31 @@ export class App {
 		// 	'yellow' : 'YELLOW',
 		// 	'cyan' : 'CYAN'
 		// },'CHAIN BLOCKS DISTINCT','fal fa-highlighter:Highlight chain blocks');
-		new MultiChoice(this.ctx,'chainBlocksCenter',{
+		new MultiChoice(this.ctx,'chainBlocksCenter', {
 			'disable':'OFF',
 			'force':"FORCE",
 			'fixed' : "FIXED"
-		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center');
+		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center', {advanced:true});
 
-		new MultiChoice(this.ctx,'layout',{
+		new MultiChoice(this.ctx,'layout', {
 			'determ' : 'DETERMINISTIC',
 			// 'random' : 'RANDOM',
 			'free' : 'FREE',
-		},'LAYOUT', 'fal fa-bring-front:Block layout');
+		},'LAYOUT', 'fal fa-bring-front:Block layout', {advanced:true});
 
-		new MultiChoice(this.ctx,'quality',{
+		new MultiChoice(this.ctx,'quality', {
 			'high' : 'HIGH',
 			'medium' : 'MEDIUM',
 			'low' : 'LOW',
-		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
+		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance',{advanced:false});
 
-		new MultiChoice(this.ctx,'dir',{
+		new MultiChoice(this.ctx,'dir', {
 			E:'LANDSCAPE',
 			S:'PORTRAIT',
 			W:'LANDSCAPE',
 			N:'PORTRAIT'
 		},'ORIENTATION','Orientation', {
-			
+			advanced : false,
 			limit : ['E','N'],
 			update : (text, v) => {
 				const $orientationImg = $('#orientation > img, body');
