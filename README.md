@@ -84,14 +84,14 @@ You can run DAGViz under KDX using the following configuration entry:
 
 	"app:dagviz": {
 		"disable": false,
-		"folder": "c:/dev/daglabs/dagviz",
-		"location": "http://localhost:8689",
+		"folder": "$apps/dagviz",
+        "location": "http://localhost:8689",
+        "width" : 1600,
+        "height" : 680,
 		"args": [
 			"node",
             "dagviz",
-            "--kdx",
-            "--no-auth",
-			"--port=8689",
+            "--kdx", "--no-auth", "--port=8689",
 			"--kasparov=http://localhost:11224",
 			"--mqtt-address=mqtt://localhost:18792"
 		]
