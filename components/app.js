@@ -80,6 +80,7 @@ export class Block extends GraphNode {
 }
 
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+/*console.log("isMobile: ", isMobile);*/
 
 class GraphContext {
 	constructor(app, options) {
@@ -606,6 +607,7 @@ export class App {
 			W:'LANDSCAPE',
 			N:'PORTRAIT'
 		},'ORIENTATION','Orientation', {
+			
 			limit : ['E','N'],
 			update : (text, v) => {
 				const $orientationImg = $('#orientation > img, body');
@@ -853,23 +855,38 @@ export class App {
 		
 		this.generateTooltips();
 
-		this.isDevicePortrait = window.innerWidth < window.innerHeight;
-		console.log(`${this.isDevicePortrait?'portrait':'landscape'} device detected`)
-		window.addEventListener("orientationchange", () => {
-			// Announce the new orientation number
-			// alert(window.orientation);
-			let isPortrait = window.orientation > 45 ? this.isDevicePortrait : !this.isDevicePortrait;
+		// this.isDevicePortrait = window.innerWidth < window.innerHeight;
+		// console.log(`${this.isDevicePortrait?'portrait':'landscape'} device detected`)
+		// window.addEventListener("orientationchange", () => {
+		// 	// Announce the new orientation number
+		// 	// alert(window.orientation);
+		// 	console.log("WINDOW ORIENTATION VALUE: ",window.orientation);
+		// 	let isPortrait = (window.orientation == 0 || window.orientation == 180) ? this.isDevicePortrait : !this.isDevicePortrait;
+		// 	console.log(isPortrait);
+		// 	console.log("this.isPortrait", this.isPortrait);
+		// 	if(isPortrait !== this.isPortrait) {
 
-			if(isPortrait !== this.isPortrait) {
+		// 		this.ctls.dir.setValue(isPortrait ? 'N' : 'E');
+		// 		// this.ctls.dir.toggle({
+		// 		// 	disableLimit : (e.ctrlKey || e.shiftKey)				
+		// 		// });
+		// 	}
 
-				this.ctls.dir.setValue(isPortrait ? 'N' : 'E');
-				// this.ctls.dir.toggle({
-				// 	disableLimit : (e.ctrlKey || e.shiftKey)				
-				// });
-			}
-
-			this.isPortrait = isPortrait;
-		}, false);		
+		// 	this.isPortrait = isPortrait;
+		// }, false);		
+		if (isMobile){
+			window.addEventListener("orientationchange", () => {
+				// Announce the new orientation number
+				// alert(window.orientation);
+				console.log("WINDOW ORIENTATION VALUE: ",window.orientation);
+				if(window.orientation == 0 || window.orientation == 180)
+					this.ctls.dir.setValue('N');
+				else if (window.orientation == 90 || window.orientation == 270 || window.orientation == -90)
+					this.ctls.dir.setValue('E');
+				
+			
+			}, false);		
+		}
 	}
 
 	search(v_) {
@@ -1855,6 +1872,8 @@ class MultiChoice {
 		this.limit = options && options.limit ? (Array.isArray(options.limit) ? Object.fromEntries(options.limit.map(v=>[v,v])) : options.limit) : null;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
+		//const hidden = isMobile&&options.isMobile===false?"hidden":"";
+		
 		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
 		$("menu-panel .items").append(this.el);
 
@@ -1971,6 +1990,28 @@ class LastBlockWidget extends BaseElement{
 				opacity: 0.8;
 
 			}
+
+			/* mobile portrait */
+			@media(max-width:425px){
+				:host{
+					font-size: 10px;
+					min-width: 120px;
+					top: 64px;
+					left: 24px;
+					right:unset !important;
+				}
+			}
+			/* mobile landscape */
+			@media(max-height:425px){ 	
+				:host{
+					font-size: 10px;
+					min-width: 120px;
+					top:24px;
+					right: 64px;
+				}
+			}
+			
+			
 		`;
 	}
 
