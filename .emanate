@@ -181,7 +181,7 @@ E.task('mysql', ['origin'], async (callback) => {
 //     E.run(['mysql']);
 // }
 // else
-if(E.flags.pgsql) {
+if(E.flags['local-binaries'] || E.flags.pgsql) {
     E.run(['pgsql']);
 }
 else
