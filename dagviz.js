@@ -87,7 +87,7 @@ class DAGViz {
                 let id = parseInt(rows.shift().id);
                 id -= this.REWIND_BLOCK_PADDING;
                 this.skip = id;
-                console.log(`RESYNCING FROM ${id}`);
+                console.log(`...resyncing from block seq ${id}`);
             } else {
                 console.log("WARNING: last block hash is not available in db".brightRed);
             }
@@ -224,7 +224,7 @@ class DAGViz {
         });
 
         if(this.args.kdx) {
-            app.get('/halt', (req, res, next)=>{
+            app.get('/stop', (req, res, next)=>{
                 res.sendJSON({ status : 'ok' }, 200);
                 this.shutdown();
             })
@@ -507,7 +507,7 @@ class DAGViz {
         let blocks_idx = ['blockHash:UNIQUE','timestamp','isChainBlock','blueScore'];
         while(blocks_idx.length) {
             let [idx, unique] = blocks_idx.shift().split(':');
-            await this.sql(`CREATE ${unique||''} INDEX idx_${idx} ON blocks (${idx})`);
+            await this.sql(`CREATE ${unique||''} INDEX IF NOT EXISTS idx_${idx} ON blocks (${idx})`);
         }
         
         //id                      BIGSERIAL PRIMARY KEY,
@@ -532,7 +532,7 @@ class DAGViz {
         `);        
                 //UNIQUE INDEX idx_xid (xid)
 
-        await this.sql(`CREATE UNIQUE INDEX idx_xid ON last_block_hash (xid)`);
+        await this.sql(`CREATE UNIQUE INDEX IF NOT EXISTS idx_xid ON last_block_hash (xid)`);
 
     }
 
@@ -692,8 +692,9 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                         this.tracking = true;
                     if(blocks.length) {
                         if(this.tracking) {
-                            console.log('WARNING: detected ${blocks.length} database blocks not visible in MQTT feed!');
+                            console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
                             console.log(' ->'+blocks.map(block=>block.blockHash).join('\n'));
+                            console.log(`possible MQTT failure, catching up via db sync...`);
                         }
 
                         await this.post(blocks);
