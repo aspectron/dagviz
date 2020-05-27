@@ -38,8 +38,8 @@
       "--kdx", 
       "--no-auth", 
       "--port=8689",
-			"--kasparov=http://localhost:11224",
-			"--mqtt-address=mqtt://localhost:18792"
+			"--kasparov=http://localhost:$KASPAROVD-HTTP-PORT",
+			"--mqtt-address=mqtt://localhost:$MQTT-PORT"
 		]
 	}
 }
