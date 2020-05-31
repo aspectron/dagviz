@@ -40,6 +40,12 @@ body{
 
 	opacity:0;
 	transition:opacity 0.2s ease;
+
+	--flow-primary-color:rgba(0, 150, 136, 1);
+	--flow-border-color:rgb(0, 133, 119);
+	--flow-border-hover-color:rgba(2, 97, 74, 1);
+
+
 }
 body.k-theme-dark{
 	opacity:1;
@@ -59,6 +65,9 @@ body.k-theme-dark{
 	--arrow-head-fill:#c3c2c2;
 	--arrow-head-stroke:#c3c2c2;
 	--graph-node-text-color:#FFF;
+
+	--flow-primary-color:  rgba(0,150,136,1);
+	--flow-border-color:  rgba(0,150,136,1);
 }
 body.k-theme-light{
 	opacity:1;
