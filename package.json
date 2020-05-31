@@ -30,6 +30,7 @@
   },
   "kdx":{
     "location": "http://localhost:8689",
+    "stop": "http://localhost:8689/stop",
     "width" : 1600,
     "height" : 680,
 		"args": [
