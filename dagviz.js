@@ -71,7 +71,9 @@ class DAGViz {
     async shutdown() {
         if(this.pgSQL)
             await this.pgSQL.stop();
-            process.exit(0);
+            dpc(()=>{
+                process.exit(0);
+            });
     }
 
     async initLastBlockTracking() {
