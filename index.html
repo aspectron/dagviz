@@ -91,10 +91,14 @@
 				localStorage.tutorial = 1;
 				window.tutorial();
 			}
+			//localStorage.tutorial = 0;
 			
 			$(document).ready(()=>{
 				window.app = new App();
 				window.app.init();
+				//console.log("local storage tutorial: ",localStorage.tutorial);
+				if(localStorage.tutorial != 1)
+					window.app.ctx.track = false;
 				return;
 				
 				if(app.argv.get('simulate-only') !== null)
