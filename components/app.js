@@ -1116,7 +1116,7 @@ export class App {
 	initIO() {
 		this.io = io();
 
-		this.newBlocks = {};
+		this.newBlocks = new Map();
 
 
 
@@ -1130,7 +1130,7 @@ export class App {
 				blocks.forEach(b=>{
 					b.cTS = cTS;
 					b.isNew = 1;
-					this.newBlocks[b.blockHash] = {cTS};
+					this.newBlocks.set(b.blockHash, {cTS});
 				})
 			}
 
@@ -1419,14 +1419,14 @@ export class App {
 	highlightNewBlockTimer(ts){
 		ts = ts || Date.now() - this.ctx.highlightNewBlock;
 		let {nodes} = this.graph;
-		Object.entries(this.newBlocks).forEach(([blockHash, o])=>{
+		this.newBlocks.forEach((o, blockHash)=>{
 			if(o.cTS >= ts)
 				return
 			if(nodes[blockHash]){
 				nodes[blockHash].data.isNew = false;
 				nodes[blockHash].updateStyle();
 			}
-			delete this.newBlocks[blockHash];
+			this.newBlocks.delete(blockHash);
 		})
 	}
 
