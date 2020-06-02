@@ -69,8 +69,10 @@ class DAGViz {
     }
 
     async shutdownPGSQL(){
-        if(this.pgSQL)
+        if(this.pgSQL){
+            this.pgSQL.log("got shutdownPGSQL".brightYellow)
             await this.pgSQL.stop();
+        }
     }
 
     async shutdown() {
