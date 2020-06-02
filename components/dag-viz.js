@@ -811,7 +811,7 @@ export class GraphNode{
 		let shapeConfig = this.getShapeConfig();
 		let zoom = this.holder.paintEl.transform.k
 		const data = this.data;
-		const isBlue = !!data.acceptingBlockHash;
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
 		const isRed = !isBlue;
 		if(data.isNew){
 			data.color = 'var(--graph-color-new-1)';
@@ -918,8 +918,8 @@ export class GraphNode{
 			this.highlightLinks(true);
 	}
 	updateStyle(force){
-		const isBlue = !!this.data.acceptingBlockHash;
 		const data = this.data;
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
 		if(data.isNew)
 			data.color = 'var(--graph-color-new-5)';
 		else if(isBlue)
