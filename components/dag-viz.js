@@ -205,11 +205,86 @@ D3x.shape.circle = function(el, o) {
     return node;
 }
 
-D3x.shape.square = function(el, o) {
-
+D3x.shape.square = function(el, o, oldRoot) {
 	let size = o.size;
+	if(oldRoot){
+		let root = oldRoot;
+		let n = root.blockBox;
+		if(root.__size != size){
+			root.__size = size;
+			n.attr('x',-size)
+		        .attr('y',-size)
+		        .attr('width', size*2)
+		        .attr('height', size*2)
+
+		   	if(root.selector){
+		   		root.selector
+					.attr("d", d3.arc()
+						.innerRadius( size*2 )
+						.outerRadius( size*2+10 )
+						.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
+						.endAngle( 6.29 )//2*Pi = 6.28 = top
+					)
+			}
+		}
+
+		if(root.__rgba != o.rgba){
+			root.__rgba = o.rgba;
+			n.attr('fill', o.rgba);
+		}
+
+		if(root.__strokeWidth != o.strokeWidth){
+			root.__strokeWidth = o.strokeWidth;
+			if(o.strokeWidth){
+				n.attr('stroke-width', o.strokeWidth);
+			}
+		}
+
+		if(o.pattern) {
+			if(!root.pattern){
+				root.pattern = root.append('svg:rect')
+					.attr("stroke", 'var(--graph-square-stroke)')
+			}
+			let pattern = root.pattern;
+			if(pattern.__size != size){
+				pattern.__size == size;
+				pattern 
+					.attr('x',-size)
+					.attr('y',-size)
+					.attr('width', size*2)
+					.attr('height', size*2)
+			}
+			let opacity = o.patternOpacity || 0.125;
+			if(pattern.__opacity != opacity){
+				pattern.__opacity == opacity;
+				pattern 
+					.attr('opacity', opacity)
+			}
+			let fill = `url(#${o.pattern})`;
+			if(pattern.__fill != fill){
+				pattern.__fill == fill;
+				pattern 
+					.attr('fill', fill)
+			}
+			if(o.strokeWidth)
+				pattern.attr('stroke-width', o.strokeWidth);
+		}else{
+			if(root.pattern)
+				root.pattern.remove();
+		}
+
+		root.setSelected(o.selected);
+
+		return root;
+	}
+
+	
 	let root = el.append('svg:g')
 				.attr('opacity',1)
+	root.__size = size;
+	root.__rgba = o.rgba;
+	root.__strokeWidth = o.strokeWidth;
+
 	let node = root.append('svg:rect')
 		.attr('opacity',1)
         .attr('x',-size)
@@ -233,11 +308,8 @@ D3x.shape.square = function(el, o) {
 	if(o.strokeWidth)
 		node.attr('stroke-width', o.strokeWidth);
 
-
-	let pattern = null;
-
 	if(o.pattern) {
-		pattern = root.append('svg:rect')
+		let pattern = root.append('svg:rect')
 			.attr('x',-size)
 			.attr('y',-size)
 			.attr('width', size*2)
@@ -247,15 +319,24 @@ D3x.shape.square = function(el, o) {
 			.attr('fill', `url(#${o.pattern})`)
 		if(o.strokeWidth)
 			pattern.attr('stroke-width', o.strokeWidth);
+		root.pattern = pattern;
+
+		pattern.__size == size;
+		pattern.__opacity == o.patternOpacity || 0.125;
+		pattern.__fill == `url(#${o.pattern})`;
 	}
 
     root.setPosition = (x, y)=>{
-
     	return root;
 	}
 	
     root.setFill = (fn)=>{
-		node.attr("fill", fn());
+    	let fill = fn();
+    	if(root.__fill != fill){
+    		root.__fill = fill;
+    		node.attr("fill", fill);
+    	}
+		
 		return root;
 	}
 
@@ -271,8 +352,8 @@ D3x.shape.square = function(el, o) {
 			return
 		root.selector = root.append('svg:path')
 			.attr("d", d3.arc()
-				.innerRadius( size*2 )
-				.outerRadius( size*2+10 )
+				.innerRadius( root.__size*2 )
+				.outerRadius( root.__size*2+10 )
 				.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
 				.endAngle( 6.29 )//2*Pi = 6.28 = top
 			)
@@ -338,11 +419,11 @@ D3x.shape.diamond = function(el, o) {
     return node;
 }
 
-D3x.createShape = function(el, type, data) {
+D3x.createShape = function(el, type, data, oldEl) {
 
     if(!D3x.shape[type])
         type = 'circle';
-    return D3x.shape[type](el, data);
+    return D3x.shape[type](el, data, oldEl);
 }
 
 
@@ -836,9 +917,9 @@ export class GraphNode{
 		this.size 	= data.size;
 		this.quality = this.holder.ctx.quality;
 
-		this.removeElEvents();
+		/*this.removeElEvents();
 		if(this.el)
-			this.el.remove();
+			this.el.remove();*/
 
 		let pattern = null;
 		let patternOpacity = 0.125;
@@ -858,7 +939,7 @@ export class GraphNode{
 			pattern, patternOpacity,
 			strokeWidth : data.isChainBlock ? 5 : 1,
 			selected : this.selected
-		})
+		}, this.el)
 
 		this.el.setFill(()=>{
 			return this.data.color;
@@ -866,41 +947,69 @@ export class GraphNode{
 
 		const textColor = data.textColor || 'var(--graph-node-text-color)';
 
-		if(this.textEl)
-	        this.textEl.remove();
-
 		if(this.quality != 'low') {
-			this.textEl = this.el.append("text")
-		    	.attr("class", "node-text")
-				.attr("stroke", textColor)
-				.attr("fill", textColor)
-				.attr("class", ["node-name", this.data.type].join(' '))
-				.text(data.name);
+			if(!this.textEl)
+				this.textEl = this.el.append("text")
+		    		.attr("class", "node-text")
+		    else
+		    	this.el.node().appendChild(this.textEl.node())
+		    if(this.textEl.__textColor != textColor){
+				this.textEl.__textColor = textColor
+		    	this.textEl
+					.attr("stroke", textColor)
+					.attr("fill", textColor)
+			}
+			let cls = ["node-name", this.data.type].join(' ');
+			if(this.textEl.__cls != cls){
+				this.textEl.__cls = cls
+		    	this.textEl
+					.attr("class", cls)
+			}
 
-			let textBox = this.textEl.node().getBoundingClientRect();
-			this.textEl
-				.attr("x", -textBox.width/zoom/2)
-				.attr("y", -8)
-				.attr("opacity", 1)
+			if(this.textEl.__text != data.name){
+				this.textEl.__text = data.name;
+				this.textEl.text(data.name);
+				let textBox = this.textEl.node().getBoundingClientRect();
+				this.textEl
+					.attr("x", -textBox.width/zoom/2)
+					.attr("y", -8)
+					.attr("opacity", 1)
+			}
 		}else{
+			if(this.textEl)
+	        	this.textEl.remove();
 			delete this.textEl;
 		}
 
-		if(this.heightEl)
-			this.heightEl.remove();
-
 		if(this.quality == 'high') {
-			this.heightEl = this.el.append("text")
-				.attr("class", "node-text")
-				.attr("stroke", textColor)
-				.attr("fill", textColor)
-				.attr("class", ["node-name", this.data.type].join(' '))
-				.text(data.blueScore+'');
-			let textBox = this.heightEl.node().getBoundingClientRect();
-			this.heightEl
-				.attr("x", -textBox.width/zoom/2)
-				.attr("y", 14)
+			if(!this.heightEl)
+				this.heightEl = this.el.append("text")
+					.attr("class", "node-text")
+			else
+				this.el.node().appendChild(this.heightEl.node())
+			if(this.heightEl.__textColor != textColor){
+				this.heightEl.__textColor = textColor
+				this.heightEl
+					.attr("stroke", textColor)
+					.attr("fill", textColor)
+			}
+			let cls = ["node-name", this.data.type].join(' ')
+			if(this.heightEl.__cls != cls){
+				this.heightEl.__cls = cls
+				this.heightEl.attr("class", cls)
+			}
+				
+			if(this.heightEl.__text != data.blueScore){
+				this.heightEl.__text == data.blueScore;
+				this.heightEl.text(data.blueScore+'');
+				let textBox = this.heightEl.node().getBoundingClientRect();
+				this.heightEl
+					.attr("x", -textBox.width/zoom/2)
+					.attr("y", 14)
+			}
 		}else{
+			if(this.heightEl)
+				this.heightEl.remove();
 			delete this.heightEl;
 		}
 
