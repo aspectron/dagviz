@@ -1124,7 +1124,7 @@ export class App {
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
-			
+			this.highlightNewBlockTimer();
 			if(this.ctx.highlightNewBlock>0){
 				let cTS = Date.now();
 				blocks.forEach(b=>{
