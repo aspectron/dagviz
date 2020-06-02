@@ -2110,6 +2110,9 @@ class LastBlockWidget extends BaseElement{
 		//app.ctx.reposition(1.0);
 		app.ctls.track.setValue(true);
 		this.halt();
+		dpc(100, ()=>{
+			app.ctx.reposition(1);
+		})
 		// dpc(750, () => {
 		// })
 		// app.position = this.blueScore(); //ctx.reposition(1.0);
