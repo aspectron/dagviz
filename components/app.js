@@ -2112,10 +2112,10 @@ class LastBlockWidget extends BaseElement{
 	click() {
 		//console.log('click called');
 		//app.ctx.reposition(1.0);
-		app.ctls.track.setValue(true);
 		this.halt();
+		app.ctx.reposition(1);
 		dpc(100, ()=>{
-			app.ctx.reposition(1);
+			app.ctls.track.setValue(true);
 		})
 		// dpc(750, () => {
 		// })
