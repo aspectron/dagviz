@@ -68,6 +68,11 @@ class DAGViz {
         return this.main();
     }
 
+    async shutdownPGSQL(){
+        if(this.pgSQL)
+            await this.pgSQL.stop();
+    }
+
     async shutdown() {
         if(this.pgSQL)
             await this.pgSQL.stop();
@@ -226,11 +231,16 @@ class DAGViz {
         });
 
         if(this.args.kdx) {
-            app.get('/stop', (req, res, next)=>{
+            app.get('/stop', async(req, res)=>{
+                await this.shutdownPGSQL();
                 res.sendJSON({ status : 'ok' }, 200);
-                this.shutdown();
+                dpc(()=>{
+                    process.exit(0);
+                });
             })
         }
+
+        
 
         app.use((req, res, next)=>{
             if(this.args['no-auth'])
@@ -457,7 +467,12 @@ class DAGViz {
 
     async sql(...args) { 
         // console.log('SQL:'.brightGreen,args[0]);
-        return this.db.query(...args); }
+        let p = this.db.query(...args);
+        p.catch(e=>{
+            console.log("sql:exception:", [...args], e)
+        })
+        return p;
+    }
 
     static DB_TABLE_BLOCKS_ORDER = [
         'blockHash', 
