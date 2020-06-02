@@ -112,7 +112,7 @@ class GraphContext {
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
-		this.highlightNewBlock = 3;//seconds
+		this.highlightNewBlock = 15;//seconds
 		this.advanced = false;
 		//this.unit2Pos = {};
 
@@ -679,6 +679,7 @@ export class App {
 		});
 
 		new MultiChoice(this.ctx, 'highlightNewBlock',{
+			30:'30 sec',
 			15:'15 sec',
 			10:'10 sec',
 			5:'5 sec',
@@ -1417,16 +1418,22 @@ export class App {
 	}
 
 	highlightNewBlockTimer(ts){
-		ts = ts || Date.now() - this.ctx.highlightNewBlock;
-		let {nodes} = this.graph;
+		let t = ts;
+		ts = ts || Date.now() - (this.ctx.highlightNewBlock*1000);
+		let {nodes} = this.graph, b, isNew;
 		this.newBlocks.forEach((o, blockHash)=>{
-			if(o.cTS >= ts)
-				return
-			if(nodes[blockHash]){
-				nodes[blockHash].data.isNew = false;
-				nodes[blockHash].updateStyle();
+			b = nodes[blockHash];
+			isNew = (o.cTS >= ts);
+			if(b){
+				if(b.data.acceptingBlockHash || b.data.isChainBlock)
+					isNew = false;
+				if(!isNew){
+					b.data.isNew = false;
+					b.updateStyle();
+				}
 			}
-			this.newBlocks.delete(blockHash);
+			if(!isNew)
+				this.newBlocks.delete(blockHash);
 		})
 	}
 
