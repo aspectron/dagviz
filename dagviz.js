@@ -1103,7 +1103,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
         }
         
         //console.log(`asing for blocks:`, args);
-        let blocks = await this.sql(`SELECT * FROM blocks WHERE ${type} IN (${args.join(",")}) `);// ($1::list)`, [args]); $1::int[]
+        let blocks = await this.sql(`SELECT * FROM blocks WHERE ${type} = ANY ($1)`, [args]);// ($1::list)`, [args]); $1::int[]
         //console.log("GOT BLOCKS:", blocks);
         // if(!blocks.length)
         //     return null;
