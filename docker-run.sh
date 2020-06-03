@@ -16,4 +16,4 @@ then
     sudo docker run --net host dagviz  --dbport=18988 --port=18989 --kasparov=http://kasparov-dev-auxiliary-default.daglabs.com:8080/ --disable-mqtt
 else
     echo Please specify: mainnet, testnet, devnet, aux
-
+fi
