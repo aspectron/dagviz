@@ -318,6 +318,10 @@ class GraphContext {
 		node[layoutAxis] = Math.round(node[layoutAxis])
 	}
 
+	onNavigate(absolute, skipUpdates){
+		this.app.completeCleanup();
+		this.app.ctx.reposition(absolute, skipUpdates);
+	}
 	reposition(x, skipUpdate) {
 		if(!this.max)
 			return;
@@ -797,7 +801,7 @@ export class App {
 		});
 
 		$("#logo").on('click', () => {
-			this.ctx.reposition(0);
+			this.ctx.onNavigate(0);
 		});
 
 		let metrics = document.getElementById('metrics');
@@ -1458,7 +1462,7 @@ export class App {
 			isNew = (o.cTS >= ts);
 			if(b){
 				if(b.data.acceptingBlockHash != b.__acceptingBlockHash)// || b.data.isChainBlock != b.__isChainBlock)
-//				if(b.data.acceptingBlockHash || b.data.isChainBlock)
+				//if(b.data.acceptingBlockHash || b.data.isChainBlock)
 					isNew = false;
 				if(!isNew){
 					b.data.isNew = false;
@@ -1840,6 +1844,12 @@ export class App {
 			console.warn("Could not select text in node: Unsupported browser.");
 		}
 	}
+
+	completeCleanup() {
+		Object.values(this.graph.nodes).forEach((node) => {
+			node.purge();
+		})
+	}
 	
 	regionCleanup() {
 		const { from, to, range } = this.getRegion();
@@ -2142,7 +2152,7 @@ class LastBlockWidget extends BaseElement{
 		//console.log('click called');
 		//app.ctx.reposition(1.0);
 		this.halt();
-		app.ctx.reposition(1);
+		app.ctx.onNavigate(1);
 		dpc(100, ()=>{
 			console.log("track.setValue:lastBlockData", app.ctx.lastBlockData?.blueScore)
 			app.ctls.track.setValue(true);
