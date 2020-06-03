@@ -153,7 +153,6 @@ class AppTutorial extends BaseElement{
 					flex-wrap:nowrap;
 					flex-direction:column;
 					justify-content:flex-start;
-					
 				}
 
 	
@@ -276,7 +275,10 @@ class AppTutorial extends BaseElement{
 			</flow-page>
 
 			<div slot="buttons" class="buttons">
-				<flow-btn data-btn="skip" @click="${this.skipTutorial}"><span>SKIP</span></flow-btn>
+				<flow-btn data-btn="skip" @click="${this.skipTutorial}">
+				<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#times"></use></svg>
+					<span>SKIP</span>
+				</flow-btn>
 				<div class="flex"></div>
 				<flow-btn data-btn="prev">
 					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#arrow-alt-left"></use></svg>
