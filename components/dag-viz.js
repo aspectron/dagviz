@@ -1343,11 +1343,11 @@ export class DAGViz extends BaseElement {
 				cursor: pointer;
 			}
 			
-			.node-name{font-size:12px;pointer-events: none;
-			
+			.node-name{
+				font-size:12px;pointer-events: none;
 				font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
 				font-weight: 200;
-			
+				stroke-width:1;
 			}
 			.observer{font-size:1px;pointer-events: none;}
 
