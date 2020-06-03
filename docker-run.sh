@@ -9,17 +9,17 @@ then
     sudo docker run $2 --net host dagviz --dbport=18786 --port=18787 --kasparov=https://testnet-kasparovd.kas.pa/ --disable-mqtt
     exit 0
     #sudo docker run --net host dagviz --port=18787 -- 
-elif [ $1 == 'devnet-open' ]
+elif [ $1 == 'open.devnet' ]
 then
     $port = 18888
     $dbport = 18887
     $address = "kasparov-dev-auxiliary-open-devnet.daglabs.com"
-elif [ $1 == 'devnet-big' ]
+elif [ $1 == 'big.devnet' ]
 then
     $port = 18989
     $dbport = 18988
     $address = "kasparov-dev-auxiliary-big.daglabs.com"
-elif [ $1 == 'devnet-default' ]
+elif [ $1 == 'default.devnet' ]
 then
     $port = 19090
     $dbport = 19089
