@@ -1102,21 +1102,22 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
             });
         }
         
-        // console.log(`asing for blocks:`,args);
-        let blocks = await this.sql(`SELECT * FROM blocks WHERE (${type}) IN (?)`,[args]);
-        // console.log("GOT BLOCKS:",blocks.map(block=>block.id).join(','));
+        //console.log(`asing for blocks:`, args);
+        let blocks = await this.sql(`SELECT * FROM blocks WHERE ${type} IN (${args.join(",")}) `);// ($1::list)`, [args]); $1::int[]
+        //console.log("GOT BLOCKS:", blocks);
         // if(!blocks.length)
         //     return null;
 
-        blocks.forEach(block => this.deserealizeBlock(block));
+        blocks = blocks.map(block => this.deserealizeBlock(block));
         // console.log("responding:",blocks);
         return Promise.resolve(blocks);
     }
 
     deserealizeBlock(block) {
         block.lseq = block.id;
-        block.parentBlockHashes = block.parentBlockHashes.split(',');
-        block.childBlockHashes = block.childBlockHashes.split(',');
+        block.parentblockhashes = block.parentblockhashes.split(',');
+        block.childblockhashes = block.childblockhashes.split(',');
+        return this.NormalizeBlock(block);
     }
 
     async doSearch(text) {
