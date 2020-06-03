@@ -2,18 +2,31 @@
 if [ $1 == 'mainnet' ]
 then
     echo Not there yet...
+    exit 0
     #sudo docker run --net host dagviz --port=18686 
 elif [ $1 == 'testnet' ]
 then
     sudo docker run $2 --net host dagviz --dbport=18786 --port=18787 --kasparov=https://testnet-kasparovd.kas.pa/ --disable-mqtt
+    exit 0
     #sudo docker run --net host dagviz --port=18787 -- 
-elif [ $1 == 'devnet' ]
+elif [ $1 == 'devnet-open' ]
 then
-    sudo docker run $2 --net host dagviz --dbport=18887 --port=18888 --kasparov=http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080 --mqtt-address=mqtt://kasparov-dev-auxiliary-open-devnet.daglabs.com:1883 --mqtt-user=user --mqtt-pass=pass
-elif [ $1 == 'aux' ]
+    $port = 18888
+    $dbport = 18887
+    $address = "kasparov-dev-auxiliary-open-devnet.daglabs.com"
+elif [ $1 == 'devnet-big' ]
 then
-    # devnet dag with 5 sec propagation
-    sudo docker run $2 --net host dagviz  --dbport=18988 --port=18989 --kasparov=http://kasparov-dev-auxiliary-default.daglabs.com:8080/ --disable-mqtt
+    $port = 18989
+    $dbport = 18988
+    $address = "kasparov-dev-auxiliary-big.daglabs.com"
+elif [ $1 == 'devnet-default' ]
+then
+    $port = 19090
+    $dbport = 19089
+    $address = "kasparov-dev-auxiliary-classic.daglabs.com"
 else
     echo Please specify: mainnet, testnet, devnet, aux
+    exit 0
 fi
+
+sudo docker run $2 --net host dagviz --dbport=$dbport --port=$port --kasparov=http://$address:8080 --mqtt-address=mqtt://$address:1883 --mqtt-user=user --mqtt-pass=pass
