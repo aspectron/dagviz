@@ -366,7 +366,7 @@ class GraphContext {
 				if(this.lastBlockData && this.track) {
 					//let v = this.lastBlockData[this.unit] * this.unitDist;
 					//this.graph.translate(v,0);
-					this.graph.centerBy(this.lastBlockData.blockHash)
+					//this.graph.centerBy(this.lastBlockData.blockHash)
 				}
 			} break;
 			case 'mass': {
@@ -1142,40 +1142,39 @@ export class App {
 			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
 			window.dispatchEvent(ce)
 
+			blocks.forEach(block=>block.isChainBlock = false);
+			let _blocks = blocks;
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
-				blocks = blocks.filter((block) => {
+				_blocks = _blocks.filter((block) => {
 					block.origin = 'tip-update';
 					if(block[this.ctx.unit] < (this.region.from-this.range_) || block[this.ctx.unit] > (this.region.to+this.range_))
 						return false;
 					return true;
 				});
 			}
-	
-			if(blocks.length) {
-
-				blocks.forEach(block=>block.isChainBlock = false);
-
-				this.createBlocks(blocks);
+			if(_blocks.length) {
+				this.createBlocks(_blocks);
 				this.graph.updateSimulation();
-				let oldLastBlock = this.ctx.lastBlockData;
-				let newLastBlock = blocks[blocks.length-1];
-				blocks.forEach(b=>{
-					if(b.blueScore > newLastBlock.blueScore){
-						console.log("#### found newLastBlock ###")
-						newLastBlock = b;
-					}
-				})
-				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
-					this.ctx.lastBlockData = newLastBlock;
-					this.ctx.lastBlockDataTS = Date.now();
-					this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
-				}
-
-				if(newLastBlock.blueScore > this.ctx.max)
-					this.ctx.updateMax(newLastBlock.blueScore)
-
 			}
+			let oldLastBlock = this.ctx.lastBlockData;
+			let newLastBlock = blocks[blocks.length-1];
+			blocks.forEach(b=>{
+				if(b.blueScore > newLastBlock.blueScore){
+					console.log("#### found newLastBlock ###")
+					newLastBlock = b;
+				}
+			})
+			if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
+				this.ctx.lastBlockData = newLastBlock;
+				this.ctx.lastBlockDataTS = Date.now();
+				this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
+			}
+
+			//console.log("newLastBlock.blueScore", newLastBlock.blueScore, this.ctx.max)
+			if(newLastBlock.blueScore > this.ctx.max)
+				this.ctx.updateMax(newLastBlock.blueScore)
+
 
 			if(this.ctx.track) {
 				dpc(()=>{
@@ -2121,6 +2120,7 @@ class LastBlockWidget extends BaseElement{
 		this.halt();
 		app.ctx.reposition(1);
 		dpc(100, ()=>{
+			console.log("track.setValue:lastBlockData", app.ctx.lastBlockData?.blueScore)
 			app.ctls.track.setValue(true);
 		})
 		// dpc(750, () => {
