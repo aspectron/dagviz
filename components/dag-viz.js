@@ -523,6 +523,16 @@ export class GraphNodeLink{
 			.attr('stroke-width', this.holder.buildStrokeWidth(this.defaultStrokeWidth) )
 			.style('opacity', this.defaultOpacity);
 	}
+
+	get isChainBlockLink(){
+		let s = this.source;
+		let t = this.target;
+		this._isChainBlockLink = (s&&s.data.isChainBlock) && (t&&t.data.isChainBlock)
+		return this._isChainBlockLink;
+	}
+	set isChainBlockLink(isChain){
+		this._isChainBlockLink = isChain;
+	}
 	remove(){
 		this.el.remove();
 		//delete this.holder.links.parent[this.data.parent];
@@ -543,7 +553,7 @@ export class GraphNodeLink{
 				target.x,
 				target.y
 			))
-
+		this.highlight();
 		if(this.arrowType == this.holder.ctx._arrows+this.holder.ctx.dir)
 			return
 		this.arrowType = this.holder.ctx._arrows+this.holder.ctx.dir;
@@ -636,7 +646,7 @@ export class GraphNodeLink{
 		let arrowType = '';
 		//if(color) {
 			if(this.isChainBlockLink) {
-				strokeWidth = color?7:strokeWidth;
+				strokeWidth = 7;//color?7:strokeWidth;
 				if(this.source.selected && this.target.selected){
 					stroke = 'var(--graph-link-selected-color)';
 					arrowType = '-selected';
