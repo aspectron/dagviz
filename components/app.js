@@ -748,6 +748,11 @@ export class App {
 				case 'End': {
 					this.ctls.track.setValue(true);
 				} break;
+
+				case '/': {
+					e.stopPropagation();
+					$("#search").focus();
+				} break;
 			}
 		});
 
