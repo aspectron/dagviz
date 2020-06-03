@@ -1,17 +1,21 @@
 const crypto = require('crypto');
 const fs = require('fs');
-const mysql = require('mysql');
+//const mysql = require('mysql');
+const { Pool : PgPool } = require('pg');
+const format = require('pg-format');
 var http = require('http')
 var serveStatic = require('serve-static')
 const rp = require('request-promise');
 const MF = require('micro-fabric');
-const MySQL = require('./lib/mysql');
+//const MySQL = require('./lib/mysql');
+const PgSQL = require('./lib/pgsql');
 const basicAuth = require('basic-auth');
 const io = require('socket.io');//(http);
 const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
-const FlowRouter = require('flow-ux/src/router.js');
+const FlowRouter = require('@aspectron/flow-router');
+//const ejs = require('ejs')
 
 let args = MF.utils.args();
 const DUMMY_TX = true;
@@ -64,6 +68,21 @@ class DAGViz {
         return this.main();
     }
 
+    async shutdownPGSQL(){
+        if(this.pgSQL){
+            this.pgSQL.log("got shutdownPGSQL".brightYellow)
+            await this.pgSQL.stop();
+        }
+    }
+
+    async shutdown() {
+        if(this.pgSQL)
+            await this.pgSQL.stop();
+            dpc(()=>{
+                process.exit(0);
+            });
+    }
+
     async initLastBlockTracking() {
 
         this.lastBlockHash = await this.restoreLastBlockHash();
@@ -77,7 +96,7 @@ class DAGViz {
                 let id = parseInt(rows.shift().id);
                 id -= this.REWIND_BLOCK_PADDING;
                 this.skip = id;
-                console.log(`RESYNCING FROM ${id}`);
+                console.log(`...resyncing from block seq ${id}`);
             } else {
                 console.log("WARNING: last block hash is not available in db".brightRed);
             }
@@ -92,6 +111,13 @@ class DAGViz {
     }
 
     async initMQTT() {
+
+        if(this.args['disable-mqtt']) {
+            // console.log(`!!! WARNING: MQTT IS DISABLED`.redBG.brightWhite);
+            return Promise.resolve();
+        }
+
+        console.log("MQTT connecting to:", this.mqtt);
 
         const client = mqtt.connect(this.mqtt.address,{
             clientId:"mqtt_"+Math.round(Date.now()*Math.random()).toString(16),
@@ -147,7 +173,7 @@ class DAGViz {
         const { addedChainBlocks, removedBlockHashes } = args;
 
         if(removedBlockHashes && removedBlockHashes.length)
-            this.sql(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=0 WHERE (blocks.blockHash) IN (?)`, removedBlockHashes);
+            this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
 
         if(addedChainBlocks && addedChainBlocks.length) {
             // let addedHashes = addedChainBlocks.map(v=>v.hash);
@@ -157,8 +183,8 @@ class DAGViz {
             addedChainBlocks.forEach((instr) => {
                 const { hash, acceptedBlockHashes } = instr;
                 //console.log('UPDATE blocks SET parentBlockHashes =  WHERE blockHash IN ?', [acceptedBlockHashes], [hash]);
-                this.sql(`UPDATE blocks SET isChainBlock = 1 WHERE blockHash = '${hash}'`);
-                this.sql(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (?)`, [acceptedBlockHashes]);
+                this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${hash}'`);
+                this.sql(format(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (%L)`, acceptedBlockHashes));
             })
         }
     }
@@ -184,7 +210,7 @@ class DAGViz {
         const block = message;
         this.io.emit("dag/selected-tip", block);
 
-        this.sql(`UPDATE blocks SET isChainBlock = 1 WHERE blockHash = '${block.blockHash}'`);
+        this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${block.blockHash}'`);
 
 
         this.postRTB(block);
@@ -203,12 +229,30 @@ class DAGViz {
         const app = new WebApp();
         const flowRouter = new FlowRouter(app, {
             rootFolder:path.dirname(__filename),
-            folders:['/node_modules/k-explorer', '/components']
+            folders:['/components']
         });
+
+        if(this.args.kdx) {
+            app.get('/stop', async(req, res)=>{
+                await this.shutdownPGSQL();
+                res.sendJSON({ status : 'ok' }, 200);
+                dpc(()=>{
+                    process.exit(0);
+                });
+            })
+        }
+
+        
+
         app.use((req, res, next)=>{
+            if(this.args['no-auth'])
+                return next();
+            //if(req.url.match(/dag\-viz\.js$/))
+            //    console.log("req", req.query._h)
+
             let auth = basicAuth(req);
             if(!req.url.startsWith('/components') && 
-                !req.url.startsWith('/build') &&
+                !req.url.startsWith('/node_modules') &&
                 (!auth || auth.name != 'dag' || auth.pass != 'dag')) {
                 res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
                 return res.end();
@@ -281,21 +325,57 @@ class DAGViz {
             });
         })
 
+        /*
+        let sendHtmlFile = (args={})=>{
+            let {res, next, file, data, options, contentType} = args;
+            if(!options)
+                options = {};
+            if(!data)
+                data = {};
+            if(!contentType)
+                contentType = 'text/html';
+
+            ejs.renderFile(file, data, options, (err, html)=>{
+                if(err)
+                    return next(err);
+                res.writeHead(200, {'Content-Type': contentType});
+                res.write(html);
+                res.end();
+            })
+        }
+        this._hashMap = {};
+        let _H = ()=>{
+            let hash = this.hash(crypto.randomBytes(32));
+            this._hashMap[hash] = 1;
+            return hash;
+        }
+        */
+
         app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next)=>{
             res.sendFile("./index.html");
+            //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
+        })
+
+        app.get('/', (req, res, next)=>{
+            res.sendFile("./index.html");
+            //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 
         flowRouter.init();
 
         //app.use("/k-explorer", serveStatic('./node_modules/k-explorer', { 'index': ['index.html', 'index.htm'] }))
-        app.use(serveStatic('./', { 'index': ['index.html', 'index.htm']}))
+        app.use('/resources', serveStatic('./resources'))
+        app.use('/node_modules', serveStatic('./node_modules'))
+
 
         return new Promise((resolve,reject) => {
+
+            let port = this.args.port || 8686;
             // Create server
             const server = http.createServer((req, res)=>{
                 app.run(req, res);
-            }).listen(8686, () => {
-                console.log('listening on 8686');
+            }).listen(port, () => {
+                console.log(`listening on ${port}`);
                 resolve();
             });
 
@@ -311,50 +391,60 @@ class DAGViz {
 
     async initDatabase() {
 
-        const port = 8309;
+        const port = this.args.dbport || this.args['pgsql-port'] || 8309;
 
-        const mySQL = new MySQL({ port, database : this.uid });
-        await mySQL.start()
+//        const mySQL = new MySQL({ port, database : this.uid });
+        const pgSQL = this.pgSQL = new PgSQL({ port, database : this.uid });
+//        await mySQL.start()
+        await pgSQL.start()
 
         let defaults = {
             host : 'localhost',
             port,
-            user : 'root',
+            user : 'dagviz',
             password : 'dagviz',
         };
 
         return new Promise((resolve,reject) => {
-            this.dbPool = mysql.createPool(Object.assign({ }, defaults, {
-                // host : 'localhost', port,
-                // user : 'root',
-                // password: 'dagviz',
+            //this.dbPool = mysql.createPool(Object.assign({ }, defaults, {
+            this.dbPool = new PgPool(Object.assign({ }, defaults, {
+                    // host : 'localhost', port,
+                user : 'dagviz',
+                password: 'dagviz',
                 database: this.uid, //'mysql',
-                insecureAuth : true
+                //insecureAuth : true
             }));
+
+            this.dbPool.on('error', (err) => {
+                if(!pgSQL.stopped)
+                    console.log(err);
+            })
             
             this.db = {
                 query : async (sql, args) => {
-                    if(mySQL.stopped)
-                        return Promise.reject("MySQL stopped.")
+                    if(pgSQL.stopped)
+                        return Promise.reject("pgSQL stopped - the platform is going down!");
                     //console.log("sql:", sql, args)
                     return new Promise((resolve,reject) => {
-                        this.dbPool.getConnection((err, connection) => {
-                            //console.log("CONNECTION:",connection);
-                            if(err)
-                                return reject(err);
+                        this.dbPool.connect().then((client) => {
+                        //     //console.log("CONNECTION:",connection);
+                        //     if(err)
+                        //         return reject(err);
 
-                            connection.query(sql, args, (err, rows) => {
-                                connection.release();
-                                if(err) {
-                                    console.log(`Error processing SQL query:`);
-                                    console.log(sql);
-                                    console.log(args);
-                                    console.log(`SQL Error is: ${err.toString()}`)
-                                    return reject(err);
-                                }
+                            client.query(sql, args, (err, result) => {
+                                client.release();
                                     // console.log("SELECT GOT ROWS:",rows);
-                                resolve(rows);
+                                resolve(result?.rows);
                             });
+                        }, (err) => {
+                            //if(err) {
+                                console.log(`Error processing SQL query:`);
+                                console.log(sql);
+                                console.log(args);
+                                console.log(`SQL Error is: ${err.toString()}`)
+                                return reject(err);
+                            // }
+                            // reject(err);
                         });
                     });
                 }                
@@ -379,7 +469,12 @@ class DAGViz {
 
     async sql(...args) { 
         // console.log('SQL:'.brightGreen,args[0]);
-        return this.db.query(...args); }
+        let p = this.db.query(...args);
+        p.catch(e=>{
+            console.log("sql:exception:", [...args], e)
+        })
+        return p;
+    }
 
     static DB_TABLE_BLOCKS_ORDER = [
         'blockHash', 
@@ -399,11 +494,11 @@ class DAGViz {
     ];
 
     async initDatabaseSchema() {
-        await this.sql(`CREATE DATABASE IF NOT EXISTS ${this.uid} DEFAULT CHARACTER SET utf8;`);
-        await this.sql(`USE ${this.uid}`);
+        // await this.sql(`CREATE DATABASE IF NOT EXISTS ${this.uid} DEFAULT CHARACTER SET utf8;`);
+        // await this.sql(`USE ${this.uid}`);
         await this.sql(`
             CREATE TABLE IF NOT EXISTS blocks (
-                id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                id                      BIGSERIAL PRIMARY KEY,
                 blockHash              CHAR(64)        NULL,
                 acceptingBlockHash      CHAR(64) NULL,
                 acceptingBlockTimestamp INT NULL,
@@ -412,39 +507,52 @@ class DAGViz {
                 acceptedIDMerkleRoot CHAR(64)        NOT NULL,
                 utxoCommitment         CHAR(64)        NOT NULL,
                 timestamp               INT        NOT NULL,
-                bits                    INT UNSIGNED    NOT NULL,
-                nonce                   BIGINT UNSIGNED NOT NULL,
-                blueScore              BIGINT UNSIGNED NOT NULL,
-                isChainBlock          TINYINT         NOT NULL,
+                bits                    INT     NOT NULL,
+                nonce                   BYTEA  NOT NULL,
+                blueScore              BIGINT  NOT NULL,
+                isChainBlock          BOOLEAN         NOT NULL,
                 mass                    BIGINT          NOT NULL,
                 parentBlockHashes   TEXT NOT NULL,
-                childBlockHashes   TEXT NOT NULL,
-                PRIMARY KEY (id),
-                UNIQUE INDEX idx_blocks_block_hash (blockHash),
-                INDEX idx_blocks_timestamp (timestamp),
-                INDEX idx_blocks_is_chain_block (isChainBlock),
-                INDEX idx_blocks_blueScore (blueScore)
+                childBlockHashes   TEXT NOT NULL
             );        
         `);
+
+        // PRIMARY KEY (id),
+        // UNIQUE INDEX idx_blocks_block_hash (blockHash),
+        // INDEX idx_blocks_timestamp (timestamp),
+        // INDEX idx_blocks_is_chain_block (isChainBlock),
+        // INDEX idx_blocks_blueScore (blueScore)
+
+        let blocks_idx = ['blockHash:UNIQUE','timestamp','isChainBlock','blueScore'];
+        while(blocks_idx.length) {
+            let [idx, unique] = blocks_idx.shift().split(':');
+            await this.sql(`CREATE ${unique||''} INDEX IF NOT EXISTS idx_${idx} ON blocks (${idx})`);
+        }
         
+        //id                      BIGSERIAL PRIMARY KEY,
         await this.sql(`
             CREATE TABLE IF NOT EXISTS block_relations (
-                id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 parent  CHAR(64) NOT NULL,
                 child CHAR(64) NOT NULL,
-                linked TINYINT NOT NULL,
-                PRIMARY KEY (id),
-                UNIQUE INDEX idx_child (child)
+                linked BOOLEAN NOT NULL,
+                PRIMARY KEY (parent, child)
             );
         `);
+
+        //await this.sql(`CREATE UNIQUE INDEX idx_child ON block_relations (child)`);
+        // UNIQUE INDEX idx_child (child)
         
         await this.sql(`
             CREATE TABLE IF NOT EXISTS last_block_hash (
-                id                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                hash  CHAR(64) NOT NULL,
-                PRIMARY KEY (id)
+                id                      BIGSERIAL PRIMARY KEY,
+                xid                     INT,
+                hash  CHAR(64) NOT NULL
             );
         `);        
+                //UNIQUE INDEX idx_xid (xid)
+
+        await this.sql(`CREATE UNIQUE INDEX IF NOT EXISTS idx_xid ON last_block_hash (xid)`);
+
     }
 
     async main() {
@@ -472,15 +580,22 @@ class DAGViz {
     }
 
     storeLastBlockHash(hash) {
+        //return this.sql(`REPLACE INTO last_block_hash ( xid, hash ) VALUES (1, '${hash}')`);//, [[ 1, hash]]);
         return this.sql(`
-            REPLACE INTO last_block_hash (
-                id : 1, hash
-            ) VALUES ?
-        `, [hash]);
+
+            INSERT INTO last_block_hash (xid, hash) VALUES (1, '${hash}')
+            ON CONFLICT (xid) DO UPDATE SET hash = excluded.hash;
+
+
+        `);
+        //    REPLACE INTO last_block_hash ( xid, hash ) VALUES (1, '${hash}')
     }
 
     async restoreLastBlockHash() {
         let rows = await this.sql(`SELECT hash FROM last_block_hash WHERE id = 1`);
+
+console.log("LAST BLOCK RETURN ROWS:", rows);
+
         let row = rows.shift();
         if(!row)
             return Promise.resolve(null);
@@ -501,7 +616,7 @@ class DAGViz {
                 resolve(data);
             }, (err) => {
                 if((err+"").indexOf('ECONNREFUSED'))
-                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks?${args}`)
+                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
                 else
                     console.log(err);
                 reject(err);
@@ -512,11 +627,7 @@ class DAGViz {
 
     fetch(options) {
         return new Promise((resolve,reject) => {
-
             let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
-            
-            // console.log(`${this.kasparov}/blocks?${args}`);
-            
             rp({url: `${this.kasparov}/blocks?${args}`, rejectUnauthorized}).then((text) => {
                 let data = null;
                 try {
@@ -524,7 +635,6 @@ class DAGViz {
                 } catch(ex) {
                     reject(ex);
                 }
-                // console.log(data);
                 resolve(data);
             }, (err) => {
                 if((err+"").indexOf('ECONNREFUSED'))
@@ -549,7 +659,7 @@ class DAGViz {
         this.verbose && process.stdout.write(` ...${this.lastTotal ? (skip/this.lastTotal * 100).toFixed(2)+'%' : skip}... `);
 
         this.getBlockCount().then(async (total) => {
-            if(this.lastTotal !== undefined && this.lastTotal > total+1e4) {
+            if(this.lastTotal !== undefined && this.lastTotal > total+1e4 || this.skip > total+1e3) {
                 console.log(`incloming total block count ${total}+1e4 is less than previous total ${this.lastTotal}`);
                 console.log(`initiating database purge...`);
                 await this.sql(`TRUNCATE TABLE blocks`);
@@ -601,8 +711,9 @@ class DAGViz {
                         this.tracking = true;
                     if(blocks.length) {
                         if(this.tracking) {
-                            console.log('WARNING: detected ${blocks.length} database blocks not visible in MQTT feed!');
+                            console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
                             console.log(' ->'+blocks.map(block=>block.blockHash).join('\n'));
+                            console.log(`possible MQTT failure, catching up via db sync...`);
                         }
 
                         await this.post(blocks);
@@ -657,7 +768,7 @@ class DAGViz {
                 block.isChainBlock = block.isChainBlock === true ? 1 : 0;
 
                 if(block.parentBlockHashes) {
-                    block.parentBlockHashes.forEach(hash => relations.push([hash, block.blockHash, 0]));
+                    block.parentBlockHashes.forEach(hash => relations.push([hash, block.blockHash, false]));
                 }
                 
                 // delete block.parentBlockHashes;
@@ -678,19 +789,85 @@ class DAGViz {
 
             this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
+//            INSERT INTO last_block_hash (xid, hash) VALUES (1, '${hash}')
+//            ON CONFLICT (xid) DO UPDATE SET hash = excluded.hash;
+
+            let blockData = blocks.map(block => {
+                let values = block.map(v => `'${v}'`).join(',');
+                return `(${values})`;
+            }).join(',');
+
+//            const VALUES = blocks.map(block)
+            const REPLACE = DAGViz.DB_TABLE_BLOCKS_ORDER.map(v => `${v} = EXCLUDED.${v}`).join(', ');
+
             try {
+
                 await this.sql(`
-                    REPLACE INTO blocks (
-                        ${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')}
-                    ) VALUES ?
-                `, [blocks]);
+                    INSERT INTO blocks (${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')})
+                    VALUES ${blockData} 
+                    ON CONFLICT (blockHash) DO UPDATE
+                    SET 
+                        ${REPLACE}
+                    ;
+                `);//, blocks);
+
+                // await this.sql(query);
+                    
+
+
+
+/*
+                let query = format(`
+                    INSERT INTO blocks (${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')})
+                    VALUES %L 
+                    ON CONFLICT (blockHash) DO UPDATE
+                    SET 
+                        ${REPLACE}
+                    ;
+                `, blocks);
+
+                await this.sql(query);
+  */                  
+/*
+                id                      BIGSERIAL PRIMARY KEY,
+                blockHash              CHAR(64)        NULL,
+                acceptingBlockHash      CHAR(64) NULL,
+                acceptingBlockTimestamp INT NULL,
+                version                 INT             NOT NULL,
+                hashMerkleRoot        CHAR(64)        NOT NULL,
+                acceptedIDMerkleRoot CHAR(64)        NOT NULL,
+                utxoCommitment         CHAR(64)        NOT NULL,
+                timestamp               INT        NOT NULL,
+                bits                    INT     NOT NULL,
+                nonce                   BIGINT  NOT NULL,
+                blueScore              BIGINT  NOT NULL,
+                isChainBlock          BOOLEAN         NOT NULL,
+                mass                    BIGINT          NOT NULL,
+                parentBlockHashes   TEXT NOT NULL,
+                childBlockHashes   TEXT NOT NULL
+
+*/
+
+                //     ${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')}
+                // ) VALUES ?
 
                 if(relations.length) {
-                    await this.sql(`
-                        REPLACE INTO block_relations (
+
+                    let query = format(`
+                        INSERT INTO block_relations (
                             parent, child, linked
-                        ) VALUES ?
-                    `, [relations]);
+                        ) VALUES %L
+                        ON CONFLICT (parent, child) DO UPDATE
+                        SET linked = FALSE;
+                    `, relations);
+
+                    await this.sql(query);
+
+                    // await this.sql(`
+                    //     REPLACE INTO block_relations (
+                    //         parent, child, linked
+                    //     ) VALUES ?
+                    // `, [relations]);
                 }
 
                 await this.update();
@@ -706,8 +883,9 @@ class DAGViz {
 
 
     async updateRelations() {
-        let rows = await this.sql('SELECT * FROM block_relations WHERE linked = 0 LIMIT 1000');
-        await this.sql('UPDATE block_relations SET linked = 1 WHERE linked = 0 LIMIT 1000');
+        let rows = await this.sql('SELECT * FROM block_relations WHERE linked = FALSE LIMIT 1000');
+//        await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
+        await this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
 
         let hashMap = { }
         rows.forEach((row) => {
@@ -752,6 +930,12 @@ class DAGViz {
         })
     }
 
+    NormalizeBlock(block) {
+        let o = { };
+        DAGViz.DB_TABLE_BLOCKS_ORDER.forEach(v => o[v] = block[v.toLowerCase()]);
+        return o;
+    }
+
     dataSlice(args) {
         return new Promise(async (resolve, reject) => {
 
@@ -791,7 +975,7 @@ class DAGViz {
                 let total = result.shift().total;
                 // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
-
+// console.log("BLOCKS:", blocks);
 
                 if(this.args.latency) {
                     await this.sleep(parseInt(this.flags.latency));
@@ -833,11 +1017,13 @@ class DAGViz {
                 // [ blocks, relations ] = await Promise.all([blocks, relations]);
                 // console.log("RESPONDING...");
                 const blockHashMap = { };
-                blocks.forEach(block => {
+                blocks = blocks.map(block => {
                     block.lseq = block.id;
-                    block.parentBlockHashes = block.parentBlockHashes.split(',');
-                    block.childBlockHashes = block.childBlockHashes.split(',');
-                    blockHashMap[block.blockHash] = block;
+                    block.parentblockhashes = block.parentblockhashes.split(',');
+                    block.childblockhashes = block.childblockhashes.split(',');
+
+                    return this.NormalizeBlock(block);
+                    // blockHashMap[block.blockHash] = block;
                 });
                 // parents.forEach(({ parent, child}) => {
                 //     let block = blockHashMap[child];

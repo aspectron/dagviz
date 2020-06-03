@@ -10,7 +10,7 @@ class BlockInfo extends BaseElement{
 	static get styles(){
 		return css `
 			:host{
-				font-family: "Cousine";
+				font-family: "Exo 2";
 				font-size: 14px;
                 z-index:4;
                 display:flex;
@@ -156,9 +156,9 @@ class BlockInfo extends BaseElement{
         let ident = data.blockHash.replace(/^0+/,'').substring(0,10);
 
         return html`
-                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.min.css" />
-                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.min.css" />
-                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/regular.min.css" />
+                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/all.min.css" />
+                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/light.min.css" />
+                <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/regular.min.css" />
                 <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.panelClick}">
                     <div class='toolbar' style=''>
                         <!--

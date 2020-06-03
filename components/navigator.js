@@ -136,7 +136,8 @@ class AxisNavigator extends BaseElement{
 	}
 
 	handleMouse(e, skipUpdates) {
-
+		if(!this.thumb)
+			return
 		const { axis, sign } = window.app.ctx.direction;
 		const horizontal = (axis == 'x');
 
@@ -149,12 +150,14 @@ class AxisNavigator extends BaseElement{
 		//const thumbWidth = 128;
 		const _scale = 1/this.scale;
 
+		const clientY = e.clientY-box.top;
+
 		let absolute = 
 			horizontal ? 		
 				(e.clientX-this.thumb.width/2*_scale) / (box.width-this.thumb.width*_scale) : 
-				(e.clientY-fontSize/2*_scale) / (box.height-fontSize/2*_scale);
+				(clientY-this.thumb.height/2*_scale) / (box.height-this.thumb.height*_scale);
 
-		this.verbose && console.log('e:', e);
+		this.verbose && console.log('e:', e, horizontal, box.height, this.thumb.height);
 		//console.log(absolute, e.clientX, box.width, thumbWidth);
 		if(absolute < 0)
 			absolute = 0;
@@ -189,7 +192,7 @@ class AxisNavigator extends BaseElement{
 		args = args.slice();
 		if(this.direction.sign > 0)
 			return args;
-		const horizontal = !!this.direction.h;
+		const horizontal = this.direction.axis=='x';
 		const x = args[0];
 		const y = args[1];
 		if(horizontal) 

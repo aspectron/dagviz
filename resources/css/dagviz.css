@@ -1,10 +1,76 @@
 body{
 	font-family:'Exo 2','Consolas','Roboto Mono','Open Sans','Ubuntu Mono',courier-new,courier,monospace;font-size:17px;
 	--bg-color:#FFF;
+	--graph-stroke:rgba(0,0,0,0.5);
+	--graph-node-link-default-color-1:rgba(0,0,0,0.65);
+	--graph-node-link-default-color-2:rgba(0,0,0,0.65);
+	--graph-square-stroke:#333;
+	--graph-color-a-1:rgba(155,207,255,0.99);
+	--graph-color-a-2:rgba(107, 198, 250,1);
+	--graph-color-a-3:rgba(83, 191, 252,1);
+	--graph-color-a-4:rgba(43, 179, 255,1);
+	--graph-color-a-5:rgba(194,244,255,0.99);
+	--graph-color-new-1:var(--bg-color);
+	--graph-color-new-2:var(--bg-color);
+	--graph-color-new-3:var(--bg-color);
+	--graph-color-new-4:var(--bg-color);
+	--graph-color-new-5:var(--bg-color);
+
+	--graph-color-b-1:rgba(249,164,192,0.99);
+	--graph-color-b-2:rgba(251,116,118,1);/*hover*/
+	--graph-color-b-3:rgba(251,116,118,1);
+	--graph-color-b-4:rgba(251,116,118,1);
+	--graph-color-b-5:rgba(255,194,194,0.99);
+
+	--graph-node-selector-stroke:rgba(0,0,0,0.5);
+	--graph-node-selector-fill:rgba(0,0,0,0.5);
+	--graph-node-text-color:#000;
+	--graph-link-tealing-color:rgba(0, 150, 136, 1);
+	--graph-link-selected-color:blue;
+
+	--graph-shape-unknown-color:rgba(184,163,136,1);
+
+	--node-info-border-color:rgba(0,0,0,.12);
+	--node-info-title-border-color:#DDD;
+	--node-info-box-shadow:0 1px 1.5px 0 rgba(0,0,0,.12), 0 1px 1px 0 rgba(0,0,0,.24);
+	--node-info-bg-color:#FFF;
+
+	--arrow-head-fill:#000;
+	--arrow-head-stroke:#000;
+
+	opacity:0;
+	transition:opacity 0.2s ease;
+
+	--flow-primary-color:rgba(0, 150, 136, 1);
+	--flow-border-color:rgb(0, 133, 119);
+	--flow-border-hover-color:rgba(2, 97, 74, 1);
+
+
 }
 body.k-theme-dark{
+	opacity:1;
 	--bg-color:#202020;
+	--k-close-btn-bg-color:#202020;
 	background-color:var(--bg-color);
+	--graph-node-link-default-color-1:rgba(255,255,255,0.95);
+	--graph-node-link-default-color-2:rgba(255,255,255,0.95);
+	--graph-square-stroke:#c6c6c6;
+	--graph-color-a-1:#0077c2;
+	--graph-color-a-3:#022338;
+	--graph-color-b-1:#ba2d65;
+	--graph-color-b-2:#540323;/*hover*/
+	--graph-color-b-3:#540323;
+	/*--graph-link-selected-color:rgba(0, 119, 194,1);*/
+
+	--arrow-head-fill:#c3c2c2;
+	--arrow-head-stroke:#c3c2c2;
+	--graph-node-text-color:#FFF;
+
+	--flow-primary-color:  rgba(0,150,136,1);
+	--flow-border-color:  rgba(0,150,136,1);
+}
+body.k-theme-light{
+	opacity:1;
 }
 #dagViz{height:100vh;}
 #address{
@@ -14,7 +80,7 @@ body.k-theme-dark{
 }
 #top{
 	font-family:'Exo 2','Consolas','Roboto Mono','Open Sans','Ubuntu Mono',courier-new,courier,monospace;font-size:17px;
-	position:absolute;left:8px;top:8px;color:#222;
+	position:absolute;left:8px;right:8px;top:8px;color:#222;
 	font-weight:400;display:flex;flex-direction:column;user-select:none;
 }
 
@@ -36,7 +102,7 @@ body.k-theme-dark{
 	border-top:1px solid rgba(0,0,0,0);user-select:none;
 }  
 .toggle:hover{color:rgba(0,70,70,0.95);border-radius:0px;}
-.toggle > .caption{min-width:120px;display:inline-block;}
+.toggle > .caption{min-width:135px;display:inline-block;}
 .toggle > .value{min-width:130px;display:inline-block;}
 
 /*
@@ -98,12 +164,17 @@ body{
 .tooltip i{display:block;margin:2px 4px 2px 4px;font-size:18px;}
 .tooltip .text{display:block;margin:2px 4px 2px 4px;}
 
+#menu-bar,#top{pointer-events:none;}
+#menu-bar .menu-item, .menu-items{pointer-events:initial;}
 
 #menu-bar,
 .menu-items{
-	display:flex;flex-direction:row;flex-wrap:wrap;
+	display:flex;flex-direction:row; 
+	/* flex-wrap:wrap; */
 }
 .menu-items{height:56px}
+#menu-bar .flex,
+.menu-items .flex{flex:1;}
 .menu-item i,
 .icon-wrapper i{font-size:24px;line-height:56px;}
 .menu-item{
@@ -152,8 +223,8 @@ body{
 }
 
 body.orient-v #timenav{
-	width:64px;height:100vh;border-top:0px;position:absolute;
-	left:unset;top:0px;right:0px;
+	width:64px;height:calc(100vh - 64px);border-top:0px;position:absolute;
+	left:unset;top:64px;right:0px;
 }
 body.orient-v #dagViz{height:100vh;width:100vw;}
 .win{
@@ -174,6 +245,9 @@ body.orient-v #dagViz{height:100vh;width:100vw;}
 .block-boxes-holder{z-index:10000;bottom:10px;left:10px;}
 menu-panel{z-index:100;}
 
+body:not(.explorer-active) #explorer .vis,
+body.explorer-active #explorer .exp{display:none}
+
 .k-theme-dark menu-panel{background-color:#383737;}
 .k-theme-dark .toggle:hover{color:#009688;}
 .k-theme-dark #top,
@@ -183,10 +257,6 @@ body.k-theme-dark{
 	color:#c3c2c2;
 }
 body.k-theme-dark{
-	--stoke-color-1:#FFF;
-	--stoke-color-2:#F00;
-	--arrow-head-fill:#c3c2c2;
-	--arrow-head-stroke:#c3c2c2;
 	--rect-stroke-color-1:rgba(255,255,255,0.7);
 	--block-info-bg-color:#202020;
 	--block-info-color:#999;
@@ -229,14 +299,63 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 	#search{min-width:100px;}
 	#search::placeholder{font-size:0.5rem}
 	menu-panel>span.toggle{padding:5px 0px;}
-}
-@media(max-width:425px){
-	#top{right:8px;}
-	menu-panel{
-		left:5px !important;right:5px !important;box-sizing:border-box;
-		width:100% !important;top:80px !important;
-		width:calc(100% - 10px) !important;
+	#timenav{
+		bottom:10px;
 	}
-	.menu-items{margin-left:0px;width:100%;margin-top:5px;}
 }
+
+
+#track {display:none;}
+.advanced {display:none;}
+
+#search-clear { opacity: 0; }
+
+@media(max-width:425px){
+	#top{right:8px;right:8px;z-index:10}
+	#logo{margin-right:0px;}
+	/*#menu-anchor{position:absolute;right:0px}*/
+	menu-panel{
+		left:8px !important;right:8px !important;box-sizing:border-box;
+		width:100% !important;top:8px !important;
+		width:calc(100% - 16px) !important;
+		height:calc(100% - 300px) !important;
+	}
+	
+	.menu-items{margin-left:0px;width:100%;margin-top:5px;}
+	body.orient-v .menu-items{width:calc(100% - 64px);box-sizing:border-box;}
+	body.orient-v .menu-items+.flex{display:none}
+
+	/* last-block-widget{top:20px;right:68px} */
+
+	#search-wrapper {
+		width: 44px;
+		/*min-width:48px;*/
+		overflow: hidden;
+		margin-top: -2px;
+	}
+	#search-wrapper
+	#explorer { flex: 1 }
+
+	#search-wrapper.open {
+		position: absolute;
+		width:100%;
+	}
+
+	#search-clear { opacity: 1; }
+
+}
+
+@media(max-width:425px), (max-height:425px){
+	#dir {display:none;}
+	#mass {display:none;}
+	#quality {display:none;}
+	#spacingFactor {display:none;}
+	#k-theme {display:none;}
+
+	
+}
+
+
+
+body.orient-v last-block-widget{right:68px;z-index:10}
 

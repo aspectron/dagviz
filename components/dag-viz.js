@@ -1,5 +1,5 @@
 // Import BaseElement base class and html helper function
-import { html, BaseElement, css, render } from './base-element.js';
+import { html, BaseElement, css, render, svg} from './base-element.js';
 import './node-panel.js';
 
 const D3x = { }
@@ -205,11 +205,86 @@ D3x.shape.circle = function(el, o) {
     return node;
 }
 
-D3x.shape.square = function(el, o) {
-
+D3x.shape.square = function(el, o, oldRoot) {
 	let size = o.size;
+	if(oldRoot){
+		let root = oldRoot;
+		let n = root.blockBox;
+		if(root.__size != size){
+			root.__size = size;
+			n.attr('x',-size)
+		        .attr('y',-size)
+		        .attr('width', size*2)
+		        .attr('height', size*2)
+
+		   	if(root.selector){
+		   		root.selector
+					.attr("d", d3.arc()
+						.innerRadius( size*2 )
+						.outerRadius( size*2+10 )
+						.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
+						.endAngle( 6.29 )//2*Pi = 6.28 = top
+					)
+			}
+		}
+
+		if(root.__rgba != o.rgba){
+			root.__rgba = o.rgba;
+			n.attr('fill', o.rgba);
+		}
+
+		if(root.__strokeWidth != o.strokeWidth){
+			root.__strokeWidth = o.strokeWidth;
+			if(o.strokeWidth){
+				n.attr('stroke-width', o.strokeWidth);
+			}
+		}
+
+		if(o.pattern) {
+			if(!root.pattern){
+				root.pattern = root.append('svg:rect')
+					.attr("stroke", 'var(--graph-square-stroke)')
+			}
+			let pattern = root.pattern;
+			if(pattern.__size != size){
+				pattern.__size == size;
+				pattern 
+					.attr('x',-size)
+					.attr('y',-size)
+					.attr('width', size*2)
+					.attr('height', size*2)
+			}
+			let opacity = o.patternOpacity || 0.125;
+			if(pattern.__opacity != opacity){
+				pattern.__opacity == opacity;
+				pattern 
+					.attr('opacity', opacity)
+			}
+			let fill = `url(#${o.pattern})`;
+			if(pattern.__fill != fill){
+				pattern.__fill == fill;
+				pattern 
+					.attr('fill', fill)
+			}
+			if(o.strokeWidth)
+				pattern.attr('stroke-width', o.strokeWidth);
+		}else{
+			if(root.pattern)
+				root.pattern.remove();
+		}
+
+		root.setSelected(o.selected);
+
+		return root;
+	}
+
+	
 	let root = el.append('svg:g')
 				.attr('opacity',1)
+	root.__size = size;
+	root.__rgba = o.rgba;
+	root.__strokeWidth = o.strokeWidth;
+
 	let node = root.append('svg:rect')
 		.attr('opacity',1)
         .attr('x',-size)
@@ -225,7 +300,7 @@ D3x.shape.square = function(el, o) {
 		//.attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
 		//.attr('fill', o.pattern ? `url(#${o.pattern})` : o.rgba) // D3x.rgba(o.rgba))
 		//.attr('fill', o.rgba) // D3x.rgba(o.rgba))
-        .attr("stroke", D3x.rgba([0,0,0], 0.5))
+        .attr("stroke", 'var(--graph-square-stroke)')
 		//.attr("stroke-width", 1)
 		//.attr('class',['block'])
 	root.blockBox = node;
@@ -233,26 +308,35 @@ D3x.shape.square = function(el, o) {
 	if(o.strokeWidth)
 		node.attr('stroke-width', o.strokeWidth);
 
-
-	let pattern = null;
-
 	if(o.pattern) {
-		pattern = root.append('svg:rect')
+		let pattern = root.append('svg:rect')
 			.attr('x',-size)
 			.attr('y',-size)
 			.attr('width', size*2)
 			.attr('height', size*2)
+			.attr("stroke", 'var(--graph-square-stroke)')
 			.attr('opacity', o.patternOpacity || 0.125)
 			.attr('fill', `url(#${o.pattern})`)
+		if(o.strokeWidth)
+			pattern.attr('stroke-width', o.strokeWidth);
+		root.pattern = pattern;
+
+		pattern.__size == size;
+		pattern.__opacity == o.patternOpacity || 0.125;
+		pattern.__fill == `url(#${o.pattern})`;
 	}
 
     root.setPosition = (x, y)=>{
-
     	return root;
 	}
 	
     root.setFill = (fn)=>{
-		node.attr("fill", fn());
+    	let fill = fn();
+    	if(root.__fill != fill){
+    		root.__fill = fill;
+    		node.attr("fill", fill);
+    	}
+		
 		return root;
 	}
 
@@ -268,14 +352,14 @@ D3x.shape.square = function(el, o) {
 			return
 		root.selector = root.append('svg:path')
 			.attr("d", d3.arc()
-				.innerRadius( size*2 )
-				.outerRadius( size*2+10 )
+				.innerRadius( root.__size*2 )
+				.outerRadius( root.__size*2+10 )
 				.startAngle( 0 )//It's in radian, so Pi = 3.14 = bottom.
 				.endAngle( 6.29 )//2*Pi = 6.28 = top
 			)
-			.attr('stroke', 'rgba(0,0,0,0.5)')
+			.attr('stroke', 'var(--graph-node-selector-stroke)')
 			.attr('stroke-width', 1)
-			.attr('fill', `rgba(0,0,0,0.5)`);
+			.attr('fill', 'var(--graph-node-selector-fill)');
 	}
 
 	root.setSelected(o.selected);
@@ -335,11 +419,11 @@ D3x.shape.diamond = function(el, o) {
     return node;
 }
 
-D3x.createShape = function(el, type, data) {
+D3x.createShape = function(el, type, data, oldEl) {
 
     if(!D3x.shape[type])
         type = 'circle';
-    return D3x.shape[type](el, data);
+    return D3x.shape[type](el, data, oldEl);
 }
 
 
@@ -421,13 +505,13 @@ export class GraphNodeLink{
 
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
-			this.defaultColor = 'rgba(0,32,64,1)';
-			this.defaultStrokeWidth = 7;
+			this.defaultColor = 'var(--graph-node-link-default-color-1)';
+			this.defaultStrokeWidth = 4;
 			this.defaultOpacity = 0.95;
 		} else 
 		{
-			this.defaultColor = 'black';
-			this.defaultStrokeWidth = 1;
+			this.defaultColor = 'var(--graph-node-link-default-color-2)';
+			this.defaultStrokeWidth = 2;
 			this.defaultOpacity = 0.65;
 		}
 
@@ -463,18 +547,23 @@ export class GraphNodeLink{
 		if(this.arrowType == this.holder.ctx._arrows+this.holder.ctx.dir)
 			return
 		this.arrowType = this.holder.ctx._arrows+this.holder.ctx.dir;
+		this._updateArrow(this._lastArrowType || "");
+	}
+
+	_updateArrow(type=""){
+		this._lastArrowType = type;
 		if(this.holder.ctx._arrows == 'multi') {
-			this.updateArrow();
+			this.updateArrow(type);
 		}else{
 			this.removeArrow();
 		}
 	}
 	
-	updateArrow() {
+	updateArrow(type="") {
 		let dir = this.holder.ctx.dir.toLowerCase();
 		if(this.holder.ctx.arrows == "multir")
 			dir = 'w'
-		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir})`:`url(#endarrow-${dir})`)
+		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir}${type})`:`url(#endarrow-${dir}${type})`)
 	}
 
 	removeArrow() {
@@ -484,7 +573,7 @@ export class GraphNodeLink{
 		const {h, sign} = this.holder.ctx.direction;
 		const {_arrows:arrows} = this.holder.ctx;
 		if(arrows != 'off') {
-			let tSize = this.target.data.size+(this.target.data.isChainBlock?9:6)
+			let tSize = this.target.data.size+(this.target.data.isChainBlock?8:6)
 			const sSize = this.source.data.size
 			let boxHSize = tSize;
 			const margin = (boxHSize*2)/(this.target.parentLinksLength+1);
@@ -543,23 +632,28 @@ export class GraphNodeLink{
 		//console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
 		//console.log('target:',this.target.data.blockHash, this.target.data.acceptingBlockHash)
 		let stroke = this.defaultColor;
-		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth)
+		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth);
+		let arrowType = '';
 		//if(color) {
 			if(this.isChainBlockLink) {
-				strokeWidth = 7;
-				if(this.source.selected && this.target.selected)
-					stroke = 'blue';
+				strokeWidth = color?7:strokeWidth;
+				if(this.source.selected && this.target.selected){
+					stroke = 'var(--graph-link-selected-color)';
+					arrowType = '-selected';
+				}
 			}
 			else
 			if(this.source.selected && this.target.selected){
-				stroke = 'blue';
-				strokeWidth = 5;
+				stroke = 'var(--graph-link-selected-color)';
+				strokeWidth = color?5:strokeWidth;
+				arrowType = '-selected';
 			}
 			else
 			if((isTealing || this.source.selected) && this.source.data.blockHash == this.target.data.acceptingBlockHash){
-				stroke = 'rgba(0, 150, 136, 1)';
+				stroke = 'var(--graph-link-tealing-color)';
 				strokeWidth = 3;
 				isTealing = true;
+				arrowType = '-teal';
 			}
 			else if(color){
 				if(node.selected)
@@ -587,6 +681,8 @@ export class GraphNodeLink{
 			.attr('stroke', stroke)
 			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
 			.attr('stroke-width', strokeWidth)
+
+		this._updateArrow(arrowType)
 	}
 }
 
@@ -662,7 +758,7 @@ export class GraphNode{
 		    "txgen" : { shape : 'hexagonB', rgba : [17,221,187,1] },
 		    "mqtt" : { shape : 'square', rgba : [187,209,36,1] },
 		    "simulator" : { shape : 'hexagonB', rgba : [226,204,216,1] },
-		    "unknown" : { shape : 'circle', rgba : [184,163,136,1] },
+		    "unknown" : { shape : 'circle', rgba : 'var(--graph-shape-unknown-color)' },
 		    "tbd2" : { shape : 'circle', rgba : [1,255,255,1] },
 		    "tbd3" : { shape : 'circle', rgba : [136,170,255,1] },
 		    "block" : { shape : 'square', rgba : [243,243,0,1] },
@@ -700,8 +796,35 @@ export class GraphNode{
 		return this;
 	}
 	rebuildLinks() {
-		this.removeLinks();
-		this.buildLinks();
+		//this.removeLinks();
+		//this.buildLinks();
+		let {data} = this;
+		if(!data.parentBlockHashes || !data.parentBlockHashes.length){
+			this.removeLinks();
+			return;
+		}
+		let map = {};
+		if(this.linkNodes)
+			this.linkNodes.forEach(l=>{
+				map[l.data.parent] = l;
+			})
+		let ids = {};
+		this.linkNodes = data.parentBlockHashes.map(parent => {
+			if(!this.holder.nodes[parent]){
+				this.partialLinks = true;
+				return null;
+			}
+			ids[parent] = 1;
+			if(map[parent])
+				return map[parent];
+
+			return new GraphNodeLink(this.holder, {child:this.id, parent});
+		}).filter(nl=>nl);
+
+		Object.values(map).forEach(link=>{
+			if(!ids[link.data.parent])
+				link.remove();
+		})
 	}
 	buildLinks(){
 		let {data, holder} = this;
@@ -769,19 +892,24 @@ export class GraphNode{
 		let shapeConfig = this.getShapeConfig();
 		let zoom = this.holder.paintEl.transform.k
 		const data = this.data;
-		const isBlue = !!data.acceptingBlockHash;
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
 		const isRed = !isBlue;
-		if(isBlue){
-			data.color = `rgba(194,244,255,0.99)`;
-			data.highlightColor_before = 'rgba(107, 198, 250,1)'
-			data.highlightColor = 'rgba(83, 191, 252,1)'
-			data.highlightColor_after = 'rgba(43, 179, 255,1)'
+		if(data.isNew){
+			data.color = 'var(--graph-color-new-1)';
+			data.highlightColor_before = 'var(--graph-color-new-2)'
+			data.highlightColor = 'var(--graph-color-new-3)'
+			data.highlightColor_after = 'var(--graph-color-new-4)'
+		}else if(isBlue){
+			data.color = 'var(--graph-color-a-1)';
+			data.highlightColor_before = 'var(--graph-color-a-2)'
+			data.highlightColor = 'var(--graph-color-a-3)'
+			data.highlightColor_after = 'var(--graph-color-a-4)'
 		}
 		else{
-			data.color = `rgba(255,194,194,0.99)`;
-			data.highlightColor_before = 'rgba(251,116,118,1)'
-			data.highlightColor = 'rgba(251,116,118,1)'
-			data.highlightColor_after = 'rgba(251,116,118,1)'
+			data.color = 'var(--graph-color-b-1)';
+			data.highlightColor_before = 'var(--graph-color-b-2)'
+			data.highlightColor = 'var(--graph-color-b-3)'
+			data.highlightColor_after = 'var(--graph-color-b-4)'
 		}
 
 		this.shape 	= data.shape;
@@ -789,9 +917,9 @@ export class GraphNode{
 		this.size 	= data.size;
 		this.quality = this.holder.ctx.quality;
 
-		this.removeElEvents();
+		/*this.removeElEvents();
 		if(this.el)
-			this.el.remove();
+			this.el.remove();*/
 
 		let pattern = null;
 		let patternOpacity = 0.125;
@@ -809,71 +937,104 @@ export class GraphNode{
             rgba : data.color || shapeConfig.color,
 			opacity : 0.5,
 			pattern, patternOpacity,
-			strokeWidth : data.isChainBlock ? 7 : 1,
+			strokeWidth : data.isChainBlock ? 5 : 1,
 			selected : this.selected
-		})
+		}, this.el)
 
 		this.el.setFill(()=>{
 			return this.data.color;
 		})
 
-		const textColor = data.textColor || '#000';
-
-		if(this.textEl)
-	        this.textEl.remove();
+		const textColor = data.textColor || 'var(--graph-node-text-color)';
 
 		if(this.quality != 'low') {
-			this.textEl = this.el.append("text")
-		    	.attr("class", "node-text")
-				.attr("fill", textColor)
-				.attr("class", ["node-name", this.data.type].join(' '))
-				.text(data.name);
+			if(!this.textEl)
+				this.textEl = this.el.append("text")
+		    		.attr("class", "node-text")
+		    else
+		    	this.el.node().appendChild(this.textEl.node())
+		    if(this.textEl.__textColor != textColor){
+				this.textEl.__textColor = textColor
+		    	this.textEl
+					.attr("stroke", textColor)
+					.attr("fill", textColor)
+			}
+			let cls = ["node-name", this.data.type].join(' ');
+			if(this.textEl.__cls != cls){
+				this.textEl.__cls = cls
+		    	this.textEl
+					.attr("class", cls)
+			}
 
-			let textBox = this.textEl.node().getBoundingClientRect();
-			this.textEl
-				.attr("x", -textBox.width/zoom/2)
-				.attr("y", -8)
-				.attr("opacity", 1)
+			if(this.textEl.__text != data.name){
+				this.textEl.__text = data.name;
+				this.textEl.text(data.name);
+				let textBox = this.textEl.node().getBoundingClientRect();
+				this.textEl
+					.attr("x", -textBox.width/zoom/2)
+					.attr("y", -8)
+					.attr("opacity", 1)
+			}
 		}else{
+			if(this.textEl)
+	        	this.textEl.remove();
 			delete this.textEl;
 		}
 
-		if(this.heightEl)
-			this.heightEl.remove();
-
 		if(this.quality == 'high') {
-			this.heightEl = this.el.append("text")
-				.attr("class", "node-text")
-				.attr("fill", textColor)
-				.attr("class", ["node-name", this.data.type].join(' '))
-				.text(data.blueScore+'');
-			let textBox = this.heightEl.node().getBoundingClientRect();
-			this.heightEl
-				.attr("x", -textBox.width/zoom/2)
-				.attr("y", 14)
+			if(!this.heightEl)
+				this.heightEl = this.el.append("text")
+					.attr("class", "node-text")
+			else
+				this.el.node().appendChild(this.heightEl.node())
+			if(this.heightEl.__textColor != textColor){
+				this.heightEl.__textColor = textColor
+				this.heightEl
+					.attr("stroke", textColor)
+					.attr("fill", textColor)
+			}
+			let cls = ["node-name", this.data.type].join(' ')
+			if(this.heightEl.__cls != cls){
+				this.heightEl.__cls = cls
+				this.heightEl.attr("class", cls)
+			}
+				
+			if(this.heightEl.__text != data.blueScore){
+				this.heightEl.__text == data.blueScore;
+				this.heightEl.text(data.blueScore+'');
+				let textBox = this.heightEl.node().getBoundingClientRect();
+				this.heightEl
+					.attr("x", -textBox.width/zoom/2)
+					.attr("y", 14)
+			}
 		}else{
+			if(this.heightEl)
+				this.heightEl.remove();
 			delete this.heightEl;
 		}
 
 		this.bindElEvents();
 
+		/*
 		this.el
-			.style('opacity', 0)
+			.style('opacity', 0.5)
 			.transition()
-			.duration(500)
+			.duration(10)
 			.style('opacity', 1);
+		*/
 
 		if(this.selected)
 			this.highlightLinks(true);
 	}
 	updateStyle(force){
-		const isBlue = !!this.data.acceptingBlockHash;
 		const data = this.data;
-
-		if(isBlue)
-			data.color = `rgba(194,244,255,0.99)`;
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
+		if(data.isNew)
+			data.color = 'var(--graph-color-new-5)';
+		else if(isBlue)
+			data.color = 'var(--graph-color-a-5)';
 		else
-			data.color = `rgba(255,194,194,0.99)`;
+			data.color = 'var(--graph-color-b-5)';
 
 		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
 			this.initElements();
@@ -957,7 +1118,8 @@ export class GraphNode{
 		if(!this.el.arrow){
 			this.el.arrow = this.el.append('polygon')
 				.attr("class", 'arrow-head')
-				.attr("fill", "#000").attr('stroke', "#000");
+				.attr("fill", "#333").attr('stroke', "#333");
+		//.attr("fill", "#000").attr('stroke', "#000");
 		}
 		let arrow = this.el.arrow;
 		if(arrow._type == arrows+dir)
@@ -984,9 +1146,11 @@ export class GraphNode{
 	}
 
 	onNodeClick(e) {
+		this.$info.html('');
 		if (d3.event.defaultPrevented)
 			return
 		this.holder.onNodeClick(this, d3.event);
+		
 	}
 	onNodeHover(){
 		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
@@ -1037,8 +1201,9 @@ export class GraphNode{
 			color = highlightColor || '#f00';
 
 		}
-		this.el.blockBox.transition().duration(500)
+		this.el.blockBox
 			.attr('fill', color)
+			.transition().duration(500)
 			.style("transform", highlight?"scale(1.1)":null)
 	}
 
@@ -1175,10 +1340,10 @@ export class DAGViz extends BaseElement {
 			#nodeInfo{
 				pointer-events: none;
 				border-radius:5px;
-				border:1px solid rgba(0,0,0,.12);
+				border:1px solid var(--node-info-border-color);
 				display:none;position:absolute;
-				background-color:#FFF;
-				box-shadow: 0 1px 1.5px 0 rgba(0,0,0,.12), 0 1px 1px 0 rgba(0,0,0,.24);
+				background-color:var(--node-info-bg-color);
+				box-shadow:var(--node-info-box-shadow);
 				z-index:10;
 				transition:left 0.1s ease,top 0.1s ease;
 				left:0px;
@@ -1192,25 +1357,23 @@ export class DAGViz extends BaseElement {
 			}
 			#nodeInfo .title{
 				padding:5px;
-				border-bottom:1px solid #DDD;
+				border-bottom:1px solid var(--node-info-title-border-color);
 			}
 			.svg-patterns{position:absolute;top:-300vh}
 
-			path[stroke='rgb(0, 0, 0)']{
-				stroke:var(--stoke-color-1, rgb(0, 0, 0))
-			}
-			path[stroke='rgb(0, 32, 64)']{
-				stroke:var(--stoke-color-2, rgb(0, 32, 64))
-			}
 			.arrow-head{
-				stroke:var(--arrow-head-stroke, #000);
-				fill:var(--arrow-head-fill, #000);
+				stroke:var(--arrow-head-stroke);
+				fill:var(--arrow-head-fill);
 			}
-			rect[stroke='rgba(0,0,0,0.5)']{
-				stroke:var(--rect-stroke-color-1, rgba(0,0,0,0.5));
+			marker polygon{
+				fill:var(--arrow-head-fill);
 			}
-			#markers polygon{
-				fill:var(--arrow-head-fill, #000);
+
+			marker[id$="teal"] polygon{
+				fill:var(--graph-link-tealing-color);
+			}
+			marker[id$="selected"] polygon{
+				fill:var(--graph-link-selected-color);
 			}
 			/*
 			#graph svg .tip-line{
@@ -1254,7 +1417,7 @@ export class DAGViz extends BaseElement {
 		<div id="graph"></div>
 		<div id="nodeInfo"></div>
 		<div class="svg-patterns">
-		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzEnLz4KPC9zdmc+Cg==" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>		
+		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-1" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PHBhdGggZD0iTTAsMTBMMTAsMCIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>		
 		<svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="diagonal-stripe-2" patternUnits="userSpaceOnUse" width="10" height="10"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSd3aGl0ZScvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J2JsYWNrJyBzdHJva2Utd2lkdGg9JzInLz4KPC9zdmc+" x="0" y="0" width="10" height="10"> </image> </pattern> </defs> </svg>
 		<svg height="8" width="8" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="crosshatch" patternUnits="userSpaceOnUse" width="8" height="8"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4JyBoZWlnaHQ9JzgnPgogIDxyZWN0IHdpZHRoPSc4JyBoZWlnaHQ9JzgnIGZpbGw9JyNmZmYnLz4KICA8cGF0aCBkPSdNMCAwTDggOFpNOCAwTDAgOFonIHN0cm9rZS13aWR0aD0nMC41JyBzdHJva2U9JyNhYWEnLz4KPC9zdmc+Cg==" x="0" y="0" width="8" height="8"> </image> </pattern> </defs> </svg>
 		<svg height="6" width="6" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="whitecarbon" patternUnits="userSpaceOnUse" width="6" height="6"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbG5zOnhsaW5rPSdodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rJyB3aWR0aD0nNicgaGVpZ2h0PSc2Jz4KICA8cmVjdCB3aWR0aD0nNicgaGVpZ2h0PSc2JyBmaWxsPScjZWVlZWVlJy8+CiAgPGcgaWQ9J2MnPgogICAgPHJlY3Qgd2lkdGg9JzMnIGhlaWdodD0nMycgZmlsbD0nI2U2ZTZlNicvPgogICAgPHJlY3QgeT0nMScgd2lkdGg9JzMnIGhlaWdodD0nMicgZmlsbD0nI2Q4ZDhkOCcvPgogIDwvZz4KICA8dXNlIHhsaW5rOmhyZWY9JyNjJyB4PSczJyB5PSczJy8+Cjwvc3ZnPg==" x="0" y="0" width="6" height="6"> </image> </pattern> </defs> </svg>
@@ -1263,38 +1426,41 @@ export class DAGViz extends BaseElement {
 		<svg height="5" width="5" xmlns="http://www.w3.org/2000/svg" version="1.1"> <defs> <pattern id="lightstripe" patternUnits="userSpaceOnUse" width="5" height="5"> <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1JyBoZWlnaHQ9JzUnPgogIDxyZWN0IHdpZHRoPSc1JyBoZWlnaHQ9JzUnIGZpbGw9J3doaXRlJy8+CiAgPHBhdGggZD0nTTAgNUw1IDBaTTYgNEw0IDZaTS0xIDFMMSAtMVonIHN0cm9rZT0nIzg4OCcgc3Ryb2tlLXdpZHRoPScxJy8+Cjwvc3ZnPg==" x="0" y="0" width="5" height="5"> </image> </pattern> </defs> </svg>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 100" fill="#000" id="markers">
 			<defs>
-			    <marker id="endarrow-e" markerWidth="6" markerHeight="6" 
+				${
+				['', '-teal', '-selected'].map(c=>svg`
+			    <marker id="endarrow-e${c}" markerWidth="6" markerHeight="6" 
 			    	refX="6" refY="3" markerUnits="userSpaceOnUse">
 			        <polygon points="6 6, 0 3, 6 0"/>
 			    </marker>
-			    <marker id="endarrow-w" markerWidth="6" markerHeight="6" 
+			    <marker id="endarrow-w${c}" markerWidth="6" markerHeight="6" 
 			    	refX="0" refY="3" markerUnits="userSpaceOnUse">
 			        <polygon points="0 0, 6 3, 0 6"/>
 			    </marker>
-			    <marker id="endarrow-n" markerWidth="6" markerHeight="6" 
+			    <marker id="endarrow-n${c}" markerWidth="6" markerHeight="6" 
 			    	refX="3" refY="0" markerUnits="userSpaceOnUse">
 			        <polygon points="0 0, 6 0, 3 6"/>
 			    </marker>
-			    <marker id="endarrow-s" markerWidth="6" markerHeight="6" 
+			    <marker id="endarrow-s${c}" markerWidth="6" markerHeight="6" 
 			    	refX="3" refY="6" markerUnits="userSpaceOnUse">
 			        <polygon points="3 0, 6 6, 0 6"/>
 			    </marker>
-			    <marker id="endarrowsm-e" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    <marker id="endarrowsm-e${c}" markerWidth="2" markerHeight="2" 
+			    	refX="2" refY="1">
 			        <polygon points="2 2, 0 1, 2 0"/>
 			    </marker>
-			    <marker id="endarrowsm-w" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    <marker id="endarrowsm-w${c}" markerWidth="2" markerHeight="2" 
+			    	refX="0" refY="1">
 			        <polygon points="0 0, 2 1, 0 2"/>
 			    </marker>
-			    <marker id="endarrowsm-n" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    <marker id="endarrowsm-n${c}" markerWidth="2" markerHeight="2" 
+			    	refX="1" refY="0">
 			        <polygon points="0 0, 2 0, 1 2"/>
 			    </marker>
-			    <marker id="endarrowsm-s" markerWidth="2" markerHeight="2" 
-			    	refX="1" refY="1">
+			    <marker id="endarrowsm-s${c}" markerWidth="2" markerHeight="2" 
+			    	refX="-2" refY="1">
 			        <polygon points="1 0, 2 2, 0 2"/>
-			    </marker>
+			    </marker>`
+			)}
 		  </defs>
 		</svg>
 		</div>
@@ -1359,7 +1525,7 @@ export class DAGViz extends BaseElement {
     			this.setChartTransform(d3.event.transform)
     			let w = Math.max(0.01, 1/this.paintEl.transform.k)
     			this.nodesEl.attr("stroke-width", w);
-    			this.nodesEl.attr("stroke", 'rgba(0,0,0,0.5)');
+    			this.nodesEl.attr("stroke", 'var(--graph-stroke)');
 				this.linksEl.attr("stroke-width", w);
 			})
 			.on('start', (e)=>{
@@ -1375,7 +1541,7 @@ export class DAGViz extends BaseElement {
     	this.paintEl.transform = d3.zoomIdentity.translate(0, 0).scale(1);
 
 		this.graphHolder.addEventListener('mouseup', (e) => {
-			console.log("YES!!!!!!!!!!!!!!!");
+			// console.log("graphHolder mouseup");
 		})
 
 		this.updateSVGSize();
@@ -1383,7 +1549,7 @@ export class DAGViz extends BaseElement {
 			.attr("class", "link")
 			.attr("stroke", "#999")
 			.attr("stroke-width", 1)
-			.attr("stroke-opacity", 0.6)
+			//.attr("stroke-opacity", 0.6)
 		this.svgLink = this.linksEl.selectAll("line")
 		this.nodesEl = this.paintEl.append("g")
 			.attr("fill", "#fff")
@@ -1446,9 +1612,12 @@ export class DAGViz extends BaseElement {
 
 		let pBox = this.getBoundingClientRect();
 		let centerX = pBox.left + pBox.width/2;
+		let centerY = pBox.top + pBox.height/2;
 		if(options && options.offsetX)
 			centerX += options.offsetX * pBox.width;
-		let centerY = pBox.top + pBox.height/2;
+		if(options && options.offsetY)
+			centerY += options.offsetY * pBox.height;
+		
 		let box = node.getBoundingClientRect();
 		let cX = box.left + box.width/2;
 		let cY = box.top + box.height/2;
@@ -1468,8 +1637,12 @@ export class DAGViz extends BaseElement {
 			t.x = +t.x.toFixed(4);
 			t.y = +t.y.toFixed(4);
 		}
+		//console.log("t", t.x, t.y)
 		let pos = -(t[axis] / t.k / this.ctx.unitDist) * sign;
+		//console.log("pos", pos.toFixed(0))
 		this.ctx.updateOffset(pos);
+		this.simulationNodes.forEach(n=>n.updateStyle());
+		
 		this.setChartTransform(this.paintEl.transform);
 	}
 
@@ -1502,7 +1675,15 @@ export class DAGViz extends BaseElement {
 			y += -sign * this.ctx.offset * k
 		}
 
-		this.paintEl.attr('transform', `translate(${x}, ${y}) scale(${k})`);
+		if(this.__x && Math.abs(this.__x - x) < 1)
+			x = this.__x;
+		if(this.__y && Math.abs(this.__y - y) < 1)
+			y = this.__y;
+
+		this.__x = x;
+		this.__y = y;
+
+		this.paintEl.attr('transform', `translate(${x.toFixed(4)}, ${y.toFixed(4)}) scale(${k})`);
 
 		if(skipUpdates)
 			return;
@@ -1871,29 +2052,35 @@ export class DAGViz extends BaseElement {
 			// 	fullFetch : true,
 			// 	pos, range : this.ctx.app.range_
 			// });
-			this.centerBy(this.ctx.lastBlockData.blockHash);
-			/*
+			//this.centerBy(this.ctx.lastBlockData.blockHash);
+			
 			this.centerBy(this.ctx.lastBlockData.blockHash, { 
 				filter : (t,v) => {
 					
 					let X_ = Math.abs(v.cX / k / this.ctx.unitDist);
 					let Y_ = Math.abs(v.cY / k / this.ctx.unitDist);
-
-					let delta = 0.015;
-					if(X_ > 256 || Y_ > 256)
-						delta = 0.75;
+					
+					//let _cX = Math.abs(v.cX);
+					let delta = 0.1;
+					if(X_ > 200 || Y_ > 200)
+						delta = 0.8;
 					else
 					if(X_ > 16 || Y_ > 16)
-						delta = 0.25;
+						delta = 0.5;
+
+					//console.log("X_", X_, _cX, delta)
+
 				
 					t.x += v.cX * delta;
 					t.y += v.cY * delta;
+
+					t.x = +t.x.toFixed(4);
+					t.y = +t.y.toFixed(4);
 				}, 
-				[offset] : (this.ctx.direction.h ? 0.3 : 0.3) * this.ctx.direction.sign
+				//[offset] : (this.ctx.direction.h ? 0.3 : 0.3) * this.ctx.direction.sign
 				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
 				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
 			});
-			*/
 		}
 		else if(this.focusTargetHash) {
 

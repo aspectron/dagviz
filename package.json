@@ -1,8 +1,12 @@
 {
   "name": "dagviz",
+  "description": "blockDAG Visualizer and Explorer",
   "version": "2.1.0",
   "private": true,
   "dependencies": {
+    "@aspectron/flow-router": "*",
+    "@aspectron/flow-ux": "*",
+    "@webcomponents/webcomponentsjs": "*",
     "basic-auth": "*",
     "finalhandler": "*",
     "is-docker": "*",
@@ -12,15 +16,32 @@
     "mkdirp": "*",
     "mqtt": "*",
     "mysql": "*",
+    "pg": "*",
+    "pg-format": "*",
     "request": "*",
     "request-promise": "*",
     "serve-static": "*",
     "socket.io": "*",
-    "underscore": "*",
-    "flow-ux": "*"
+    "underscore": "*"
   },
   "engines": {
     "node": "*",
     "npm": "*"
-  }
+  },
+  "kdx":{
+    "name" : "DAGViz",
+    "location": "http://localhost:8689",
+    "stop": "http://localhost:8689/stop",
+    "width" : 1600,
+    "height" : 680,
+		"args": [
+			"node",
+      "dagviz",
+      "--kdx", 
+      "--no-auth", 
+      "--port=8689",
+			"--kasparov=http://localhost:$KASPAROVD-PORT",
+			"--mqtt-address=mqtt://localhost:$MQTT-PORT"
+		]
+	}
 }

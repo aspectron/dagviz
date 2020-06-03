@@ -60,6 +60,9 @@ export class Block extends GraphNode {
 			if(child)
 				child.rebuildLinks();
 		})
+
+		this.__acceptingBlockHash = data.acceptingBlockHash;
+		this.__isChainBlock = data.isChainBlock;
 	}
 
 	getSize() {
@@ -79,6 +82,8 @@ export class Block extends GraphNode {
 	}
 }
 
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+/*console.log("isMobile: ", isMobile);*/
 
 class GraphContext {
 	constructor(app, options) {
@@ -105,14 +110,21 @@ class GraphContext {
 		this.shape = 'square';
 		this.layout = 'determ';
 		this.quality = 'high';
-		this.spacingFactor = 1;
+		this.spacingFactor = 1.5;
 		this.arrows = 'multis';
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
+		this.highlightNewBlock = 15;//seconds
+		this.advanced = false;
 		//this.unit2Pos = {};
 
 		this.dir = 'E';
+
+		if(isMobile) {
+			this.dir = 'N';
+		}
+
 		this.directions = {
 			'E' : {
 				h : true,
@@ -153,7 +165,10 @@ class GraphContext {
 	}
 	updateOffset(pos){
 		pos = pos!==undefined? pos : this.position;
-		this.offset = this.linearScale(pos/this.unitDist) - pos * this.unitDist;
+		this.offset = Math.ceil(this.linearScale(pos/this.unitDist) - pos * this.unitDist);
+		//console.log("this.offset", this.offset)
+		//if(Math.abs(offset - this.offset) > 10)
+		//	this.offset = offset;
 	}
 	/*
 	get position(){
@@ -309,7 +324,7 @@ class GraphContext {
 
 		this.position = x * this.max;
 		this.updateOffset();
-		// console.log('position:',this.position,'x:',x,'max:',this.max);
+		//console.log('updateOffset:',this.position,'x:', x,'max:',this.max);
 		if(skipUpdate)
 			return;
 
@@ -351,7 +366,7 @@ class GraphContext {
 				if(this.lastBlockData && this.track) {
 					//let v = this.lastBlockData[this.unit] * this.unitDist;
 					//this.graph.translate(v,0);
-					this.graph.centerBy(this.lastBlockData.blockHash)
+					//this.graph.centerBy(this.lastBlockData.blockHash)
 				}
 			} break;
 			case 'mass': {
@@ -564,33 +579,14 @@ export class App {
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
 		new Toggle(this.ctx,'mass','MASS','far fa-weight-hanging:Size of the block is derived from block mass (capped at 200)');
-		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain');
-		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
-		// 	'border' : 'BORDER',
-		// 	'green' : 'GREEN',
-		// 	'none' : 'NO',
-		// 	'yellow' : 'YELLOW',
-		// 	'cyan' : 'CYAN'
-		// },'CHAIN BLOCKS DISTINCT','fal fa-highlighter:Highlight chain blocks');
-		new MultiChoice(this.ctx,'chainBlocksCenter',{
-			'disable':'OFF',
-			'force':"FORCE",
-			'fixed' : "FIXED"
-		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center');
-
-		new MultiChoice(this.ctx,'layout',{
-			'determ' : 'DETERMINISTIC',
-			// 'random' : 'RANDOM',
-			'free' : 'FREE',
-		},'LAYOUT', 'fal fa-bring-front:Block layout');
-
-		new MultiChoice(this.ctx,'quality',{
+		
+		new MultiChoice(this.ctx,'quality', {
 			'high' : 'HIGH',
 			'medium' : 'MEDIUM',
 			'low' : 'LOW',
 		},'QUALITY','fal fa-tachometer-alt-fast:Rendering quality / performance');
 
-		new MultiChoice(this.ctx,'dir',{
+		new MultiChoice(this.ctx,'dir', {
 			E:'LANDSCAPE',
 			S:'PORTRAIT',
 			W:'LANDSCAPE',
@@ -613,13 +609,41 @@ export class App {
 			}
 		});
 
+		new Toggle (this.ctx, 'advanced', 'ADVANCED', '',{
+			menu:'advanced',
+		});
+
+		new Toggle(this.ctx,'lvariance','L-VARIANCE','far fa-question:Local variance: blocks are shifted by their relative timestamp within their local blue score domain',{advanced:true});
+
+		// new MultiChoice(this.ctx,'chainBlocksDistinct',{
+		// 	'border' : 'BORDER',
+		// 	'green' : 'GREEN',
+		// 	'none' : 'NO',
+		// 	'yellow' : 'YELLOW',
+		// 	'cyan' : 'CYAN'
+		// },'CHAIN BLOCKS DISTINCT','fal fa-highlighter:Highlight chain blocks');
+
+		new MultiChoice(this.ctx,'chainBlocksCenter', {
+			'disable':'OFF',
+			'force':"FORCE",
+			'fixed' : "FIXED"
+		},'CENTER','fa fa-compress-alt:Chain block position is biased toward center', {advanced:true});
+
+		new MultiChoice(this.ctx,'layout', {
+			'determ' : 'DETERMINISTIC',
+			// 'random' : 'RANDOM',
+			'free' : 'FREE',
+		},'LAYOUT', 'fal fa-bring-front:Block layout', {advanced:true});
+
+
 		new MultiChoice(this.ctx,'spacingFactor',[1,1.5,2.0,2.5,3.0],'SPACING','Spacing Factor', {
+			advanced: true,
 			update : (v) => {
 				this.graph.restartSimulation();
 			}
 		});
 
-		new Toggle(this.ctx,'childShift','CHILD SHIFT','Child Shift');
+		new Toggle(this.ctx,'childShift','CHILD SHIFT','Child Shift', {advanced:true});
 
 		new MultiChoice(this.ctx, 'arrows', {
 			'off' : 'OFF',
@@ -627,6 +651,7 @@ export class App {
 			'multis' : 'MULTI-S',
 			'multir': 'MULTI-R'
 		},'ARROWS','fal fa-location-arrow:Display Arrows', {
+			advanced: true,
 			update : (v) => {
 				//d3.select('node-text').attr("stroke-width", 0.5);
 				let {arrows} = this.ctx;
@@ -647,11 +672,26 @@ export class App {
 			'dark':'DARK',
 			'light':"LIGHT",
 		}, 'THEME','fa fa-palette:UI Theme', {
+			advanced: true,
 			update:(v)=>{
 				if(this.kExplorer){
 					this.kExplorer.setSettings({theme: v.toLowerCase()}, true);
 					this.navigator.redraw();
 				}
+			}
+		});
+
+		new MultiChoice(this.ctx, 'highlightNewBlock',{
+			30:'30 sec',
+			15:'15 sec',
+			10:'10 sec',
+			5:'5 sec',
+			3:'3 sec',
+			0:'OFF'
+		}, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
+			advanced:true,
+			update:(text, v)=>{
+				this.updateNewBlockTimer(+v)
 			}
 		});
 
@@ -699,6 +739,19 @@ export class App {
 						this.ctx.position = 0;
 					console.log('pos:',this.ctx.position);
 					this.updatePosition();
+				} break;
+
+				case 'Home': {
+					this.ctls.track.setValue(false);
+					this.ctx.reposition(0);
+				} break;
+				case 'End': {
+					this.ctls.track.setValue(true);
+				} break;
+
+				case '/': {
+					e.stopPropagation();
+					$("#search").focus();
 				} break;
 			}
 		});
@@ -762,13 +815,13 @@ export class App {
 			width = Math.min(width,max);
 			console.log(width);
 			$search.css('width',width+'px');
-			$searchBtn.css('opacity',v?0.9:0);
+			$('.search-btn').css('opacity',v?0.9:0);
 			//console.log(v);
 
 			if(e.key == 'Enter') {
 				$search.val('');
 				$search.css('width','320px');
-				$searchBtn.css('opacity',0);
+				$('.search-btn').css('opacity',0);
 				this.search(v);
 			}
 
@@ -779,13 +832,23 @@ export class App {
 			$search.val('');
 			if(v)
 				this.search(v);
-			$searchBtn.css('opacity',0);
+				$('.search-btn').css('opacity',0);
 		});
 
 		$('#search-clear').on('click', () => {
 			$search.val('');
-			$searchBtn.css('opacity',0);
+			$('.search-btn').css('opacity',0);
+			if(isMobile)
+				$('#search-wrapper').removeClass('open');
 		});
+
+		if(isMobile) {
+			$("#search-wrapper .icon-wrapper").on('click', () => {
+				$('#search-wrapper').addClass('open');
+			})
+		} else {
+			$("#search-clear").addClass('search-btn');
+		}
 
 		const $orientationImg = $('#orientation > img');
 		$orientationImg.addClass(`orient-${this.ctx.dir}`);
@@ -830,6 +893,39 @@ export class App {
 			this.$info = $("#info");
 		
 		this.generateTooltips();
+
+		// this.isDevicePortrait = window.innerWidth < window.innerHeight;
+		// console.log(`${this.isDevicePortrait?'portrait':'landscape'} device detected`)
+		// window.addEventListener("orientationchange", () => {
+		// 	// Announce the new orientation number
+		// 	// alert(window.orientation);
+		// 	console.log("WINDOW ORIENTATION VALUE: ",window.orientation);
+		// 	let isPortrait = (window.orientation == 0 || window.orientation == 180) ? this.isDevicePortrait : !this.isDevicePortrait;
+		// 	console.log(isPortrait);
+		// 	console.log("this.isPortrait", this.isPortrait);
+		// 	if(isPortrait !== this.isPortrait) {
+
+		// 		this.ctls.dir.setValue(isPortrait ? 'N' : 'E');
+		// 		// this.ctls.dir.toggle({
+		// 		// 	disableLimit : (e.ctrlKey || e.shiftKey)				
+		// 		// });
+		// 	}
+
+		// 	this.isPortrait = isPortrait;
+		// }, false);		
+		if (isMobile){
+			window.addEventListener("orientationchange", () => {
+				// Announce the new orientation number
+				// alert(window.orientation);
+				console.log("WINDOW ORIENTATION VALUE: ",window.orientation);
+				if(window.orientation == 0 || window.orientation == 180)
+					this.ctls.dir.setValue('N');
+				else if (window.orientation == 90 || window.orientation == 270 || window.orientation == -90)
+					this.ctls.dir.setValue('E');
+				
+			
+			}, false);		
+		}
 	}
 
 	search(v_) {
@@ -932,7 +1028,7 @@ export class App {
 
 	async updatePosition() {
 		//console.log('updatePosition');
-		this.graph.style.opacity = 0;
+//		this.graph.style.opacity = 0;
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
@@ -1047,43 +1143,61 @@ export class App {
 	initIO() {
 		this.io = io();
 
+		this.newBlocks = new Map();
+
+
+
 		this.io.on('dag/blocks', (blocks) => {
-			console.log("dag/blocks", blocks)
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
+			this.highlightNewBlockTimer();
+			if(this.ctx.highlightNewBlock>0){
+				let cTS = Date.now();
+				blocks.forEach(b=>{
+					b.cTS = cTS;
+					b.isNew = 1;
+					this.newBlocks.set(b.blockHash, {cTS});
+				})
+			}
+
 			this.lastBlockWidget.updateBlocks(blocks);
 			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
 			window.dispatchEvent(ce)
 
+			blocks.forEach(block=>block.isChainBlock = false);
+			let _blocks = blocks;
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
-				blocks = blocks.filter((block) => {
+				_blocks = _blocks.filter((block) => {
 					block.origin = 'tip-update';
 					if(block[this.ctx.unit] < (this.region.from-this.range_) || block[this.ctx.unit] > (this.region.to+this.range_))
 						return false;
 					return true;
 				});
 			}
-	
-			if(blocks.length) {
-
-				blocks.forEach(block=>block.isChainBlock = false);
-
-				this.createBlocks(blocks);
+			if(_blocks.length) {
+				this.createBlocks(_blocks);
 				this.graph.updateSimulation();
-				let oldLastBlock = this.ctx.lastBlockData;
-				let newLastBlock = blocks[blocks.length-1];
-				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
-					this.ctx.lastBlockData = newLastBlock;
-					this.ctx.lastBlockDataTS = Date.now();
-					console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
-				}
-
-				if(newLastBlock.blueScore > this.ctx.max)
-					this.ctx.updateMax(newLastBlock.blueScore)
-
 			}
+			let oldLastBlock = this.ctx.lastBlockData;
+			let newLastBlock = blocks[blocks.length-1];
+			blocks.forEach(b=>{
+				if(b.blueScore > newLastBlock.blueScore){
+					console.log("#### found newLastBlock ###")
+					newLastBlock = b;
+				}
+			})
+			if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
+				this.ctx.lastBlockData = newLastBlock;
+				this.ctx.lastBlockDataTS = Date.now();
+				this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
+			}
+
+			//console.log("newLastBlock.blueScore", newLastBlock.blueScore, this.ctx.max)
+			if(newLastBlock.blueScore > this.ctx.max)
+				this.ctx.updateMax(newLastBlock.blueScore)
+
 
 			if(this.ctx.track) {
 				dpc(()=>{
@@ -1091,6 +1205,7 @@ export class App {
 				})
 			}
 
+			this.navigator.redraw();
 		});
 
 		// this.io.on('last-block-data', (data) => {
@@ -1184,6 +1299,7 @@ export class App {
 			quality : ctx.quality,
 			select : 'none',
 			theme: ctx['k-theme'],
+			highlightNewBlock: ctx.highlightNewBlock,
 			expParams
 		}
 		params = Object.assign(defaults, params);
@@ -1332,6 +1448,45 @@ export class App {
 	restoreUndo(state) {
 		this.initContext(state);
 	}
+
+	highlightNewBlockTimer(ts){
+		let t = ts;
+		ts = ts || Date.now() - (this.ctx.highlightNewBlock*1000);
+		let {nodes} = this.graph, b, isNew;
+		this.newBlocks.forEach((o, blockHash)=>{
+			b = nodes[blockHash];
+			isNew = (o.cTS >= ts);
+			if(b){
+				if(b.data.acceptingBlockHash != b.__acceptingBlockHash)// || b.data.isChainBlock != b.__isChainBlock)
+//				if(b.data.acceptingBlockHash || b.data.isChainBlock)
+					isNew = false;
+				if(!isNew){
+					b.data.isNew = false;
+					b.updateStyle();
+				}
+			}
+			if(!isNew)
+				this.newBlocks.delete(blockHash);
+		})
+	}
+
+	updateNewBlockTimer(highlightNewBlock, time=0){
+		if(highlightNewBlock){
+			if(this.highlightNewBlockTimerId)
+				clearInterval(this.highlightNewBlockTimerId);
+
+			this.highlightNewBlockTimerId = setInterval(()=>{
+				this.highlightNewBlockTimer();
+			}, (time || highlightNewBlock) * 1000)
+			return
+		}
+
+		if(this.highlightNewBlockTimerId){
+			this.highlightNewBlockTimer(Date.now() + 100000)
+			clearInterval(this.highlightNewBlockTimerId);
+		}
+
+	}
 	
 	async initContext(state) {
 		// pos, k, select, all ctls
@@ -1352,6 +1507,7 @@ export class App {
 				this.ctx.updateOffset();
 			}
 		}
+		this.updateNewBlockTimer(+state.highlightNewBlock);
 
 		if(state.k) {
 			const t = this.graph.paintEl.transform;
@@ -1441,6 +1597,7 @@ export class App {
 			this.kExplorer.hideSettings = true;
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorerWin.close = ()=>{
+				document.body.classList.toggle("explorer-active", false);
 				if(this.kExplorerWin.classList.contains("active")){
 					this.kExplorerWin.classList.remove("active");
 					this.storeUndo()
@@ -1508,6 +1665,7 @@ export class App {
 		if(!method)
 			return
 		this.kExplorerWin.classList.add("active");
+		document.body.classList.toggle("explorer-active", true);
 		if(this.kExplorer.callApi)
 			this.kExplorer.callApi([method, ...paths], params);
 		
@@ -1684,7 +1842,6 @@ export class App {
 	}
 	
 	regionCleanup() {
-
 		const { from, to, range } = this.getRegion();
 		//const { region : { from, to, range } } = this.getRegion();
 
@@ -1707,11 +1864,17 @@ class Toggle {
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.options = options;
+		this.options = options || {};
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
-		this.el = $(`<span id="${ident}" class='toggle' ${tooltip}></span>`);
-		$("menu-panel").append(this.el);
+
+		let cls = ["toggle"];
+
+		if(this.options.advanced)
+			cls.push("advanced");
+
+		this.el = $(`<span id="${ident}" class='${cls.join(" ")}' ${tooltip}></span>`);
+		$("menu-panel .items").append(this.el);
 
 		// let url = new URL(window.location.href);
 		// let params = url.searchParams;
@@ -1737,6 +1900,11 @@ class Toggle {
 		if(this.target.onToggle)
 			this.target.onToggle(this.ident, value);
 		this.update();
+
+		if(this.options.menu){
+			let selector = "." + this.options.menu;
+			$(selector).css("display", value ? "inline-block" : "none" );
+		}
 	}
 
 	getValue(storage) {
@@ -1750,7 +1918,14 @@ class Toggle {
 
 	update() {
 		const value = this.target[this.ident];
-		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${value ? 'ON' : 'OFF' }</span>`);
+		const {menu} = this.options;
+		let onV = "ON";
+		let offV = "OFF";
+		if(menu) {
+			onV = `<i class="fas fa-caret-down"></i>`;
+			offV = `<i class="fas fa-caret-right"></i>`;
+		}
+		this.el.html(`<span class="caption">${this.caption}:</span><span class="value">${value ? onV : offV }</span>`);
 		if(this.options && this.options.update)
 			this.options.update(value);
 	}
@@ -1762,13 +1937,19 @@ class MultiChoice {
 		this.target = target;
 		this.ident = ident;
 		this.caption = caption;
-		this.options = options;
+		this.options = options || {};
 		this.choices = Array.isArray(choices) ? Object.fromEntries(choices.map(v=>[v,v])) : choices;
 		this.limit = options && options.limit ? (Array.isArray(options.limit) ? Object.fromEntries(options.limit.map(v=>[v,v])) : options.limit) : null;
 		if(tooltip)
 			tooltip = `tooltip="${tooltip}"`;
-		this.el = $(`<span id="${ident}" class='toggle' ${tooltip||''}></span>`);
-		$("menu-panel").append(this.el);
+		//const hidden = isMobile&&options.isMobile===false?"hidden":"";
+		let cls = ["toggle"];
+
+		if(this.options.advanced)
+			cls.push("advanced");
+
+		this.el = $(`<span id="${ident}" class='${cls.join(" ")}' ${tooltip||''}></span>`);
+		$("menu-panel .items").append(this.el);
 
 		$(this.el).on('click', (e) => {
 			this.toggle({
@@ -1796,9 +1977,8 @@ class MultiChoice {
 	}	
 
 	setValue(value){
-		//console.log(value);
 		const choices = Object.keys(this.choices);
-		if(!choices.includes(value))
+		if(this.choices[value] === undefined)
 			value = choices[0];
 
 		this.target[this.ident] = value;
@@ -1828,12 +2008,11 @@ class LastBlockWidget extends BaseElement{
 				position: absolute;
 				font-family: "Cousine";
 				font-size: 16px;
-				z-index:4;
+				z-index:10;
 				display:block;
 				min-width: 160px;
 				top: 128px;
 				right: 32px;
-				eight: 128px;
 				transition: opacity 750ms;
 				opacity: 0;
 				background-color: rgba(0, 150, 136, 1);
@@ -1846,7 +2025,11 @@ class LastBlockWidget extends BaseElement{
 				cursor: pointer;
 			}
 			:host(.visible) { opacity: 1 }
-			div{padding:6px}
+			div[wrapper]{
+				padding:6px;
+				display: flex;
+				flex-direction: column;
+			}
 			
 			@keyframes wiggle {
 				0% { transform: rotate(0deg); }
@@ -1867,7 +2050,42 @@ class LastBlockWidget extends BaseElement{
 			:host(.shake) {
 				/*animation: shake 2.5s ;*/
 				animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
-			}			
+			}
+
+			.arrow {
+				width: 36px;
+				height: auto;
+				margin: 2px;
+				opacity: 0.8;
+			}
+
+			.subtitle {
+				font-size: 10.4px;
+				opacity: 0.8;
+
+			}
+
+			/* mobile portrait */
+			@media(max-width:425px){
+				:host{
+					font-size: 10px;
+					min-width: 120px;
+					top: 64px;
+					left: 24px;
+					right:unset !important;
+				}
+			}
+			/* mobile landscape */
+			@media(max-height:425px){ 	
+				:host{
+					font-size: 10px;
+					min-width: 120px;
+					top:24px;
+					right: 64px;
+				}
+			}
+			
+			
 		`;
 	}
 
@@ -1880,7 +2098,23 @@ class LastBlockWidget extends BaseElement{
 
 	render(){
 
-		return html`<div @click=${this.click}>${this.blocks} new block${this.blocks!=1?'s':''}</div>`;
+		return html`<div wrapper @click=${this.click}>
+				<div>
+					${this.blocks} new block${this.blocks!=1?'s':''}
+				</div>
+				<div>
+					<img class='arrow' src="/resources/images/arrow-right-white.png" />
+					<!--
+
+					// TODO @surinder
+
+					<fa-icon icon="/resources/images/k-subtract.svg" color="red" size="48"></fa-icon>
+					<fa-icon icon="/resources/images/arrow-right.svg#arrow-right" color="red" size="48"></fa-icon>
+					<fa-icon icon="fal:arrow-right" size="24" color="red"></fa-icon>
+					-->
+				</div>
+				<div class='subtitle'>CLICK TO TRACK</div>
+			</div>`;
 	}
 
 	updateBlocks(blocks) {
@@ -1888,11 +2122,13 @@ class LastBlockWidget extends BaseElement{
 
 		this.blueScore = blocks[0].blueScore;
 
+		if(this.region === undefined)
+			return;
 
 		let pos = -app.ctx.graph.paintEl.transform.x / app.ctx.graph.paintEl.transform.k / app.ctx.unitDist * app.ctx.direction.sign;
 		let from = pos - this.region.range * 0.5;
 		let to = pos + this.region.range * 0.5;
-		console.log(pos,from,to);
+		//console.log(pos,from,to);
 		if(from < this.blueScore && this.blueScore < to ) {
 			this.halt();
 		} else {
@@ -1905,8 +2141,12 @@ class LastBlockWidget extends BaseElement{
 	click() {
 		//console.log('click called');
 		//app.ctx.reposition(1.0);
-		app.ctls.track.setValue(true);
 		this.halt();
+		app.ctx.reposition(1);
+		dpc(100, ()=>{
+			console.log("track.setValue:lastBlockData", app.ctx.lastBlockData?.blueScore)
+			app.ctls.track.setValue(true);
+		})
 		// dpc(750, () => {
 		// })
 		// app.position = this.blueScore(); //ctx.reposition(1.0);

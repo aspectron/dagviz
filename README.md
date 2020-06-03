@@ -77,3 +77,27 @@ As of v2 the the block data structure used by DAGViz differs from Kasparov: in a
 
 Constant re-partitioning that occurs in the DAGViz user interface makes it very difficult to traverse and perform chain analysis. Having `childBlockHashes` available as a part of the API response allows us to instantly notify already-existing children that they should link up to parents (otherwise we have to traverse the entire snapshot each time a new node is created).
 
+## DAGViz under KDX
+
+You can run DAGViz under KDX using the following configuration entry:
+```json
+
+	"app:dagviz": {
+		"disable": false,
+		"folder": "$apps/dagviz",
+        "location": "http://localhost:8689",
+        "width" : 1600,
+        "height" : 680,
+		"args": [
+			"node",
+            "dagviz",
+            "--kdx", "--no-auth", "--port=8689",
+			"--kasparov=http://localhost:11224",
+			"--mqtt-address=mqtt://localhost:18792"
+		]
+	}
+```
+- `folder` - location of dagviz project
+- `location` - url for KDX to access dagviz UI (must match port number provided via `--port`)
+- `args` - command line arguments to pass to DAGViz
+

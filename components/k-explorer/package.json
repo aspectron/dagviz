@@ -2,8 +2,12 @@
 	"name": "k-explorer",
 	"description": " ",
 	"dependencies": {
-		"lit-element": "*",
-		"express": "*"
+		"@aspectron/flow-utils": "*",
+		"@aspectron/flow-router": "*",
+		"@webcomponents/webcomponentsjs": "*",
+		"ejs": "*",
+		"express": "*",
+		"lit-element": "*"
 	},
 	"scripts": {
 		"start": "node web-app.js"

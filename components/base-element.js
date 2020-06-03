@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit-element/lit-element.js';
-import {render} from 'lit-html/lit-html.js';
+import {render, svg} from 'lit-html/lit-html.js';
 
 class BaseElement extends LitElement {
 	static register(){
@@ -40,4 +40,4 @@ class BaseElement extends LitElement {
 	*/
 }
 
-export {LitElement, html, BaseElement, css, render};
+export {LitElement, html, BaseElement, css, render, svg};

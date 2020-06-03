@@ -167,9 +167,9 @@ export class KBlock extends LitElement{
         let hash = data.blockHash.substring(0,18)+'...';
 
         return html`
-        <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.min.css" />
-        <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.min.css" />
-        <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/regular.min.css" />
+        <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/all.min.css" />
+        <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/light.min.css" />
+        <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/regular.min.css" />
         <div id="info-panel" class="panel ${this.cls()}" xstyle="border:1px solid red;" @click="${this.panelClick}">
             <div class='toolbar'>
                 <div @click="${this.details}" class="button mask-icon-info" title="Open detailed block information"></div>

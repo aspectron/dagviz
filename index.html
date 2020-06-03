@@ -2,20 +2,22 @@
 <html>
 <head>
 	<title>DAGViz</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, minimum-scale=1">
 	<link href="https://fonts.googleapis.com/css?family=Exo+2:200,400|Monseratt|Lato|Open+Sans|Roboto|Roboto+Mono|Cousine|Share+Tech+Mono|Ubuntu+Mono&display=swap" rel="stylesheet">
 
 	<script type="module" src="/components/dag-viz.js" crossorigin></script>
 	<script src="/resources/scripts/jquery-3.4.1.js"></script>
+	<script src="/resources/scripts/jquery.touchwipe.min.js"></script>
+
 	<!--script src="/resources/d3.v5.min.js"></script-->
 
 	<script src="/resources/scripts/notify.js"></script>
 	<script src="/resources/scripts/notify.dagviz.js"></script>
 	<link rel="stylesheet" type="text/css" href="/resources/css/notify.css" />
 
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/all.min.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/light.min.css" />
-	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome-pro-5.12.1-web/css/regular.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/all.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/light.min.css" />
+	<link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/regular.min.css" />
 
 	<!-- TODO switch to express, migrate to http/ as root -->
 	<script src="/socket.io/socket.io.js"></script>
@@ -25,32 +27,36 @@
 	<!--script src="https://d3js.org/d3.v3.min.js"></script-->
 	<!--script src="/resources/mqttws31.js"></script-->
 	<script src="/resources/scripts/mqtt.min.js"></script>
+	<script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
 
-	<script type="module" src="/node_modules/flow-ux/flow-ux.js"></script>
+	<script type="module" src="/node_modules/@aspectron/flow-ux/flow-ux.js"></script>
 	<script type="module" src="/components/app.js" crossorigin></script>
+	<script type="module" src="/components/app-tutorial.js" crossorigin></script>
 	<script type="module" src="/components/navigator.js" crossorigin></script>
 	<script type="module" src="/components/block-info.js" crossorigin></script>
 	<script type="module" src="/components/menu-panel.js" crossorigin></script>
 	<script type="module" src="/components/k-explorer/k-explorer.js" crossorigin></script>
+	<link rel="stylesheet" type="text/css" href="/node_modules/@aspectron/flow-ux/flow-ux.css" />
 	<link rel="stylesheet" type="text/css" href="/resources/css/dagviz.css"/>
-	<link rel="stylesheet" type="text/css" href="/node_modules/flow-ux/flow-ux.css" />
 	<style class="k-link-style"></style>
 </head>
 <body>
+	<app-tutorial></app-tutorial>
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='top'>
 		<div id="menu-bar">
 			<div id='logo' tooltip="fa fa-arrow-to-left:Go to the Genesis block"></div>
-			<div id="menu-anchor" class="menu-item"><i class='fal fa-bars' tooltip="Settings"></i></div>
 			<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast-green.png' tooltip="Track"><span>Track</span></div>
 			<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"><span>Orientation</span></div>
-			<div id="explorer" class="menu-item"><img src='/resources/images/icons/genealogy.png' tooltip="Explorer"><span>Explorer</span></div>
+			<div id="explorer" class="menu-item"><img src='/resources/images/icons/genealogy.png' tooltip="Toggle Explorer"><span class="vis">Visualizer</span><span class="exp">Explorer</span></div>
 			<div id="search-wrapper" class="menu-items">
 				<div class='icon-wrapper'><i class='fal fa-search' style='font-size:22px;' tooltip="Search for blue score of block "></i></div>
 				<input type="text" id="search" placeholder="Enter blue score or hash...">
 				<div id="search-execute" class="menu-item search-btn"><i class='fal fa-arrow-alt-right'></i></div>
-				<div id="search-clear" class="menu-item search-btn"><i class='fal fa-times'></i></div>
+				<div id="search-clear" class="menu-item xsearch-btn"><i class='fal fa-times'></i></div>
 			</div>
+			<div class="flex"></div>
+			<div id="menu-anchor" class="menu-item" data-menu-align="right" data-menu-v-offset="-56"><i class='fal fa-bars' tooltip="Settings"></i></div>
 		</div>
 		<div id='info'></div>
 	</div>
@@ -73,14 +79,31 @@
 		</div>
 	</div>
 	<script type="module">
+		if(!localStorage.loaded){
+			localStorage.loaded = 'true';
+			window.location.reload();
+		}
 		import { App } from '/components/app.js';
-		$(document).ready(()=>{
-			window.app = new App();
-			window.app.init();
-			return;
+		window.addEventListener("WebComponentsReady", ()=>{
+			console.log("WebComponentsReady")
+		
+			if(window.localStorage && window.localStorage.tutorial!=1){
+				localStorage.tutorial = 1;
+				window.tutorial();
+			}
+			//localStorage.tutorial = 0;
 			
-			if(app.argv.get('simulate-only') !== null)
+			$(document).ready(()=>{
+				window.app = new App();
+				window.app.init();
+				//console.log("local storage tutorial: ",localStorage.tutorial);
+				if(localStorage.tutorial != 1)
+					window.app.ctx.track = false;
 				return;
+				
+				if(app.argv.get('simulate-only') !== null)
+					return;
+			})
 		})
 	</script>
 	<div id="metrics"></div>
