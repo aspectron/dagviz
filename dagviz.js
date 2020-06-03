@@ -933,6 +933,8 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
     NormalizeBlock(block) {
         let o = { };
         DAGViz.DB_TABLE_BLOCKS_ORDER.forEach(v => o[v] = block[v.toLowerCase()]);
+        if(block.lseq)
+            o.lseq = block.lseq
         return o;
     }
 
@@ -975,7 +977,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 let total = result.shift().total;
                 // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
-// console.log("BLOCKS:", blocks);
+                // console.log("BLOCKS:", blocks);
 
                 if(this.args.latency) {
                     await this.sleep(parseInt(this.flags.latency));
@@ -1061,7 +1063,6 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 if(this.lastBlock) {
                     max = this.lastBlock[unit];
                 }
-
                 // console.log(`blocks: ${blocks.length} last: ${last} total: ${total} max: ${max}`);
                 resolve({ blocks, last, total, max });
             } catch(ex) {
