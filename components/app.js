@@ -60,6 +60,9 @@ export class Block extends GraphNode {
 			if(child)
 				child.rebuildLinks();
 		})
+
+		this.__acceptingBlockHash = data.acceptingBlockHash;
+		this.__isChainBlock = data.isChainBlock;
 	}
 
 	getSize() {
@@ -1431,7 +1434,8 @@ export class App {
 			b = nodes[blockHash];
 			isNew = (o.cTS >= ts);
 			if(b){
-				if(b.data.acceptingBlockHash || b.data.isChainBlock)
+				if(b.data.acceptingBlockHash != b.__acceptingBlockHash)// || b.data.isChainBlock != b.__isChainBlock)
+//				if(b.data.acceptingBlockHash || b.data.isChainBlock)
 					isNew = false;
 				if(!isNew){
 					b.data.isNew = false;
