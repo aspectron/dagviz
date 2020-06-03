@@ -740,6 +740,19 @@ export class App {
 					console.log('pos:',this.ctx.position);
 					this.updatePosition();
 				} break;
+
+				case 'Home': {
+					this.ctls.track.setValue(false);
+					this.ctx.reposition(0);
+				} break;
+				case 'End': {
+					this.ctls.track.setValue(true);
+				} break;
+
+				case '/': {
+					e.stopPropagation();
+					$("#search").focus();
+				} break;
 			}
 		});
 
@@ -802,13 +815,13 @@ export class App {
 			width = Math.min(width,max);
 			console.log(width);
 			$search.css('width',width+'px');
-			$searchBtn.css('opacity',v?0.9:0);
+			$('.search-btn').css('opacity',v?0.9:0);
 			//console.log(v);
 
 			if(e.key == 'Enter') {
 				$search.val('');
 				$search.css('width','320px');
-				$searchBtn.css('opacity',0);
+				$('.search-btn').css('opacity',0);
 				this.search(v);
 			}
 
@@ -819,13 +832,23 @@ export class App {
 			$search.val('');
 			if(v)
 				this.search(v);
-			$searchBtn.css('opacity',0);
+				$('.search-btn').css('opacity',0);
 		});
 
 		$('#search-clear').on('click', () => {
 			$search.val('');
-			$searchBtn.css('opacity',0);
+			$('.search-btn').css('opacity',0);
+			if(isMobile)
+				$('#search-wrapper').removeClass('open');
 		});
+
+		if(isMobile) {
+			$("#search-wrapper .icon-wrapper").on('click', () => {
+				$('#search-wrapper').addClass('open');
+			})
+		} else {
+			$("#search-clear").addClass('search-btn');
+		}
 
 		const $orientationImg = $('#orientation > img');
 		$orientationImg.addClass(`orient-${this.ctx.dir}`);
@@ -1005,7 +1028,7 @@ export class App {
 
 	async updatePosition() {
 		//console.log('updatePosition');
-		this.graph.style.opacity = 0;
+//		this.graph.style.opacity = 0;
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
@@ -1182,6 +1205,7 @@ export class App {
 				})
 			}
 
+			this.navigator.redraw();
 		});
 
 		// this.io.on('last-block-data', (data) => {
@@ -1984,7 +2008,7 @@ class LastBlockWidget extends BaseElement{
 				position: absolute;
 				font-family: "Cousine";
 				font-size: 16px;
-				z-index:4;
+				z-index:10;
 				display:block;
 				min-width: 160px;
 				top: 128px;

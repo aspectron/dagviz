@@ -1,6 +1,8 @@
 import {html, css, BaseElement} from './base-element.js';
 import {flowPagesStyle} from '/node_modules/@aspectron/flow-ux/flow-ux.js';
 
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 class AppTutorial extends BaseElement{
 
 	static get properties() {
@@ -50,18 +52,19 @@ class AppTutorial extends BaseElement{
 				background-color:var(--bg-color, #FFF);
 			}
 
-			flow-page > div:nth-child(1){
+			/*flow-page > div:nth-child(1){*/
+				flow-page > div.intro {
 				object-fit: contain;
-				width: 40%;
+				min-width: 180px;
 				text-align: justify;
 				padding: 32px;
 			}
 
-			flow-page > div:nth-child(2){
-				padding: 32px;
-				flex: 1;
+/*			flow-page > div:nth-child(2){*/
+				/*padding: 32px;
+				flex: 1;*/
 				/*text-align: justify;*/
-			}
+/*			}*/
 
 			flow-page div img{
 				max-width:100%;
@@ -70,7 +73,7 @@ class AppTutorial extends BaseElement{
 
 			.dagviz-slide{
 				flex-direction:row;
-				flex-wrap:wrap;
+				flex-wrap:wrap;0
 				overflow:auto;
 				justify-content:space-around;
 				padding-top:0px;
@@ -101,6 +104,9 @@ class AppTutorial extends BaseElement{
 				z-index:1000;
 			}
 
+			tr td {
+				text-align: center;
+			}
 
 			tr:last-child td{border-bottom:0px;}
 			.shadow{box-shadow:2px 2px 4px 0px rgba(0, 0, 0, 0.3);}
@@ -108,8 +114,12 @@ class AppTutorial extends BaseElement{
 			div.items{margin-bottom:20px;}
 			flow-page p{margin-bottom:10px;}
 
+			[mobile] { display: none; }
+			[desktop] { display: block; }
 
 			@media(max-width:425px){
+				[mobile] { display: block; }
+				[desktop] { display: none; }
 				flow-page{
 					flex-direction:column;
 					justify-content: flex-start; 
@@ -117,10 +127,10 @@ class AppTutorial extends BaseElement{
 
 				flow-page > div.intro {
 					object-fit: contain;
-					width: 80%;
-					max-height: 70%;
+					width: 99%;
+					/*max-height: 70%;*/
 					text-align: center;
-					padding: 32px;
+					/*padding: 32px;*/
 				}
 
 /*
@@ -161,15 +171,15 @@ class AppTutorial extends BaseElement{
 
 
 	render(){
+		
 		return html`
 		
-		<flow-pages id="pages" class="has-dots" @change="${this.onSlideChange}">
+		<flow-pages id="pages" class="has-dots" @change="${this.onSlideChange}" dotoffset="${isMobile?0:40}">
 		
 			<div slot="title">${this.slideTitle||'Kaspa Tutorial'}</div>
   
 			<flow-page class="active">
-				<div class="intro"><img src="/resources/images/tutorial/dag-intro.png" /></div>
-				<div></div>
+				<div class="intro"><img src="/resources/images/tutorial/dag-intro.png" mobile /><img src="/resources/images/tutorial/dag-intro-v2.png" desktop /></div>
 				<div>
 				<p>	
 				Kaspa is a PoW-based ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a blockDAG. 
@@ -183,26 +193,59 @@ class AppTutorial extends BaseElement{
 				governed by the PHANTOM consensus protocol, which is a generalization 
 				of Nakamoto Consensus.</p>
 				</div>
-				<div>PHANTOM favours blocks that mined up-to-date blocks, and propagated 
-				them sufficiently fast, “blue blocks”, over those withheld or propagated 
-				over too slow communication channels, “red blocks”.</div>
 			</flow-page>
-			<flow-page>
-				<div>The “blue score” of a block is a generalization of the block height 
-				in a chain; it represents the number of blue blocks in the block’s 
-				past.</div>
-				<div>The iterative process of selecting the parent with the highest 
-				blue score, “the selected parent”, results in the identification of
-				a chain within the blockDAG, “the selected parent chain”.</div>
-				<div>Each new block inherits the colouring of its past from its selected 
-				parent, and adds blocks created in parallel to the selected parent,
-				following a colouring procedure defined by the protocol.</div>
-				<div>Confirmations in PHANTOM are a generalization of confirmations
-				in a chain, and are defined by the blue score of the chain blocks 
-				atop the transaction. The fast block rate enables fast confirmation
-				of transactions.</div>
-				<div>Blocks contain transactions in the UTXO-model format.</div>
-			</flow-page>
+			${
+				isMobile ? html`
+					<flow-page>
+						<div>
+							<p>PHANTOM favours blocks that mined up-to-date blocks, and propagated 
+							them sufficiently fast, “blue blocks”, over those withheld or propagated 
+							over too slow communication channels, “red blocks”.</p>
+							<p>The “blue score” of a block is a generalization of the block height 
+							in a chain; it represents the number of blue blocks in the block’s 
+							past.</p>
+							<p>The iterative process of selecting the parent with the highest 
+							blue score, “the selected parent”, results in the identification of
+							a chain within the blockDAG, “the selected parent chain”.</p>
+							<p>Each new block inherits the colouring of its past from its selected 
+							parent, and adds blocks created in parallel to the selected parent,
+							following a colouring procedure defined by the protocol.</p>
+							<p>Confirmations in PHANTOM are a generalization of confirmations
+							in a chain, and are defined by the blue score of the chain blocks 
+							atop the transaction. The fast block rate enables fast confirmation
+							of transactions.</p>
+							<p>Blocks contain transactions in the UTXO-model format.</p>
+						</div>
+					</flow-page>
+				` : 
+				html`
+					<flow-page>
+						<div>
+							<p>PHANTOM favours blocks that mined up-to-date blocks, and propagated 
+							them sufficiently fast, “blue blocks”, over those withheld or propagated 
+							over too slow communication channels, “red blocks”.</p>
+							<p>The “blue score” of a block is a generalization of the block height 
+							in a chain; it represents the number of blue blocks in the block’s 
+							past.</p>
+							<p>The iterative process of selecting the parent with the highest 
+							blue score, “the selected parent”, results in the identification of
+							a chain within the blockDAG, “the selected parent chain”.</p>
+							</div>
+					</flow-page>
+					<flow-page>
+						<div>
+							<p>Each new block inherits the colouring of its past from its selected 
+							parent, and adds blocks created in parallel to the selected parent,
+							following a colouring procedure defined by the protocol.</p>
+							<p>Confirmations in PHANTOM are a generalization of confirmations
+							in a chain, and are defined by the blue score of the chain blocks 
+							atop the transaction. The fast block rate enables fast confirmation
+							of transactions.</p>
+							<p>Blocks contain transactions in the UTXO-model format.</p>
+						</div>
+					</flow-page>
+				`
+			}
 			<flow-page class="dagviz-slide" data-title='Dagviz Tutorial'>
 				<div class="items">
 					<table cellpadding="0" cellspacing="0" border="0">
