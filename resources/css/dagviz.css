@@ -95,7 +95,7 @@ body.k-theme-light{
 #logo{
 	background:url('/resources/images/k-subtract.svg') center no-repeat;
 	background-size:contain;background-color:var(--bg-color);width:66px;
-	height:56px;margin-right:16px;
+	height:56px;margin-right:16px;pointer-events:initial;
 }
 .toggle{
 	cursor:pointer;margin:2px 8px 2px 8px;padding:2px;display:block;
