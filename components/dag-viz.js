@@ -674,13 +674,18 @@ export class GraphNodeLink{
 				
 			});
 		}
-
-		this.el.path.transition()
-			.duration(200)
-			.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
-			.attr('stroke', stroke)
-			// .attr('stroke', color ? (this.isChainBlockLink ? (color == 'red' ? 'rgba(92,0,0,1)' : 'rgba(0,48,0,1)') : color) : this.defaultColor)
-			.attr('stroke-width', strokeWidth)
+		if(this.holder.ctx.track){
+			this.el.path
+				.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
+				.attr('stroke', stroke)
+				.attr('stroke-width', strokeWidth)
+		}else{
+			this.el.path.transition()
+				.duration(200)
+				.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
+				.attr('stroke', stroke)
+				.attr('stroke-width', strokeWidth)
+		}
 
 		this._updateArrow(arrowType)
 	}
