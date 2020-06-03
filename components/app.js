@@ -1157,6 +1157,12 @@ export class App {
 				this.graph.updateSimulation();
 				let oldLastBlock = this.ctx.lastBlockData;
 				let newLastBlock = blocks[blocks.length-1];
+				blocks.forEach(b=>{
+					if(b.blueScore > newLastBlock.blueScore){
+						console.log("#### found newLastBlock ###")
+						newLastBlock = b;
+					}
+				})
 				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
 					this.ctx.lastBlockData = newLastBlock;
 					this.ctx.lastBlockDataTS = Date.now();
