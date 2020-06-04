@@ -20,7 +20,7 @@ then
     #sudo docker run --net host dagviz --port=18686 
 elif [[ $1 == 'testnet' ]]
 then
-    sudo docker run $2 --net host dagviz --dbport=18786 --port=18777 --kasparov=https://testnet-kasparovd.kas.pa/ --disable-mqtt
+    sudo docker run $2 --name=testnet --net host dagviz --dbport=18786 --port=18777 --kasparov=https://testnet-kasparovd.kas.pa/ --disable-mqtt
     exit 0
     #sudo docker run --net host dagviz --port=18787 -- 
 elif [[ $1 == 'open.devnet' ]]
