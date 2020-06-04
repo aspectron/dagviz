@@ -1,5 +1,8 @@
 #!/bin/bash
 
+kasport=8080
+mqttport=1883
+
 # sudo docker run --net host dagviz "$@"
 if [[ $1 == 'mainnet' ]]
 then
@@ -28,6 +31,8 @@ then
     address="kasparov-dev-auxiliary-classic.daglabs.com"
 elif [[ $1 == 'aspectron' ]]
 then
+    kasport=11224
+    mqttport=18792
     port=19990
     dbport=19989
     address="localhost"
@@ -36,4 +41,4 @@ else
     exit 0
 fi
 
-sudo docker run $2 --net host dagviz --dbport=$dbport --port=$port --kasparov=http://$address:8080 --mqtt-address=mqtt://$address:1883 --mqtt-user=user --mqtt-pass=pass
+sudo docker run $2 --net host dagviz --dbport=$dbport --port=$port --kasparov=http://$address:$kasport --mqtt-address=mqtt://$address:$mqttport --mqtt-user=user --mqtt-pass=pass
