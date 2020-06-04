@@ -615,8 +615,13 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 // console.log(data);
                 resolve(data);
             }, (err) => {
-                if((err+"").indexOf('ECONNREFUSED'))
-                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
+                if((err+"").indexOf('ECONNREFUSED')) {
+                    const ts = Date.new();
+                    if(!this.last_gbc_ts || ts > this.last_gbc_ts+1000*60) {
+                        console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
+                        this.last_gbc_ts = ts;
+                    }
+                }
                 else
                     console.log(err);
                 reject(err);
