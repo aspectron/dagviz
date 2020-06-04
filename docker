@@ -4,6 +4,15 @@ kasport=8080
 mqttport=1883
 
 # sudo docker run --net host dagviz "$@"
+if [[ $1 == 'all' ]]
+then
+    bash docker testnet -d
+    bash docker big.devnet -d
+    bash docker open.devnet -d
+    bash docker classic.devnet -d
+    bash docker aspectron -d
+    exit 0
+    #sudo docker run --net host dagviz --port=18686 
 if [[ $1 == 'mainnet' ]]
 then
     echo Not there yet...
