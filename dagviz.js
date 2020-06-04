@@ -616,7 +616,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 resolve(data);
             }, (err) => {
                 if((err+"").indexOf('ECONNREFUSED')) {
-                    const ts = Date.new();
+                    const ts = Date.now();
                     if(!this.last_gbc_ts || ts > this.last_gbc_ts+1000*60) {
                         console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
                         this.last_gbc_ts = ts;
