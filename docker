@@ -13,7 +13,7 @@ then
     bash docker aspectron -d
     exit 0
     #sudo docker run --net host dagviz --port=18686 
-if [[ $1 == 'mainnet' ]]
+elif [[ $1 == 'mainnet' ]]
 then
     echo Not there yet...
     exit 0
