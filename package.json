@@ -27,5 +27,21 @@
   "engines": {
     "node": "*",
     "npm": "*"
-  }
+  },
+  "kdx":{
+    "name" : "DAGViz",
+    "location": "http://localhost:8689",
+    "stop": "http://localhost:8689/stop",
+    "width" : 1600,
+    "height" : 680,
+		"args": [
+			"node",
+      "dagviz",
+      "--kdx", 
+      "--no-auth", 
+      "--port=8689",
+			"--kasparov=http://localhost:$KASPAROVD-PORT",
+			"--mqtt-address=mqtt://localhost:$MQTT-PORT"
+		]
+	}
 }

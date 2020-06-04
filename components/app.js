@@ -60,6 +60,9 @@ export class Block extends GraphNode {
 			if(child)
 				child.rebuildLinks();
 		})
+
+		this.__acceptingBlockHash = data.acceptingBlockHash;
+		this.__isChainBlock = data.isChainBlock;
 	}
 
 	getSize() {
@@ -112,7 +115,7 @@ class GraphContext {
 		this.childShift = 1;
 		this.lvariance = true;
 		this['k-theme'] = 'light';
-		this.highlightNewBlock = 3;//seconds
+		this.highlightNewBlock = 15;//seconds
 		this.advanced = false;
 		//this.unit2Pos = {};
 
@@ -315,6 +318,10 @@ class GraphContext {
 		node[layoutAxis] = Math.round(node[layoutAxis])
 	}
 
+	onNavigate(absolute, skipUpdates){
+		this.app.completeCleanup();
+		this.app.ctx.reposition(absolute, skipUpdates);
+	}
 	reposition(x, skipUpdate) {
 		if(!this.max)
 			return;
@@ -363,7 +370,7 @@ class GraphContext {
 				if(this.lastBlockData && this.track) {
 					//let v = this.lastBlockData[this.unit] * this.unitDist;
 					//this.graph.translate(v,0);
-					this.graph.centerBy(this.lastBlockData.blockHash)
+					//this.graph.centerBy(this.lastBlockData.blockHash)
 				}
 			} break;
 			case 'mass': {
@@ -679,6 +686,7 @@ export class App {
 		});
 
 		new MultiChoice(this.ctx, 'highlightNewBlock',{
+			30:'30 sec',
 			15:'15 sec',
 			10:'10 sec',
 			5:'5 sec',
@@ -736,6 +744,19 @@ export class App {
 					console.log('pos:',this.ctx.position);
 					this.updatePosition();
 				} break;
+
+				case 'Home': {
+					this.ctls.track.setValue(false);
+					this.ctx.reposition(0);
+				} break;
+				case 'End': {
+					this.ctls.track.setValue(true);
+				} break;
+
+				case '/': {
+					e.stopPropagation();
+					$("#search").focus();
+				} break;
 			}
 		});
 
@@ -780,7 +801,7 @@ export class App {
 		});
 
 		$("#logo").on('click', () => {
-			this.ctx.reposition(0);
+			this.ctx.onNavigate(0);
 		});
 
 		let metrics = document.getElementById('metrics');
@@ -798,13 +819,13 @@ export class App {
 			width = Math.min(width,max);
 			console.log(width);
 			$search.css('width',width+'px');
-			$searchBtn.css('opacity',v?0.9:0);
+			$('.search-btn').css('opacity',v?0.9:0);
 			//console.log(v);
 
 			if(e.key == 'Enter') {
 				$search.val('');
 				$search.css('width','320px');
-				$searchBtn.css('opacity',0);
+				$('.search-btn').css('opacity',0);
 				this.search(v);
 			}
 
@@ -815,13 +836,23 @@ export class App {
 			$search.val('');
 			if(v)
 				this.search(v);
-			$searchBtn.css('opacity',0);
+				$('.search-btn').css('opacity',0);
 		});
 
 		$('#search-clear').on('click', () => {
 			$search.val('');
-			$searchBtn.css('opacity',0);
+			$('.search-btn').css('opacity',0);
+			if(isMobile)
+				$('#search-wrapper').removeClass('open');
 		});
+
+		if(isMobile) {
+			$("#search-wrapper .icon-wrapper").on('click', () => {
+				$('#search-wrapper').addClass('open');
+			})
+		} else {
+			$("#search-clear").addClass('search-btn');
+		}
 
 		const $orientationImg = $('#orientation > img');
 		$orientationImg.addClass(`orient-${this.ctx.dir}`);
@@ -1001,7 +1032,7 @@ export class App {
 
 	async updatePosition() {
 		//console.log('updatePosition');
-		this.graph.style.opacity = 0;
+//		this.graph.style.opacity = 0;
 		this.fullFetch = true;
 		const t = this.graph.paintEl.transform;
 		const {axis, sign} = this.ctx.direction;
@@ -1116,7 +1147,7 @@ export class App {
 	initIO() {
 		this.io = io();
 
-		this.newBlocks = {};
+		this.newBlocks = new Map();
 
 
 
@@ -1124,13 +1155,13 @@ export class App {
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
-			
+			this.highlightNewBlockTimer();
 			if(this.ctx.highlightNewBlock>0){
 				let cTS = Date.now();
 				blocks.forEach(b=>{
 					b.cTS = cTS;
 					b.isNew = 1;
-					this.newBlocks[b.blockHash] = {cTS};
+					this.newBlocks.set(b.blockHash, {cTS});
 				})
 			}
 
@@ -1138,34 +1169,39 @@ export class App {
 			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
 			window.dispatchEvent(ce)
 
+			blocks.forEach(block=>block.isChainBlock = false);
+			let _blocks = blocks;
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
-				blocks = blocks.filter((block) => {
+				_blocks = _blocks.filter((block) => {
 					block.origin = 'tip-update';
 					if(block[this.ctx.unit] < (this.region.from-this.range_) || block[this.ctx.unit] > (this.region.to+this.range_))
 						return false;
 					return true;
 				});
 			}
-	
-			if(blocks.length) {
-
-				blocks.forEach(block=>block.isChainBlock = false);
-
-				this.createBlocks(blocks);
+			if(_blocks.length) {
+				this.createBlocks(_blocks);
 				this.graph.updateSimulation();
-				let oldLastBlock = this.ctx.lastBlockData;
-				let newLastBlock = blocks[blocks.length-1];
-				if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
-					this.ctx.lastBlockData = newLastBlock;
-					this.ctx.lastBlockDataTS = Date.now();
-					this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
-				}
-
-				if(newLastBlock.blueScore > this.ctx.max)
-					this.ctx.updateMax(newLastBlock.blueScore)
-
 			}
+			let oldLastBlock = this.ctx.lastBlockData;
+			let newLastBlock = blocks[blocks.length-1];
+			blocks.forEach(b=>{
+				if(b.blueScore > newLastBlock.blueScore){
+					console.log("#### found newLastBlock ###")
+					newLastBlock = b;
+				}
+			})
+			if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
+				this.ctx.lastBlockData = newLastBlock;
+				this.ctx.lastBlockDataTS = Date.now();
+				this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
+			}
+
+			//console.log("newLastBlock.blueScore", newLastBlock.blueScore, this.ctx.max)
+			if(newLastBlock.blueScore > this.ctx.max)
+				this.ctx.updateMax(newLastBlock.blueScore)
+
 
 			if(this.ctx.track) {
 				dpc(()=>{
@@ -1173,6 +1209,7 @@ export class App {
 				})
 			}
 
+			this.navigator.redraw();
 		});
 
 		// this.io.on('last-block-data', (data) => {
@@ -1417,16 +1454,23 @@ export class App {
 	}
 
 	highlightNewBlockTimer(ts){
-		ts = ts || Date.now() - this.ctx.highlightNewBlock;
-		let {nodes} = this.graph;
-		Object.entries(this.newBlocks).forEach(([blockHash, o])=>{
-			if(o.cTS >= ts)
-				return
-			if(nodes[blockHash]){
-				nodes[blockHash].data.isNew = false;
-				nodes[blockHash].updateStyle();
+		let t = ts;
+		ts = ts || Date.now() - (this.ctx.highlightNewBlock*1000);
+		let {nodes} = this.graph, b, isNew;
+		this.newBlocks.forEach((o, blockHash)=>{
+			b = nodes[blockHash];
+			isNew = (o.cTS >= ts);
+			if(b){
+				if(b.data.acceptingBlockHash != b.__acceptingBlockHash)// || b.data.isChainBlock != b.__isChainBlock)
+				//if(b.data.acceptingBlockHash || b.data.isChainBlock)
+					isNew = false;
+				if(!isNew){
+					b.data.isNew = false;
+					b.updateStyle();
+				}
 			}
-			delete this.newBlocks[blockHash];
+			if(!isNew)
+				this.newBlocks.delete(blockHash);
 		})
 	}
 
@@ -1800,6 +1844,12 @@ export class App {
 			console.warn("Could not select text in node: Unsupported browser.");
 		}
 	}
+
+	completeCleanup() {
+		Object.values(this.graph.nodes).forEach((node) => {
+			node.purge();
+		})
+	}
 	
 	regionCleanup() {
 		const { from, to, range } = this.getRegion();
@@ -1968,7 +2018,7 @@ class LastBlockWidget extends BaseElement{
 				position: absolute;
 				font-family: "Cousine";
 				font-size: 16px;
-				z-index:4;
+				z-index:10;
 				display:block;
 				min-width: 160px;
 				top: 128px;
@@ -2101,8 +2151,12 @@ class LastBlockWidget extends BaseElement{
 	click() {
 		//console.log('click called');
 		//app.ctx.reposition(1.0);
-		app.ctls.track.setValue(true);
 		this.halt();
+		app.ctx.onNavigate(1);
+		dpc(100, ()=>{
+			console.log("track.setValue:lastBlockData", app.ctx.lastBlockData?.blueScore)
+			app.ctls.track.setValue(true);
+		})
 		// dpc(750, () => {
 		// })
 		// app.position = this.blueScore(); //ctx.reposition(1.0);

@@ -167,7 +167,7 @@ class AxisNavigator extends BaseElement{
 		if(sign < 0)
 			absolute = 1 - absolute;
 		this.verbose && console.log("mouse absolute:",absolute);
-		this.app.ctx.reposition(absolute, skipUpdates);
+		this.app.ctx.onNavigate(absolute, skipUpdates);
 	}
 
 	updateCanvas() {

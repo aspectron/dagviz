@@ -68,6 +68,13 @@ class DAGViz {
         return this.main();
     }
 
+    async shutdownPGSQL(){
+        if(this.pgSQL){
+            this.pgSQL.log("got shutdownPGSQL".brightYellow)
+            await this.pgSQL.stop();
+        }
+    }
+
     async shutdown() {
         if(this.pgSQL)
             await this.pgSQL.stop();
@@ -226,11 +233,16 @@ class DAGViz {
         });
 
         if(this.args.kdx) {
-            app.get('/stop', (req, res, next)=>{
+            app.get('/stop', async(req, res)=>{
+                await this.shutdownPGSQL();
                 res.sendJSON({ status : 'ok' }, 200);
-                this.shutdown();
+                dpc(()=>{
+                    process.exit(0);
+                });
             })
         }
+
+        
 
         app.use((req, res, next)=>{
             if(this.args['no-auth'])
@@ -457,7 +469,12 @@ class DAGViz {
 
     async sql(...args) { 
         // console.log('SQL:'.brightGreen,args[0]);
-        return this.db.query(...args); }
+        let p = this.db.query(...args);
+        p.catch(e=>{
+            console.log("sql:exception:", [...args], e)
+        })
+        return p;
+    }
 
     static DB_TABLE_BLOCKS_ORDER = [
         'blockHash', 
@@ -598,8 +615,13 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 // console.log(data);
                 resolve(data);
             }, (err) => {
-                if((err+"").indexOf('ECONNREFUSED'))
-                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
+                if((err+"").indexOf('ECONNREFUSED')) {
+                    const ts = Date.new();
+                    if(!this.last_gbc_ts || ts > this.last_gbc_ts+1000*60) {
+                        console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
+                        this.last_gbc_ts = ts;
+                    }
+                }
                 else
                     console.log(err);
                 reject(err);
@@ -916,6 +938,8 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
     NormalizeBlock(block) {
         let o = { };
         DAGViz.DB_TABLE_BLOCKS_ORDER.forEach(v => o[v] = block[v.toLowerCase()]);
+        if(block.lseq)
+            o.lseq = block.lseq
         return o;
     }
 
@@ -958,7 +982,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 let total = result.shift().total;
                 // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
                 let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
-// console.log("BLOCKS:", blocks);
+                // console.log("BLOCKS:", blocks);
 
                 if(this.args.latency) {
                     await this.sleep(parseInt(this.flags.latency));
@@ -1044,7 +1068,6 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 if(this.lastBlock) {
                     max = this.lastBlock[unit];
                 }
-
                 // console.log(`blocks: ${blocks.length} last: ${last} total: ${total} max: ${max}`);
                 resolve({ blocks, last, total, max });
             } catch(ex) {
@@ -1084,21 +1107,22 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
             });
         }
         
-        // console.log(`asing for blocks:`,args);
-        let blocks = await this.sql(`SELECT * FROM blocks WHERE (${type}) IN (?)`,[args]);
-        // console.log("GOT BLOCKS:",blocks.map(block=>block.id).join(','));
+        //console.log(`asing for blocks:`, args);
+        let blocks = await this.sql(`SELECT * FROM blocks WHERE ${type} = ANY ($1)`, [args]);// ($1::list)`, [args]); $1::int[]
+        //console.log("GOT BLOCKS:", blocks);
         // if(!blocks.length)
         //     return null;
 
-        blocks.forEach(block => this.deserealizeBlock(block));
+        blocks = blocks.map(block => this.deserealizeBlock(block));
         // console.log("responding:",blocks);
         return Promise.resolve(blocks);
     }
 
     deserealizeBlock(block) {
         block.lseq = block.id;
-        block.parentBlockHashes = block.parentBlockHashes.split(',');
-        block.childBlockHashes = block.childBlockHashes.split(',');
+        block.parentblockhashes = block.parentblockhashes.split(',');
+        block.childblockhashes = block.childblockhashes.split(',');
+        return this.NormalizeBlock(block);
     }
 
     async doSearch(text) {

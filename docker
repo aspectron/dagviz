@@ -1,0 +1,58 @@
+#!/bin/bash
+
+kasport=8080
+mqttport=1883
+
+# sudo docker run --net host dagviz "$@"
+if [[ $1 == 'all' ]]
+then
+    bash docker testnet -d
+    bash docker big.devnet -d
+    bash docker open.devnet -d
+    bash docker classic.devnet -d
+    bash docker aspectron -d
+    exit 0
+    #sudo docker run --net host dagviz --port=18686 
+elif [[ $1 == 'mainnet' ]]
+then
+    echo Not there yet...
+    exit 0
+    #sudo docker run --net host dagviz --port=18686 
+elif [[ $1 == 'testnet' ]]
+then
+    sudo docker run $2 --name=testnet --net host dagviz --dbport=18786 --port=18777 --kasparov=https://testnet-kasparovd.kas.pa/ --disable-mqtt
+    exit 0
+    #sudo docker run --net host dagviz --port=18787 -- 
+elif [[ $1 == 'open.devnet' ]]
+then
+    port=18888
+    dbport=18887
+    address="kasparov-dev-auxiliary-open-devnet.daglabs.com"
+elif [[ $1 == 'big.devnet' ]]
+then
+    port=18989
+    dbport=18988
+    address="kasparov-dev-auxiliary-big.daglabs.com"
+elif [[ $1 == 'default.devnet' ]]
+then
+    port=19090
+    dbport=19089
+    address="kasparov-dev-auxiliary-classic.daglabs.com"
+elif [[ $1 == 'classic.devnet' ]]
+then
+    port=19090
+    dbport=19089
+    address="kasparov-dev-auxiliary-classic.daglabs.com"
+elif [[ $1 == 'aspectron' ]]
+then
+    kasport=11224
+    mqttport=18792
+    port=19990
+    dbport=19989
+    address="localhost"
+else
+    echo Please specify: mainnet testnet open.devnet big.devnet default.devnet
+    exit 0
+fi
+
+sudo docker run $2 --name=$1 --net host dagviz --dbport=$dbport --port=$port --kasparov=http://$address:$kasport --mqtt-address=mqtt://$address:$mqttport --mqtt-user=user --mqtt-pass=pass

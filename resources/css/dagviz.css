@@ -40,6 +40,12 @@ body{
 
 	opacity:0;
 	transition:opacity 0.2s ease;
+
+	--flow-primary-color:rgba(0, 150, 136, 1);
+	--flow-border-color:rgb(0, 133, 119);
+	--flow-border-hover-color:rgba(2, 97, 74, 1);
+
+
 }
 body.k-theme-dark{
 	opacity:1;
@@ -59,6 +65,9 @@ body.k-theme-dark{
 	--arrow-head-fill:#c3c2c2;
 	--arrow-head-stroke:#c3c2c2;
 	--graph-node-text-color:#FFF;
+
+	--flow-primary-color:  rgba(0,150,136,1);
+	--flow-border-color:  rgba(0,150,136,1);
 }
 body.k-theme-light{
 	opacity:1;
@@ -86,7 +95,7 @@ body.k-theme-light{
 #logo{
 	background:url('/resources/images/k-subtract.svg') center no-repeat;
 	background-size:contain;background-color:var(--bg-color);width:66px;
-	height:56px;margin-right:16px;
+	height:56px;margin-right:16px;pointer-events:initial;
 }
 .toggle{
 	cursor:pointer;margin:2px 8px 2px 8px;padding:2px;display:block;
@@ -156,7 +165,7 @@ body{
 .tooltip .text{display:block;margin:2px 4px 2px 4px;}
 
 #menu-bar,#top{pointer-events:none;}
-#menu-bar .menu-item{pointer-events:initial;}
+#menu-bar .menu-item, .menu-items{pointer-events:initial;}
 
 #menu-bar,
 .menu-items{
@@ -299,10 +308,13 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 #track {display:none;}
 .advanced {display:none;}
 
+#search-clear { opacity: 0; }
+[desktop-only] { display: block; }
+
 @media(max-width:425px){
 	#top{right:8px;right:8px;z-index:10}
 	#logo{margin-right:0px;}
-	#menu-anchor{position:absolute;right:0px}
+	/*#menu-anchor{position:absolute;right:0px}*/
 	menu-panel{
 		left:8px !important;right:8px !important;box-sizing:border-box;
 		width:100% !important;top:8px !important;
@@ -316,7 +328,25 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 
 	/* last-block-widget{top:20px;right:68px} */
 
+	#search-wrapper {
+		width: 8px;
+		min-width:8px;
+		overflow: hidden;
+		margin-top: -2px;
+		margin-right: 16px;
+		flex: 0;
+	}
+	/*#search-wrapper*/
+	#explorer { flex: 1 }
 
+	#search-wrapper.open {
+		position: absolute;
+		width:100%;
+	}
+
+	#search-clear { opacity: 1; }
+
+	[desktop-only] { display: none; }
 }
 
 @media(max-width:425px), (max-height:425px){
@@ -328,6 +358,8 @@ body:not(.tracking-enabled) last-block-widget{display:inline-block;opacity:1}
 
 	
 }
+
+
 
 body.orient-v last-block-widget{right:68px;z-index:10}
 

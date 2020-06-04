@@ -1,5 +1,5 @@
 # -----
-FROM node:14.2-alpine AS build
+FROM node:14.4-alpine AS build
 
 RUN apk update
 RUN apk add --no-cache bash file postgresql nano 
@@ -12,6 +12,9 @@ WORKDIR /usr/src/dagviz
 COPY . .
 RUN npm install
 
+RUN mv /usr/src/dagviz/k-explorer /usr/src/k-explorer
+RUN cd /usr/src/k-explorer && npm install && npm link
+RUN npm link k-explorer
 #RUN mv /usr/src/dagviz/k-explorer /usr/src/dagviz/k-explorer
 #RUN cd /usr/src/dagviz/k-explorer && npm install && npm link
 #RUN npm link k-explorer

@@ -10,6 +10,9 @@ export class KBlockCfm extends LitElement{
 	}
 	static get styles(){
 		return css`
+			:host{
+				font-family:var(--k-block-cfm-font, 'Roboto Mono', "Courier New", Courier, "Lucida Console", Monaco, monospace);
+			}
 			:host(.hl){
 				animation:highlight 1.5s;
 			}

@@ -700,7 +700,7 @@ export class KExplorer extends LitElement{
 					<tbody>
 						${repeat(t.outputs, (a, index) => html
 							`<tr class="output-row">
-								<td class="address">${a.address}</td>
+								<td class="address k-link" data-t-address="${a.address}">${a.address}</td>
 								<td class="script-pub-key">${a.scriptPubKey}</td>
 								<td class="value">${a.value}</td>
 							</tr>`
@@ -783,6 +783,7 @@ export class KExplorer extends LitElement{
 		const $dataBHash = $target.closest("[data-b-hash]");
 		const $dataTPageId = $target.closest("[data-t-page-id]");
 		const $dataTPageHash = $target.closest("[data-t-page-hash]");
+		const $dataTAddress = $target.closest("[data-t-address]");
 		let hash = $hash.attr("hash");
 		let action = $dataAction.attr("data-action");
 		if($dataBHash.length){
@@ -796,6 +797,10 @@ export class KExplorer extends LitElement{
 		if($dataTPageHash.length){
 			action = 't-page';
 			hash = $dataTPageHash.attr("data-t-page-hash");
+		}
+		if($dataTAddress.length){
+			action = 't-address';
+			hash = $dataTAddress.attr("data-t-address");
 		}
 		switch(action){
 			case 'close':
@@ -828,6 +833,9 @@ export class KExplorer extends LitElement{
 			break;
 			case 't-page':
 				this.callApi('transaction/hash/'+hash);
+			break;
+			case 't-address':
+				this.callApi('transactions/address/'+hash);
 			break;
 			case 't-page-id':
 				this.callApi('transaction/id/'+hash);
@@ -1020,7 +1028,8 @@ export class KExplorer extends LitElement{
 
 			console.log("getTransactions:result", res, result);//JSON.stringify(pagination, null, "\t"))
 			let items = [];
-			(res.transactions||[]).forEach(tx=>{
+			let txs = res.transactions || (res.forEach ? res:[])
+			txs.forEach(tx=>{
 				tx.name = tx.transactionHash.replace(/^[0]{1,}/g, '').substr(0, 6);
 				items.push(tx)
 				//this.transactionsMap[b.blockHash] = b;
