@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # sudo docker run --net host dagviz "$@"
 if [[ $1 == 'mainnet' ]]
 then
@@ -11,24 +13,24 @@ then
     #sudo docker run --net host dagviz --port=18787 -- 
 elif [[ $1 == 'open.devnet' ]]
 then
-    port = 18888
-    dbport = 18887
-    address = "kasparov-dev-auxiliary-open-devnet.daglabs.com"
+    port=18888
+    dbport=18887
+    address="kasparov-dev-auxiliary-open-devnet.daglabs.com"
 elif [[ $1 == 'big.devnet' ]]
 then
-    port = 18989
-    dbport = 18988
-    address = "kasparov-dev-auxiliary-big.daglabs.com"
+    port=18989
+    dbport=18988
+    address="kasparov-dev-auxiliary-big.daglabs.com"
 elif [[ $1 == 'default.devnet' ]]
 then
-    port = 19090
-    dbport = 19089
-    address = "kasparov-dev-auxiliary-classic.daglabs.com"
+    port=19090
+    dbport=19089
+    address="kasparov-dev-auxiliary-classic.daglabs.com"
 elif [[ $1 == 'aspectron' ]]
 then
-    port = 19990
-    dbport = 19989
-    address = "localhost"
+    port=19990
+    dbport=19989
+    address="localhost"
 else
     echo Please specify: mainnet testnet open.devnet big.devnet default.devnet
     exit 0
