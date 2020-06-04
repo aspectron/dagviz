@@ -29,6 +29,11 @@ then
     port=19090
     dbport=19089
     address="kasparov-dev-auxiliary-classic.daglabs.com"
+elif [[ $1 == 'classic.devnet' ]]
+then
+    port=19090
+    dbport=19089
+    address="kasparov-dev-auxiliary-classic.daglabs.com"
 elif [[ $1 == 'aspectron' ]]
 then
     kasport=11224
