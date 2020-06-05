@@ -490,7 +490,8 @@ class DAGViz {
         'isChainBlock', 
         'mass', 
         'parentBlockHashes', 
-        'childBlockHashes'
+        'childBlockHashes',
+        'acceptedBlockHashes'
     ];
 
     async initDatabaseSchema() {
@@ -512,6 +513,7 @@ class DAGViz {
                 blueScore              BIGINT  NOT NULL,
                 isChainBlock          BOOLEAN         NOT NULL,
                 mass                    BIGINT          NOT NULL,
+                acceptedBlockHashes   TEXT NOT NULL,
                 parentBlockHashes   TEXT NOT NULL,
                 childBlockHashes   TEXT NOT NULL
             );        
@@ -569,6 +571,11 @@ class DAGViz {
             this.lastBlock = blocks.shift();
             // console.log("LAST BLOCK:",this.lastBlock);
         }
+
+        if(this.args.reset) {
+            await this.resetChain(true);
+        }
+
         this.sync();
         dpc(3000, () => {
             this.updateRelations();
@@ -652,6 +659,25 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
         })
     }
 
+    async resetChain(dropdb = false) {
+        console.log(`initiating database purge...`);
+        if(dropdb) {
+            await this.sql(`DROP TABLE blocks CASCADE`);
+            await this.sql(`DROP TABLE block_relations CASCADE`);
+            await this.sql(`DROP TABLE last_block_hash CASCADE`);
+            await this.initDatabaseSchema();
+        }
+        else {
+            await this.sql(`TRUNCATE TABLE blocks`);
+            await this.sql(`TRUNCATE TABLE block_relations`);
+        }
+
+        this.lastTotal = 0; //total;
+        this.skip = 0;
+        this.initRTBS();
+        this.io.emit('chain-reset');
+    }
+
     sync() {
 
         const skip = this.skip;
@@ -666,13 +692,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
         this.getBlockCount().then(async (total) => {
             if(this.lastTotal !== undefined && this.lastTotal > total+1e4 || this.skip > total+1e3) {
                 console.log(`incloming total block count ${total}+1e4 is less than previous total ${this.lastTotal}`);
-                console.log(`initiating database purge...`);
-                await this.sql(`TRUNCATE TABLE blocks`);
-                await this.sql(`TRUNCATE TABLE block_relations`);
-                this.lastTotal = total;
-                this.skip = 0;
-                this.initRTBS();
-                this.io.emit('chain-reset');
+                await this.resetChain();
                 dpc(1000, () => {
                     this.sync();
                 })
@@ -774,8 +794,34 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
 
                 if(block.parentBlockHashes) {
                     block.parentBlockHashes.forEach(hash => relations.push([hash, block.blockHash, false]));
+                
+                
+                    // store accepted block hashes as a diff against parent block hashes
+
+
+                    // console.log("original accepted list",block.acceptedBlockHashes);
+                    let acceptingNonParents = block.parentBlockHashes.slice();
+                    block.acceptedBlockHashes = block.acceptedBlockHashes.map((acceptedHash) => {
+                        let idx = acceptingNonParents.indexOf(acceptedHash);
+                        if(idx == -1)
+                            return '+'+acceptedHash;
+                        else {
+                            acceptingNonParents.splice(idx,1);
+                            return null;
+                        }
+                    }).filter(v=>v);
+                    // console.log("acceptingNonParents",acceptingNonParents);
+                    acceptingNonParents.forEach((hash) => {
+                        block.acceptedBlockHashes.push('-'+hash);
+                    })
+                    // console.log("block.acceptedBlockHashes",block.acceptedBlockHashes);
                 }
                 
+                block.acceptedBlockHashes = block.acceptedBlockHashes.join(',');
+                // if(block.acceptedBlockHashes)
+                //     console.log('---',block.acceptedBlockHashes);
+                //console.log('---');
+
                 // delete block.parentBlockHashes;
                 block.parentBlockHashes = block.parentBlockHashes.join(',');
                 block.childBlockHashes = '';
@@ -1025,12 +1071,11 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                 // console.log("RESPONDING...");
                 const blockHashMap = { };
                 blocks = blocks.map(block => {
-                    block.lseq = block.id;
-                    block.parentblockhashes = block.parentblockhashes.split(',');
-                    block.childblockhashes = block.childblockhashes.split(',');
-
-                    return this.NormalizeBlock(block);
-                    // blockHashMap[block.blockHash] = block;
+                    return this.deserealizeBlock(block);
+                    // block.lseq = block.id;
+                    // block.parentblockhashes = block.parentblockhashes.split(',');
+                    // block.childblockhashes = block.childblockhashes.split(',');
+                    // return this.NormalizeBlock(block);
                 });
                 // parents.forEach(({ parent, child}) => {
                 //     let block = blockHashMap[child];
@@ -1122,6 +1167,26 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
         block.lseq = block.id;
         block.parentblockhashes = block.parentblockhashes.split(',');
         block.childblockhashes = block.childblockhashes.split(',');
+
+        let accepted_diff = block.acceptedblockhashes.split(',');
+
+        let acceptedBlockHashes = block.parenblockhashes.slice();
+        accepted_diff.forEach((v) => {
+            let op = v.charAt(0);
+            let hash = v.substring(1);
+            if(op == '-') {
+                let idx = acceptedBlockHashes.indexOf(hash);
+                if(idx == -1) {
+
+                } else {
+                    acceptedBlockHashes.splice(idx,1);
+                }
+            } else if(op == '+') {
+                acceptedBlockHashes.push(hash);
+            }
+        })
+        block.acceptedblockhashes = acceptedblockhashes;
+
         return this.NormalizeBlock(block);
     }
 
