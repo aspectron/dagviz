@@ -1170,22 +1170,22 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
 
         let accepted_diff = block.acceptedblockhashes.split(',');
 
-        let acceptedBlockHashes = block.parenblockhashes.slice();
+        let abh = block.parentblockhashes.slice();
         accepted_diff.forEach((v) => {
             let op = v.charAt(0);
             let hash = v.substring(1);
             if(op == '-') {
-                let idx = acceptedBlockHashes.indexOf(hash);
+                let idx = abh.indexOf(hash);
                 if(idx == -1) {
 
                 } else {
-                    acceptedBlockHashes.splice(idx,1);
+                    abh.splice(idx,1);
                 }
             } else if(op == '+') {
-                acceptedBlockHashes.push(hash);
+                abh.push(hash);
             }
         })
-        block.acceptedblockhashes = acceptedblockhashes;
+        block.acceptedblockhashes = abh;
 
         return this.NormalizeBlock(block);
     }
