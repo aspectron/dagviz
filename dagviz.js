@@ -44,6 +44,8 @@ class DAGViz {
         this.REWIND_BLOCK_PADDING = 60 * 60;
         this.skip = 0;
 
+        this.blockTimings = [];
+
     }
     
     async initRTBS() {
@@ -155,13 +157,19 @@ class DAGViz {
     }
 
     async "dag/blocks"(block) {
+
+        const ts = Date.now();
+        while(this.blockTimings[0] < ts-1000*15)
+            this.blockTimings.shift();
+        this.blockTimings.push(ts);
+        let rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
+
         // console.log('received: dag/blocks',blocks);
-        this.io.emit("dag/blocks",[block]);
+        this.io.emit("dag/blocks",{ blocks : [block], rate});
 
         this.lastBlockHash = block.blockHash;
         
         await this.storeLastBlockHash(block.blockHash);
-
 
         await this.postRTB(block);
     }
@@ -1193,7 +1201,6 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
     async doSearch(text) {
 
         //console.log('text length:',text.length);
-        //! WARNING - TODO: THE INPUT IS NOT SANITIZED!
         if(text.length == 64) {
             let blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=?`,text);
             //console.log(blocks);
