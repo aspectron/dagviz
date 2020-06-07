@@ -568,6 +568,8 @@ export class App {
 		this.undo = true;
 		// this.init();
 		this.lastBlockWidget = document.getElementsByTagName("last-block-widget")[0];
+
+		this.blockTimings = [];
 	}
 
 	initCtls() {
@@ -716,6 +718,8 @@ export class App {
 		setInterval(()=>{
 			this.graph.updateSimulation();
 		}, 1000);
+
+		this.rateInfo = document.getElementById('rate');
 
 		$(window).on('keydown', (e) => {
 			let {v, h, sign} = this.ctx.direction;
@@ -1151,7 +1155,17 @@ export class App {
 
 
 
-		this.io.on('dag/blocks', (blocks) => {
+		this.io.on('dag/blocks', (data) => {
+
+			const { blocks } = data;
+
+			const ts = Date.now();
+			while(this.blockTimings[0] < ts-1000*15)
+				this.blockTimings.shift();
+			this.blockTimings.push(ts);
+			const rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
+			this.rateInfo.innerHTML = `Rate: ${rate.toFixed(2)} Blocks / sec`;
+
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
