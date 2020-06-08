@@ -1202,9 +1202,9 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
 
         //console.log('text length:',text.length);
         if(text.length == 64) {
-            let blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=?`,text);
+            let blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=$1`, [text]);
             //console.log(blocks);
-            blocks.forEach(block => this.deserealizeBlock(block));
+            blocks = blocks.map(block => this.deserealizeBlock(block));
             // console.log("responding:",blocks);
             return Promise.resolve({blocks});
         }
