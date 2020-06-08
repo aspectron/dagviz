@@ -2283,14 +2283,43 @@ export class DAGViz extends BaseElement {
 		window.app.enableUndo(false);
 	}
 
-	// findBlockPaths(block, diff)
 
-	// findBlockPath(block, diff) {
+	getGraphNode(hash) {
+		return this.nodes[hash];
+	}
+
+	getAcceptanceLinks(accepted, acceptorBlockHash) {
+		accepted = this.getGraphNode(accepted);
+
+		if(!accepted || !acceptorBlockHash)
+			return [];
+		
+		let links = accepted.parentLinks.map(link => {
+			return this.traverseLink(link, acceptorBlockHash);
+		}).filter(v=>v).flat();
+
+		return links;
+	}
+
+	traverseLink(link, acceptorBlockHash) {
+
+		const { source } = link;
+		if(source.data.blockHash == acceptor)
+			return [link];
+
+		let list = (source.parentLinks||[]).map(link => {
+			return this.traverseLink(link, acceptorBlockHash);
+		}).filter(v=>v);
+
+		if(list.length) {
+			list.push(link);
+			return list;
+		}
+		
+		return null;
+	}
 
 
-
-
-	// }
 }
 
 // Register the element with the browser
