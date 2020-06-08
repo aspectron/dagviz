@@ -803,8 +803,11 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                     let acceptingNonParents = block.parentBlockHashes.slice();
                     block.acceptedBlockHashes = block.acceptedBlockHashes.map((acceptedHash) => {
                         let idx = acceptingNonParents.indexOf(acceptedHash);
-                        if(idx == -1)
+                        if(idx == -1){
+                            if(block.isChainBlock)
+                                console.log("ACCEPTED BUT NOT PARENT:", acceptedHash, "in block", block.blockHash);
                             return '+'+acceptedHash;
+                        }
                         else {
                             acceptingNonParents.splice(idx,1);
                             return null;
@@ -813,6 +816,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                     // console.log("acceptingNonParents",acceptingNonParents);
                     acceptingNonParents.forEach((hash) => {
                         block.acceptedBlockHashes.push('-'+hash);
+                        //console.log("ACCEPTED but NOT A PARENT:", hash, "in block", block.blockHash);
                     })
                     // console.log("block.acceptedBlockHashes",block.acceptedBlockHashes);
                 }
