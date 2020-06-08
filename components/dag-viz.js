@@ -647,6 +647,9 @@ export class GraphNodeLink{
 		//if(color) {
 			if(this.isChainBlockLink) {
 				strokeWidth = 7;//color?7:strokeWidth;
+				if(isTealing)
+					stroke = 'var(--graph-link-tealing-color)';
+				else
 				if(this.source.selected && this.target.selected){
 					stroke = 'var(--graph-link-selected-color)';
 					arrowType = '-selected';
@@ -674,16 +677,16 @@ export class GraphNodeLink{
 			}
 		//}
 
-		if(this.isTealing != isTealing){
-			this.isTealing = isTealing;
-			(this.target.linkNodes || []).forEach(l=>{
-				dpc(100, ()=>{
-					if(l.target.data.acceptingBlockHash)
-						l.highlight(false, l.source, isTealing);
-				})
+		// if(this.isTealing != isTealing){
+		// 	this.isTealing = isTealing;
+		// 	(this.target.linkNodes || []).forEach(l=>{
+		// 		dpc(100, ()=>{
+		// 			if(l.target.data.acceptingBlockHash)
+		// 				l.highlight(false, l.source, isTealing);
+		// 		})
 				
-			});
-		}
+		// 	});
+		// }
 		if(this.holder.ctx.track){
 			this.el.path
 				.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
@@ -1040,6 +1043,7 @@ export class GraphNode{
 
 		if(this.selected)
 			this.highlightLinks(true);
+		
 	}
 	updateStyle(force){
 		const data = this.data;
@@ -1168,9 +1172,13 @@ export class GraphNode{
 		
 	}
 	onNodeHover(){
-		this.holder.highlightLinks(this.linkNodes || [], 'green', this);
-		this.holder.highlightLinks(this.parentLinks, 'red', this);
+		
+		// console.log(this.data.isChainBlock);
+		// console.log(this.data.acceptingBlockHash);
+		// this.holder.highlightLinks(this.linkNodes || [], 'green', this);
+		// this.holder.highlightLinks(this.parentLinks, 'red', this);
 		this.highlightConnectedBlocks(true);
+		this.highlightLinks(true);
 
 		const { data } = this;
 
@@ -1209,6 +1217,8 @@ export class GraphNode{
 		});
 		this.highlight(highlight);
 	}
+
+
 	highlight(highlight, type){
 		let color = this.data.color;
 		if(highlight) {
@@ -1222,13 +1232,68 @@ export class GraphNode{
 			.style("transform", highlight?"scale(1.1)":null)
 	}
 
+	
 	highlightLinks(highlight = true) {
+		//console.log("MY CHILDREN LINKS", this.parentLinks);
+		console.log('MY PARENTS LINKS', this.linkNodes);
 		if(highlight) {
 			this.holder.highlightLinks(this.linkNodes || [], 'green', this);
 			this.holder.highlightLinks(this.parentLinks, 'red', this);
+		// -------------------------------	
+			(this.parentLinks || []).forEach((l)=>{
+				if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == false){
+					//console.log("TARGET ACCEPTING BLOCK:", l.target.data.acceptingBlockHash);
+					//console.log("SOURCE ID:", l.source.id);
+					console.log("ACCEPTED BLOCKS TARGET:",l.target.data.acceptedBlockHashes);
+					//console.log("ACCEPTED BLOCKS SOURCE:",l.source.data.acceptedBlockHashes);
+					l.highlight(false, l.source, true); 
+				}
+				else if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == true){
+					//console.log("TARGET ACCEPTING BLOCK:", l.target.data.acceptingBlockHash);
+					//console.log("SOURCE ID:", l.source.id);
+					console.log("ACCEPTED BLOCKS TARGET:",l.target.data.acceptedBlockHashes);
+					//console.log("ACCEPTED BLOCKS SOURCE:",l.source.data.acceptedBlockHashes);
+					l.highlight(false, l.source, true);
+					(this.linkNodes || []).forEach((l)=>{
+						let difference = l.source.data.acceptedBlockHashes.filter(x => !l.source.data.parentBlockHashes.includes(x));
+						//console.log("DIFFERENCE:", difference)
+						if(l.source.data.acceptedBlockHashes.includes(l.target.id)){
+							l.highlight(false, l.source, true);
+
+							let blocks = difference.map( hash => {
+								return this.holder.nodes[hash];
+							}).filter(v=>v)
+
+							
+							// (this.blocks || []).forEach((b)=>{
+							// 	let parentBlocks = l.source.data.parentBlockHashes.map(hash => {
+							// 		return this.holder.nodes[hash];
+							// 	}).filter(v=>v)
+
+							// 	(parentBlocks || []).forEach((p)=>{
+							// 		(p.linkNodes || []).forEach((link)=>{
+							// 			if(link.source.id == b.id)
+							// 				link.highlight(false, b, true);
+
+							// 		})
+
+
+							// 	})
+
+								
+
+						}
+					})
+				}
+				
+				
+			});
+
+
 		}else {
 			this.holder.highlightLinks(this.getLinks(), null, this);
 		}
+		
 	}
 
 	onNodeOut(){
@@ -2217,6 +2282,15 @@ export class DAGViz extends BaseElement {
 		this.restartSimulation();
 		window.app.enableUndo(false);
 	}
+
+	// findBlockPaths(block, diff)
+
+	// findBlockPath(block, diff) {
+
+
+
+
+	// }
 }
 
 // Register the element with the browser
