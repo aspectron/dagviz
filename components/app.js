@@ -1160,7 +1160,7 @@ export class App {
 			const { blocks } = data;
 
 			const ts = Date.now();
-			while(this.blockTimings[0] < ts-1000*15)
+			while(this.blockTimings[0] < ts-1000*60)
 				this.blockTimings.shift();
 			this.blockTimings.push(ts);
 			const rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
