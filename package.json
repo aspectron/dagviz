@@ -15,7 +15,6 @@
     "mime-types": "*",
     "mkdirp": "*",
     "mqtt": "*",
-    "mysql": "*",
     "pg": "*",
     "pg-format": "*",
     "request": "*",
