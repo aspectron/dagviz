@@ -5,10 +5,10 @@ body{
 	--graph-node-link-default-color-1:rgba(0,0,0,0.65);
 	--graph-node-link-default-color-2:rgba(0,0,0,0.65);
 	--graph-square-stroke:#333;
-	--graph-color-a-1:rgba(155,207,255,0.99);
-	--graph-color-a-2:rgba(107, 198, 250,1);
-	--graph-color-a-3:rgba(83, 191, 252,1);
-	--graph-color-a-4:rgba(43, 179, 255,1);
+	--graph-color-a-1:#2b8afb;/*rgba(155,207,255,0.99);*/
+	--graph-color-a-2:#0058bf; /*rgba(107, 198, 250,1);*/
+	--graph-color-a-3:#0058bf; /*rgba(83, 191, 252,1);*/
+	--graph-color-a-4:#0058bf; /*rgba(43, 179, 255,1); */
 	--graph-color-a-5:rgba(194,244,255,0.99);
 	--graph-color-new-1:var(--bg-color);
 	--graph-color-new-2:var(--bg-color);
@@ -16,15 +16,15 @@ body{
 	--graph-color-new-4:var(--bg-color);
 	--graph-color-new-5:var(--bg-color);
 
-	--graph-color-b-1:rgba(249,164,192,0.99);
-	--graph-color-b-2:rgba(251,116,118,1);/*hover*/
-	--graph-color-b-3:rgba(251,116,118,1);
-	--graph-color-b-4:rgba(251,116,118,1);
+	--graph-color-b-1: #f63c3c; /*rgba(249,164,192,0.99);*/
+	--graph-color-b-2: #c90000; /*rgba(251,116,118,1);/*hover*/
+	--graph-color-b-3:#c90000; /*rgba(251,116,118,1);*/
+	--graph-color-b-4:#c90000; /*rgba(251,116,118,1);*/
 	--graph-color-b-5:rgba(255,194,194,0.99);
 
 	--graph-node-selector-stroke:rgba(0,0,0,0.5);
 	--graph-node-selector-fill:rgba(0,0,0,0.5);
-	--graph-node-text-color:#000;
+	--graph-node-text-color:#FFF;
 	--graph-link-tealing-color:rgba(0, 150, 136, 1);
 	--graph-link-selected-color:blue;
 
