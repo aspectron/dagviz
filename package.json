@@ -8,6 +8,7 @@
     "@aspectron/flow-utils": "*",
     "@aspectron/flow-ux": "*",
     "@webcomponents/webcomponentsjs": "*",
+    "micro-fabric" : "*",
     "basic-auth": "*",
     "finalhandler": "*",
     "is-docker": "*",
