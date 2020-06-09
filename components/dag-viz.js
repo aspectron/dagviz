@@ -912,10 +912,9 @@ export class GraphNode{
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
 		const isRed = !isBlue;
-		if(this.data.blockHash == "00000df00264b8faaa9ab07eeb1dcc9a84b908aac4e467cef1caf0dceaf9cb1f")
-			console.log("RB CHECK:",this.data.blockHash,isBlue,isRed);
+		// if(this.data.blockHash == "00000df00264b8faaa9ab07eeb1dcc9a84b908aac4e467cef1caf0dceaf9cb1f")
+		// 	console.log("RB CHECK:",this.data.blockHash,isBlue,isRed);
 		if(data.isNew){
-			console.log("NEW NEW NEW NEW NEW NEW NEW NEW ");
 			data.color = 'var(--graph-color-new-1)';
 			data.highlightColor_before = 'var(--graph-color-new-2)'
 			data.highlightColor = 'var(--graph-color-new-3)'
@@ -966,7 +965,8 @@ export class GraphNode{
 			return this.data.color;
 		})
 
-		const textColor = data.textColor || 'var(--graph-node-text-color)';
+		const textColor = data.textColor || 
+			(data.isNew ? 'var(--graph-node-text-color-dark)' : 'var(--graph-node-text-color)');
 
 		if(this.quality != 'low') {
 			if(!this.textEl)
@@ -1237,8 +1237,8 @@ export class GraphNode{
 
 	
 	highlightLinks(highlight = true) {
-		console.log("MY CHILDREN LINKS", this.parentLinks);
-		console.log('MY PARENTS LINKS', this.linkNodes);
+		// console.log("MY CHILDREN LINKS", this.parentLinks);
+		// console.log('MY PARENTS LINKS', this.linkNodes);
 		if(highlight) {
 		
 			if(!this.data.childBlockHashes.includes(this.data.acceptingBlockHash)) {
@@ -1270,7 +1270,7 @@ export class GraphNode{
 
 					this.holder.indirectLinks.push(...links);
 
-					console.log("LINKS", links);
+					//console.log("LINKS", links);
 					(links || []).forEach((link)=>{
 						link.highlight(false,null,true);
 					});
