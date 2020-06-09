@@ -636,7 +636,7 @@ export class GraphNodeLink{
 		}
 	}
 
-	highlight(color, node, isTealing=false) {
+	highlight(color, node=null, isTealing=false) {
 		//isTealing = isTealing || !!this.source.parentLinks.find(l=>l.isTealing);
 		//console.log('highlight arrows ->', node);
 		//console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
@@ -662,14 +662,14 @@ export class GraphNodeLink{
 				arrowType = '-selected';
 			}
 			else
-			if((isTealing || this.source.selected) && this.source.data.blockHash == this.target.data.acceptingBlockHash){
+			if((isTealing || this.source.selected)){//} && this.source.data.blockHash == this.target.data.acceptingBlockHash){
 				stroke = 'var(--graph-link-tealing-color)';
-				strokeWidth = 3;
+				strokeWidth = 7;
 				isTealing = true;
 				arrowType = '-teal';
 			}
 			else if(color){
-				if(node.selected)
+				if(node&&node.selected)
 					stroke = this.defaultColor;
 				else {
 					strokeWidth = 2;
@@ -912,7 +912,10 @@ export class GraphNode{
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
 		const isRed = !isBlue;
+		if(this.data.blockHash == "00000df00264b8faaa9ab07eeb1dcc9a84b908aac4e467cef1caf0dceaf9cb1f")
+			console.log("RB CHECK:",this.data.blockHash,isBlue,isRed);
 		if(data.isNew){
+			console.log("NEW NEW NEW NEW NEW NEW NEW NEW ");
 			data.color = 'var(--graph-color-new-1)';
 			data.highlightColor_before = 'var(--graph-color-new-2)'
 			data.highlightColor = 'var(--graph-color-new-3)'
@@ -1234,61 +1237,46 @@ export class GraphNode{
 
 	
 	highlightLinks(highlight = true) {
-		//console.log("MY CHILDREN LINKS", this.parentLinks);
+		console.log("MY CHILDREN LINKS", this.parentLinks);
 		console.log('MY PARENTS LINKS', this.linkNodes);
 		if(highlight) {
-			this.holder.highlightLinks(this.linkNodes || [], 'green', this);
-			this.holder.highlightLinks(this.parentLinks, 'red', this);
-		// -------------------------------	
+		
+			if(!this.data.childBlockHashes.includes(this.data.acceptingBlockHash)) {
+				let links = this.holder.getAcceptanceLinks(this.data.blockHash,this.data.acceptingBlockHash);
+				this.holder.indirectLinks.push(...links);
+				(links || []).forEach((link)=>{
+					link.highlight(false,null,true);
+				});
+			}
+
 			(this.parentLinks || []).forEach((l)=>{
+
 				if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == false){
-					//console.log("TARGET ACCEPTING BLOCK:", l.target.data.acceptingBlockHash);
-					//console.log("SOURCE ID:", l.source.id);
-					console.log("ACCEPTED BLOCKS TARGET:",l.target.data.acceptedBlockHashes);
-					//console.log("ACCEPTED BLOCKS SOURCE:",l.source.data.acceptedBlockHashes);
 					l.highlight(false, l.source, true); 
 				}
 				else if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == true){
-					//console.log("TARGET ACCEPTING BLOCK:", l.target.data.acceptingBlockHash);
-					//console.log("SOURCE ID:", l.source.id);
-					console.log("ACCEPTED BLOCKS TARGET:",l.target.data.acceptedBlockHashes);
-					//console.log("ACCEPTED BLOCKS SOURCE:",l.source.data.acceptedBlockHashes);
 					l.highlight(false, l.source, true);
+					
 					(this.linkNodes || []).forEach((l)=>{
-						let difference = l.source.data.acceptedBlockHashes.filter(x => !l.source.data.parentBlockHashes.includes(x));
-						//console.log("DIFFERENCE:", difference)
-						if(l.source.data.acceptedBlockHashes.includes(l.target.id)){
+						if(l.source.data.acceptedBlockHashes.includes(l.target.id))
 							l.highlight(false, l.source, true);
+					});
 
-							let blocks = difference.map( hash => {
-								return this.holder.nodes[hash];
-							}).filter(v=>v)
+					let difference = this.data.acceptedBlockHashes.filter(x => !this.data.parentBlockHashes.includes(x));
 
-							
-							// (this.blocks || []).forEach((b)=>{
-							// 	let parentBlocks = l.source.data.parentBlockHashes.map(hash => {
-							// 		return this.holder.nodes[hash];
-							// 	}).filter(v=>v)
+					let links = difference.map( hash => {
+						return this.holder.getAcceptanceLinks(hash,this.data.blockHash)
+					}).filter(v=>v).flat();
 
-							// 	(parentBlocks || []).forEach((p)=>{
-							// 		(p.linkNodes || []).forEach((link)=>{
-							// 			if(link.source.id == b.id)
-							// 				link.highlight(false, b, true);
+					this.holder.indirectLinks.push(...links);
 
-							// 		})
-
-
-							// 	})
-
-								
-
-						}
-					})
+					console.log("LINKS", links);
+					(links || []).forEach((link)=>{
+						link.highlight(false,null,true);
+					});
 				}
 				
-				
 			});
-
 
 		}else {
 			this.holder.highlightLinks(this.getLinks(), null, this);
@@ -1305,6 +1293,13 @@ export class GraphNode{
 
 		if(!this.selected)
 			this.holder.highlightLinks(this.getLinks(), null, this);
+
+		while (this.holder.indirectLinks.length){
+			let link = this.holder.indirectLinks.shift();
+			if(link)
+				link.highlight(false, null, false);
+		}
+
 	}
 
 	getTS(src_date) {
@@ -1412,7 +1407,7 @@ export class DAGViz extends BaseElement {
 				font-size:12px;pointer-events: none;
 				font-family:'Exo 2','Consolas', 'Roboto Mono', 'Open Sans', 'Ubuntu Mono', courier-new, courier, monospace;
 				font-weight: 200;
-				stroke-width:1;
+				stroke-width:0.3;
 			}
 			.observer{font-size:1px;pointer-events: none;}
 
@@ -1490,6 +1485,8 @@ export class DAGViz extends BaseElement {
 		//this.unitDist = 100;
 
 		//
+
+		this.indirectLinks = [];
 	}
 	render() {
 		// https://iros.github.io/patternfills/sample_d3.html
@@ -2296,15 +2293,37 @@ export class DAGViz extends BaseElement {
 		
 		let links = accepted.parentLinks.map(link => {
 			return this.traverseLink(link, acceptorBlockHash);
-		}).filter(v=>v).flat();
+		}).filter(v=>v).map((link) => {
+			return link.flat(64);
+		});
 
-		return links;
+
+		const ELIMINATE_DUPLICATES = true;
+
+		if(ELIMINATE_DUPLICATES) {
+
+			let paths = { }
+
+
+			links.forEach(path => {
+				let last_link = path[path.length-1];
+				let target = last_link.target.data.blockHash;
+				paths[target] = path;
+			});
+
+			links = Object.values(paths);
+
+			
+		}
+
+
+		return links.flat(64);
 	}
 
 	traverseLink(link, acceptorBlockHash) {
 
 		const { source } = link;
-		if(source.data.blockHash == acceptor)
+		if(source.data.blockHash == acceptorBlockHash)
 			return [link];
 
 		let list = (source.parentLinks||[]).map(link => {
