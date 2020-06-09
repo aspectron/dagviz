@@ -1199,6 +1199,9 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
         })
         block.acceptedblockhashes = abh;
 
+        // TODO @aspect - resolve to null 
+        block.acceptingblockhash = block.acceptingblockhash.trim();
+
         return this.NormalizeBlock(block);
     }
 
