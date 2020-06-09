@@ -25,6 +25,7 @@ body{
 	--graph-node-selector-stroke:rgba(0,0,0,0.5);
 	--graph-node-selector-fill:rgba(0,0,0,0.5);
 	--graph-node-text-color:#FFF;
+	--graph-node-text-color-dark:#000;
 	--graph-link-tealing-color:rgba(0, 150, 136, 1);
 	--graph-link-selected-color:blue;
 
