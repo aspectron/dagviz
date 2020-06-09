@@ -6,7 +6,7 @@ const format = require('pg-format');
 var http = require('http')
 var serveStatic = require('serve-static')
 const rp = require('request-promise');
-const MF = require('micro-fabric');
+const utils = require('@aspectron/flow-utils');
 //const MySQL = require('./lib/mysql');
 const PgSQL = require('./lib/pgsql');
 const basicAuth = require('basic-auth');
@@ -17,7 +17,7 @@ const WebApp = require('./web-app.js');
 const FlowRouter = require('@aspectron/flow-router');
 //const ejs = require('ejs')
 
-let args = MF.utils.args();
+let args = utils.args();
 const DUMMY_TX = true;
 const USE_LOCAL_KASPAROV = !!args['use-local-kas'];
 const rejectUnauthorized = false;
@@ -27,7 +27,7 @@ console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.w
 class DAGViz {
 
     constructor() {
-        this.args = MF.utils.args();
+        this.args = utils.args();
 
         this.kasparov = this.args['kasparov'] || `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
         this.mqtt = {
