@@ -912,6 +912,15 @@ export class GraphNode{
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
 		const isRed = !isBlue;
+		/*
+		this._xx = this._xx || {count:0};
+		if(!this._xx[this.data.blockHash])
+			this._xx[this.data.blockHash] = 0;
+		this._xx[this.data.blockHash]++;
+		this._xx.count++;
+		if(this._xx.count%4 === 0)
+			console.log("initElements", this.data.blockHash, this._xx)
+		*/
 		// if(this.data.blockHash == "00000df00264b8faaa9ab07eeb1dcc9a84b908aac4e467cef1caf0dceaf9cb1f")
 		// 	console.log("RB CHECK:",this.data.blockHash,isBlue,isRed);
 		if(data.isNew){
@@ -1052,13 +1061,23 @@ export class GraphNode{
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
 		if(data.isNew)
-			data.color = 'var(--graph-color-new-5)';
+			data.color = 'var(--graph-color-new-1)';
 		else if(isBlue)
-			data.color = 'var(--graph-color-a-5)';
+			data.color = 'var(--graph-color-a-1)';
 		else
-			data.color = 'var(--graph-color-b-5)';
+			data.color = 'var(--graph-color-b-1)';
 
 		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
+			/*
+			if(Date.now()%100 === 0)
+			console.log("xxx", {
+				force,
+				shape: data.shape != this.shape,
+				color: data.color != this.color,
+				size: data.size != this.size,
+				quality: this.quality != this.holder.ctx.quality
+			})
+			*/
 			this.initElements();
 	    }
 
