@@ -573,10 +573,16 @@ export class GraphNodeLink{
 		let dir = this.holder.ctx.dir.toLowerCase();
 		if(this.holder.ctx.arrows == "multir")
 			dir = 'w'
-		this.el.path.attr("marker-end", this.isChainBlockLink?`url(#endarrowsm-${dir}${type})`:`url(#endarrow-${dir}${type})`)
+		let markerEnd = this.isChainBlockLink?`url(#endarrowsm-${dir}${type})`:`url(#endarrow-${dir}${type})`;
+		if(this.el.path.__markerEnd != markerEnd){
+			this.el.path.__markerEnd = markerEnd;
+			this.el.path.attr("marker-end", markerEnd)
+		}
+		
 	}
 
 	removeArrow() {
+		this.el.path.__markerEnd = "";
 		this.el.path.attr("marker-end", null)
 	}
 	buildD(x1, y1, x2, y2) {
@@ -636,7 +642,11 @@ export class GraphNodeLink{
 		}
 	}
 
-	highlight(color, node=null, isTealing=false) {
+	highlight(color, node=null, isTealing=null) {
+		if(isTealing!==null)
+			this._isTealing = isTealing;
+		isTealing = this._isTealing;
+
 		//isTealing = isTealing || !!this.source.parentLinks.find(l=>l.isTealing);
 		//console.log('highlight arrows ->', node);
 		//console.log('source:',this.source.data.blockHash, this.source.data.acceptingBlockHash)
@@ -687,17 +697,23 @@ export class GraphNodeLink{
 				
 		// 	});
 		// }
-		if(this.holder.ctx.track){
-			this.el.path
-				.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
-				.attr('stroke', stroke)
-				.attr('stroke-width', strokeWidth)
-		}else{
-			this.el.path.transition()
-				.duration(200)
-				.style('opacity', (color || isTealing) ? 1 : this.defaultOpacity)
-				.attr('stroke', stroke)
-				.attr('stroke-width', strokeWidth)
+		let p = this.el.path;
+		//if(!this.holder.ctx.track){
+		//	p.transition().duration(200)
+		//}
+		
+		let opacity = (color || isTealing) ? 1 : this.defaultOpacity
+		if(p.__opacity != opacity){
+			p.__opacity = opacity;
+			p.style('opacity', opacity)
+		}
+		if(p.__stroke != stroke){
+			p.__stroke = stroke;
+			p.attr('stroke', stroke)
+		}
+		if(p.__strokeWidth != strokeWidth){
+			p.__strokeWidth = strokeWidth;
+			p.attr('stroke-width', strokeWidth)
 		}
 
 		this._updateArrow(arrowType)
@@ -1015,8 +1031,9 @@ export class GraphNode{
 			if(!this.heightEl)
 				this.heightEl = this.el.append("text")
 					.attr("class", "node-text")
-			else
+			else if(this.heightEl.node().parentNode != this.el.node()){
 				this.el.node().appendChild(this.heightEl.node())
+			}
 			if(this.heightEl.__textColor != textColor){
 				this.heightEl.__textColor = textColor
 				this.heightEl
@@ -1194,8 +1211,6 @@ export class GraphNode{
 		
 	}
 	onNodeHover(){
-		
-		// console.log(this.data.isChainBlock);
 		// console.log(this.data.acceptingBlockHash);
 		// this.holder.highlightLinks(this.linkNodes || [], 'green', this);
 		// this.holder.highlightLinks(this.parentLinks, 'red', this);
@@ -1259,8 +1274,8 @@ export class GraphNode{
 		// console.log("MY CHILDREN LINKS", this.parentLinks);
 		// console.log('MY PARENTS LINKS', this.linkNodes);
 		if(highlight) {
-		
-			if(!this.data.childBlockHashes.includes(this.data.acceptingBlockHash)) {
+			let cbh = this.data.childBlockHashes
+			if(!cbh || !cbh.includes(this.data.acceptingBlockHash)) {
 				let links = this.holder.getAcceptanceLinks(this.data.blockHash,this.data.acceptingBlockHash);
 				this.holder.indirectLinks.push(...links);
 				(links || []).forEach((link)=>{
@@ -1269,7 +1284,6 @@ export class GraphNode{
 			}
 
 			(this.parentLinks || []).forEach((l)=>{
-
 				if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == false){
 					l.highlight(false, l.source, true); 
 				}
@@ -2229,7 +2243,7 @@ export class DAGViz extends BaseElement {
 
 	highlightLinks(links, highlight, node) {
 		links.forEach((link)=>{
-			link.highlight(highlight, node); 
+			link.highlight(highlight, node, false); 
 		});
 	}
 
