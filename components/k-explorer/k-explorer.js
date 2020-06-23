@@ -540,7 +540,7 @@ export class KExplorer extends LitElement{
 					<tbody>
 						${repeat(blocks, b=>b.blockHash, (b, index) => html
 							`<tr class="block-row ${highlight(b.blockHash)?'highlight x'+random():''}" hash="${b.blockHash}">
-								<td class="blue-score k-link" data-action="b-panel">${b.blueScore}</td>
+								<td class="blue-score k-link" data-action="b-page">${b.blueScore}</td>
 								<td class="name k-link" data-action="b-page">${b.name}</td>
 								<td class="confirmations"><k-block-cfm blue-score="${b.blueScore}" cfm="${b.confirmations}"></k-block-cfm></td>
 								<td class="mass">${b.mass}</td>
