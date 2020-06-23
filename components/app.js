@@ -782,6 +782,7 @@ export class App {
 			const selection = Object.values(this.graph.selection).map(node => parseInt(node.data.lseq).toString(16)).join(':');
 			let el = document.getElementById('copy-url');
 			const url = window.location.toString();
+			
 			el.innerText = url;
 			$(el).show();
 			window.app.selectText(el);
@@ -1164,7 +1165,7 @@ export class App {
 				this.blockTimings.shift();
 			this.blockTimings.push(ts);
 			const rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
-			this.rateInfo.innerHTML = `Rate: ${rate.toFixed(2)} Blocks / sec`;
+			this.rateInfo.innerHTML = `${rate.toFixed(2)} blocks / sec`;
 
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
