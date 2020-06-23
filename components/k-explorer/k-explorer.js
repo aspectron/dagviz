@@ -614,7 +614,7 @@ export class KExplorer extends LitElement{
 					<tbody>
 						${repeat(items, t=>t.transactionHash, (t, index) => html
 							`<tr class="tx-row" hash="${t.transactionHash}" data-id="${t.transactionId}">
-								<td class="id k-link" data-action="t-page">${t.transactionId}</td>
+								<td class="id k-link" data-action="t-page-id">${t.transactionId}</td>
 								<td class="hash k-link" data-action="t-page">${t.transactionHash}</td>
 								<td class="confirmations">${t.confirmations}</td>
 								<td class="ins-outs">${t.inputs.length} / ${t.outputs.length}</td>
@@ -718,7 +718,7 @@ export class KExplorer extends LitElement{
 		if(isString(paths))
 			paths = paths.split("/");
 		let method = paths.shift()||"";
-		let action = this.camelCase(method)
+		let action = this.camelCase(method);
 		//console.log("action, paths, params", action, paths, params)
 		if(!this[`${action}Api`])
 			return
@@ -779,12 +779,14 @@ export class KExplorer extends LitElement{
 		}
 
 		const $hash = $target.closest("[hash]");
+		const $txid = $target.closest("[data-id]");
 		const $dataAction = $target.closest("[data-action]");
 		const $dataBHash = $target.closest("[data-b-hash]");
 		const $dataTPageId = $target.closest("[data-t-page-id]");
 		const $dataTPageHash = $target.closest("[data-t-page-hash]");
 		const $dataTAddress = $target.closest("[data-t-address]");
 		let hash = $hash.attr("hash");
+		let txid = $txid.attr("data-id");
 		let action = $dataAction.attr("data-action");
 		if($dataBHash.length){
 			action = 'b-page';
@@ -838,7 +840,7 @@ export class KExplorer extends LitElement{
 				this.callApi('transactions/address/'+hash);
 			break;
 			case 't-page-id':
-				this.callApi('transaction/id/'+hash);
+				this.callApi('transaction/id/'+txid);
 			break;
 			case 'b-panel':
 				this.showBlock(hash);
