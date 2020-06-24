@@ -581,6 +581,7 @@ export class KExplorer extends LitElement{
 	}
 	renderTransactions(title="Transactions"){
 		const items = this.transactions || [];
+		console.log("ITEMS:",items);
 		return html`
 		<div class="holder transactions" @click="${this.onTXsClick}">
 			<div class="heading">
@@ -973,12 +974,14 @@ export class KExplorer extends LitElement{
 		if(!block)
 			return false
 
-		
 		let {items, pagination} = await this.getTransactions(['block', block.blockHash], {});
 		this.transactions = items;
 		this.transactionsPagination = pagination;
+		if(paths && paths.length)
+			this.__paths = paths;
 		this.block = block;
-		console.log("block", block)
+		console.log("block", block);
+		console.log("block pagination~", pagination);
 		this.fireKEvent({method:"block", paths:paths, block});
 		return result;
 	}
@@ -1004,6 +1007,8 @@ export class KExplorer extends LitElement{
 		console.log("transactionsApi:items", items);
 		this.transactions = items;
 		this.transactionsPagination = pagination;
+		if(paths && paths.length)
+			this.__paths = paths;
 		this.fireKEvent({method:"transactions", paths, params:reqParams});
 		return result;
 	}
@@ -1021,23 +1026,38 @@ export class KExplorer extends LitElement{
 
 	getTransactions(paths, params){
 		return new Promise(async(resolve, reject)=>{
-			let result = this.api.getTransactions(paths, params);
-			let {params:reqParams, req} = result;
-			let res = await req;
-			let {skip, limit} = reqParams;
-			let pagination = buildPagination(res.total, skip, limit);
-			pagination.type = "transactions";
+			let total = 0;
 
-			console.log("getTransactions:result", res, result);//JSON.stringify(pagination, null, "\t"))
-			let items = [];
-			let txs = res.transactions || (res.forEach ? res:[])
-			txs.forEach(tx=>{
-				tx.name = tx.transactionHash.replace(/^[0]{1,}/g, '').substr(0, 6);
-				items.push(tx)
-				//this.transactionsMap[b.blockHash] = b;
-			})
+			paths = paths && paths.length ? paths : (this.__paths || []);
+try {
+			// if(paths[0] == "address"){
+			if(paths[0] == "address"){
+					total = await this.api.getTransactionsCount(paths[1]).req;
+				console.log("TOTAL:",total);
+			}
+			
+				let result = this.api.getTransactions(paths, params);
+				let {params:reqParams, req} = result;
+				let res = await req;
+				let {skip, limit} = reqParams;
+				
+				let pagination = buildPagination(total, skip, limit);
+				pagination.type = "transactions";
+				
+				console.log("getTransactions:result", res, result);//JSON.stringify(pagination, null, "\t"))
+				let items = [];
+				let txs = res.transactions || (res.forEach ? res:[])
+				txs.forEach(tx=>{
+					tx.name = tx.transactionHash.replace(/^[0]{1,}/g, '').substr(0, 6);
+					items.push(tx)
+					//this.transactionsMap[b.blockHash] = b;
+				})
+				resolve({items, pagination, reqParams})
 
-			resolve({items, pagination, reqParams})
+			} catch(ex) {
+				console.log(ex);
+			}
+			
 		})
 	}
 
