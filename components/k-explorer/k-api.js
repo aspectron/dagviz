@@ -22,6 +22,10 @@ class KAPI {
 		return {req:this.get(`blocks/count`)}
 	}
 
+	getTransactionsCount(addr){
+		return {req:this.get(`transactions/address/${addr}/count` )}
+	}
+
 	getBlock(hash){
 		return {hash, req:this.get(`block/${hash}`)}
 	}
