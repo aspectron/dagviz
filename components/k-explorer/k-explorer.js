@@ -609,7 +609,7 @@ export class KExplorer extends LitElement{
 							<th class="lock-time">Lock Time</th>
 							<th class="gas">GAS</th>
 							<th class="sub-network-id">Sub-Network id</th>
-							<th class="accepting-block-hash">Accepting Block Hash</th>
+							<th class="accepting-block-hash">Merging Chain Block Hash</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -649,8 +649,8 @@ export class KExplorer extends LitElement{
 			<div class="items sbar" >
 				${this.debug?html`<pre>${this.renderJSON(t)}</pre>`:''}
 				<table>
-                    <tr class="id"><td>ID</td><td class="k-link" data-t-page-id="${t.transactionId}">${t.transactionId}</td></tr>
-					<tr class="hash"><td>Hash</td><td class="k-link"  data-t-page-hash="${t.transactionHash}">${t.transactionHash}</td></tr>
+                    <tr class="id"><td>ID</td><td>${t.transactionId}</td></tr>
+					<tr class="hash"><td>Hash</td><td>${t.transactionHash}</td></tr>
 					<tr class="confirmations"><td>Confirmations</td><td>${t.confirmations}</td></tr>
 					<tr class="mass"><td>Mass</td><td>${t.mass}</td></tr>
 					<tr class="payload-hash"><td>Payload Hash</td><td>${t.payloadHash}</td></tr>
@@ -659,7 +659,7 @@ export class KExplorer extends LitElement{
 					<tr class="gas"><td>GAS</td><td>${t.gas}</td></tr>
 					<tr class="sub-network-id"><td>Subnetwork Id</td><td>${t.subnetworkId}</td></tr>
 					<tr class="accepting-block-hash">
-						<td>Accepting Block Hash</td>
+						<td>Merging Chain Block Hash</td>
 						<td class="k-link" data-b-hash="${t.acceptingBlockHash}">${t.acceptingBlockHash}</td>
 					</tr>
 					<tr class="ins-outs">
@@ -679,6 +679,7 @@ export class KExplorer extends LitElement{
 						</tr>
 					</thead>
 					<tbody>
+						
 						${repeat(t.inputs, a=>a.previousTransactionId, (a, index) => html
 							`<tr class="input-row" data-id="${a.previousTransactionId}">
 								<td class="id k-link" data-t-page-id="${a.previousTransactionId}">${a.previousTransactionId}</td>
@@ -841,7 +842,7 @@ export class KExplorer extends LitElement{
 				this.callApi('transactions/address/'+hash);
 			break;
 			case 't-page-id':
-				this.callApi('transaction/id/'+txid);
+				this.callApi('transaction/id/'+ txid);
 			break;
 			case 'b-panel':
 				this.showBlock(hash);
