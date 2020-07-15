@@ -1257,13 +1257,20 @@ export class App {
 			const updateMap = { };
 
 			removedBlockHashes.forEach((hash) => {
-				const node = nodes[hash]
+				const node = nodes[hash];
 				if(node) {
 					node.data.isChainBlock = false;
-					node.data.acceptingBlockHash = null;
+					// node.data.acceptingBlockHash = null;
 					updateMap[node.data.blockHash] = node;
 				}
 			});
+
+			nodes.forEach(node => {
+				if(removedBlockHashes.includes(node.data.acceptingBlockHash)) {
+					node.data.acceptingBlockHash = null;
+					updateMap[node.data.blockHash] = block;
+				}
+			});			
 
 			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
 				const { hash, acceptedBlockHashes } = instr;

@@ -182,20 +182,19 @@ class DAGViz {
 
         const { addedChainBlocks, removedBlockHashes } = args;
 
-        if(removedBlockHashes && removedBlockHashes.length)
-            this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
+        if(removedBlockHashes && removedBlockHashes.length) {
+            //this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
+            await this.sql(format(`UPDATE blocks SET isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
+            await this.sql(format(`UPDATE blocks SET acceptingBlockHash='' WHERE (blocks.acceptingBlockHash) IN (%L)`, removedBlockHashes));
+        }
 
         if(addedChainBlocks && addedChainBlocks.length) {
-            // let addedHashes = addedChainBlocks.map(v=>v.hash);
-            // console.log(`UPDATE blocks SET blocks.acceptedBlockHash='${}' WHERE (blocks.blockHash) IN (?)`, addedHashes);
-            // this.sql('UPDATE blocks SET blocks.isChainBlock=1 WHERE (blocks.blockHash) IN (?)', addedHashes);
-            // console.log('UPDATE blocks SET isChainBlock=1 WHERE blockHash IN ?', [addedHashes]);
-            addedChainBlocks.forEach((instr) => {
+            while(addedChainBlocks.length) {
+                let instr = addedChainBlocks.shift();
                 const { hash, acceptedBlockHashes } = instr;
-                //console.log('UPDATE blocks SET parentBlockHashes =  WHERE blockHash IN ?', [acceptedBlockHashes], [hash]);
-                this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${hash}'`);
-                this.sql(format(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (%L)`, acceptedBlockHashes));
-            })
+                await this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${hash}'`);
+                await this.sql(format(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (%L)`, acceptedBlockHashes));
+            }
         }
     }
 
