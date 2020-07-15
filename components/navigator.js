@@ -24,7 +24,7 @@ class AxisNavigator extends BaseElement{
 		super();
 		this.data = { }
 		this.margin = 32;
-		this.scale = 0.75;
+		this.scale = 1;
 
 		// this.fontSize = 
 		// return Math.round(36/2*this.scale);

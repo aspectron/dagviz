@@ -540,7 +540,7 @@ export class KExplorer extends LitElement{
 					<tbody>
 						${repeat(blocks, b=>b.blockHash, (b, index) => html
 							`<tr class="block-row ${highlight(b.blockHash)?'highlight x'+random():''}" hash="${b.blockHash}">
-								<td class="blue-score k-link" data-action="b-panel">${b.blueScore}</td>
+								<td class="blue-score k-link" data-action="b-page">${b.blueScore}</td>
 								<td class="name k-link" data-action="b-page">${b.name}</td>
 								<td class="confirmations"><k-block-cfm blue-score="${b.blueScore}" cfm="${b.confirmations}"></k-block-cfm></td>
 								<td class="mass">${b.mass}</td>
@@ -581,6 +581,7 @@ export class KExplorer extends LitElement{
 	}
 	renderTransactions(title="Transactions"){
 		const items = this.transactions || [];
+		console.log("ITEMS:",items);
 		return html`
 		<div class="holder transactions" @click="${this.onTXsClick}">
 			<div class="heading">
@@ -608,13 +609,13 @@ export class KExplorer extends LitElement{
 							<th class="lock-time">Lock Time</th>
 							<th class="gas">GAS</th>
 							<th class="sub-network-id">Sub-Network id</th>
-							<th class="accepting-block-hash">Accepting Block Hash</th>
+							<th class="accepting-block-hash">Merging Chain Block Hash</th>
 						</tr>
 					</thead>
 					<tbody>
 						${repeat(items, t=>t.transactionHash, (t, index) => html
 							`<tr class="tx-row" hash="${t.transactionHash}" data-id="${t.transactionId}">
-								<td class="id k-link" data-action="t-page">${t.transactionId}</td>
+								<td class="id k-link" data-action="t-page-id">${t.transactionId}</td>
 								<td class="hash k-link" data-action="t-page">${t.transactionHash}</td>
 								<td class="confirmations">${t.confirmations}</td>
 								<td class="ins-outs">${t.inputs.length} / ${t.outputs.length}</td>
@@ -648,8 +649,8 @@ export class KExplorer extends LitElement{
 			<div class="items sbar" >
 				${this.debug?html`<pre>${this.renderJSON(t)}</pre>`:''}
 				<table>
-                    <tr class="id"><td>ID</td><td class="k-link" data-t-page-id="${t.transactionId}">${t.transactionId}</td></tr>
-					<tr class="hash"><td>Hash</td><td class="k-link"  data-t-page-hash="${t.transactionHash}">${t.transactionHash}</td></tr>
+                    <tr class="id"><td>ID</td><td>${t.transactionId}</td></tr>
+					<tr class="hash"><td>Hash</td><td>${t.transactionHash}</td></tr>
 					<tr class="confirmations"><td>Confirmations</td><td>${t.confirmations}</td></tr>
 					<tr class="mass"><td>Mass</td><td>${t.mass}</td></tr>
 					<tr class="payload-hash"><td>Payload Hash</td><td>${t.payloadHash}</td></tr>
@@ -658,7 +659,7 @@ export class KExplorer extends LitElement{
 					<tr class="gas"><td>GAS</td><td>${t.gas}</td></tr>
 					<tr class="sub-network-id"><td>Subnetwork Id</td><td>${t.subnetworkId}</td></tr>
 					<tr class="accepting-block-hash">
-						<td>Accepting Block Hash</td>
+						<td>Merging Chain Block Hash</td>
 						<td class="k-link" data-b-hash="${t.acceptingBlockHash}">${t.acceptingBlockHash}</td>
 					</tr>
 					<tr class="ins-outs">
@@ -678,6 +679,7 @@ export class KExplorer extends LitElement{
 						</tr>
 					</thead>
 					<tbody>
+						
 						${repeat(t.inputs, a=>a.previousTransactionId, (a, index) => html
 							`<tr class="input-row" data-id="${a.previousTransactionId}">
 								<td class="id k-link" data-t-page-id="${a.previousTransactionId}">${a.previousTransactionId}</td>
@@ -718,7 +720,7 @@ export class KExplorer extends LitElement{
 		if(isString(paths))
 			paths = paths.split("/");
 		let method = paths.shift()||"";
-		let action = this.camelCase(method)
+		let action = this.camelCase(method);
 		//console.log("action, paths, params", action, paths, params)
 		if(!this[`${action}Api`])
 			return
@@ -779,12 +781,14 @@ export class KExplorer extends LitElement{
 		}
 
 		const $hash = $target.closest("[hash]");
+		const $txid = $target.closest("[data-id]");
 		const $dataAction = $target.closest("[data-action]");
 		const $dataBHash = $target.closest("[data-b-hash]");
 		const $dataTPageId = $target.closest("[data-t-page-id]");
 		const $dataTPageHash = $target.closest("[data-t-page-hash]");
 		const $dataTAddress = $target.closest("[data-t-address]");
 		let hash = $hash.attr("hash");
+		let txid = $txid.attr("data-id");
 		let action = $dataAction.attr("data-action");
 		if($dataBHash.length){
 			action = 'b-page';
@@ -838,7 +842,7 @@ export class KExplorer extends LitElement{
 				this.callApi('transactions/address/'+hash);
 			break;
 			case 't-page-id':
-				this.callApi('transaction/id/'+hash);
+				this.callApi('transaction/id/'+ txid);
 			break;
 			case 'b-panel':
 				this.showBlock(hash);
@@ -971,12 +975,14 @@ export class KExplorer extends LitElement{
 		if(!block)
 			return false
 
-		
 		let {items, pagination} = await this.getTransactions(['block', block.blockHash], {});
 		this.transactions = items;
 		this.transactionsPagination = pagination;
+		if(paths && paths.length)
+			this.__paths = paths;
 		this.block = block;
-		console.log("block", block)
+		console.log("block", block);
+		console.log("block pagination~", pagination);
 		this.fireKEvent({method:"block", paths:paths, block});
 		return result;
 	}
@@ -1002,6 +1008,8 @@ export class KExplorer extends LitElement{
 		console.log("transactionsApi:items", items);
 		this.transactions = items;
 		this.transactionsPagination = pagination;
+		if(paths && paths.length)
+			this.__paths = paths;
 		this.fireKEvent({method:"transactions", paths, params:reqParams});
 		return result;
 	}
@@ -1019,23 +1027,38 @@ export class KExplorer extends LitElement{
 
 	getTransactions(paths, params){
 		return new Promise(async(resolve, reject)=>{
-			let result = this.api.getTransactions(paths, params);
-			let {params:reqParams, req} = result;
-			let res = await req;
-			let {skip, limit} = reqParams;
-			let pagination = buildPagination(res.total, skip, limit);
-			pagination.type = "transactions";
+			let total = 0;
 
-			console.log("getTransactions:result", res, result);//JSON.stringify(pagination, null, "\t"))
-			let items = [];
-			let txs = res.transactions || (res.forEach ? res:[])
-			txs.forEach(tx=>{
-				tx.name = tx.transactionHash.replace(/^[0]{1,}/g, '').substr(0, 6);
-				items.push(tx)
-				//this.transactionsMap[b.blockHash] = b;
-			})
+			paths = paths && paths.length ? paths : (this.__paths || []);
+try {
+			// if(paths[0] == "address"){
+			if(paths[0] == "address"){
+					total = await this.api.getTransactionsCount(paths[1]).req;
+				console.log("TOTAL:",total);
+			}
+			
+				let result = this.api.getTransactions(paths, params);
+				let {params:reqParams, req} = result;
+				let res = await req;
+				let {skip, limit} = reqParams;
+				
+				let pagination = buildPagination(total, skip, limit);
+				pagination.type = "transactions";
+				
+				console.log("getTransactions:result", res, result);//JSON.stringify(pagination, null, "\t"))
+				let items = [];
+				let txs = res.transactions || (res.forEach ? res:[])
+				txs.forEach(tx=>{
+					tx.name = tx.transactionHash.replace(/^[0]{1,}/g, '').substr(0, 6);
+					items.push(tx)
+					//this.transactionsMap[b.blockHash] = b;
+				})
+				resolve({items, pagination, reqParams})
 
-			resolve({items, pagination, reqParams})
+			} catch(ex) {
+				console.log(ex);
+			}
+			
 		})
 	}
 
