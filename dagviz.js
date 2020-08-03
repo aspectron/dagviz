@@ -236,7 +236,7 @@ class DAGViz {
             return console.log('invalid mqtt message:', message);
         
         const block = message;
-        this.io.emit("dag/selected-tip", block);
+//        this.io.emit("dag/selected-tip", this.serializeBlock(block));
 
         this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${block.blockHash}'`);
 
