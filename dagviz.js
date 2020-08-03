@@ -273,7 +273,7 @@ class DAGViz {
         
 
         app.use((req, res, next)=>{
-            if(this.args['no-auth'])
+            if(!this.args['with-auth'])
                 return next();
             //if(req.url.match(/dag\-viz\.js$/))
             //    console.log("req", req.query._h)
