@@ -25,6 +25,21 @@ const USE_LOCAL_KASPAROV = !!args['use-local-kas'];
 const rejectUnauthorized = false;
 console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.white.bold)
 
+const BLOCK_PROPERTIES = [
+    "blockHash", 
+    "parentBlockHashes", 
+    "version", 
+    "hashMerkleRoot", 
+    "acceptedIdMerkleRoot", 
+    "utxoCommitment", 
+    "timestamp",
+    "bits",
+    "nonce",
+    "acceptingBlockHash",
+    "blueScore",
+    "isChainBlock",
+    "mass",
+];
  
 class DAGViz {
 
@@ -158,6 +173,10 @@ class DAGViz {
         });
     }
 
+    serializeBlock(block) {
+        return BLOCK_PROPERTIES.map(p=>block[p]);
+    }
+
     async "dag/blocks"(block) {
 
         const ts = Date.now();
@@ -167,7 +186,7 @@ class DAGViz {
         let rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
 
         // console.log('received: dag/blocks',blocks);
-        this.io.emit("dag/blocks",{ blocks : [block], rate});
+        this.io.emit("dag/blocks",{ blocks : [this.serializeBlock(block)], rate});
 
         this.lastBlockHash = block.blockHash;
         
