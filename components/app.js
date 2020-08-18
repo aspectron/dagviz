@@ -22,6 +22,22 @@ const dpc = (t,fn)=>{
 
 const tsInit = Date.now();
 
+const BLOCK_PROPERTIES = [
+    "blockHash", 
+    "parentBlockHashes", 
+    "version", 
+    "hashMerkleRoot", 
+    "acceptedIdMerkleRoot", 
+    "utxoCommitment", 
+    "timestamp",
+    "bits",
+    "nonce",
+    "acceptingBlockHash",
+    "blueScore",
+    "isChainBlock",
+    "mass",
+];
+
 export class Block extends GraphNode {
 	constructor(holder,data, ctx) {
 
@@ -1149,16 +1165,21 @@ export class App {
 		this.region = this.getRegion();
 	}
 
+	deserealizeBlock(data) {
+		const block = { }
+		BLOCK_PROPERTIES.forEach((p, idx) => block[p] = data[idx]);
+		return block;
+	}
+
 	initIO() {
 		this.io = io();
 
 		this.newBlocks = new Map();
 
-
-
 		this.io.on('dag/blocks', (data) => {
 
-			const { blocks } = data;
+			let { blocks } = data;
+			blocks = blocks.map(data => this.deserealizeBlock(data));
 
 			const ts = Date.now();
 			while(this.blockTimings[0] < ts-1000*60)
