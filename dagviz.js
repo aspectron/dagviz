@@ -825,7 +825,7 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
                     // console.log("acceptingNonParents",acceptingNonParents);
                     acceptingNonParents.forEach((hash) => {
                         block.acceptedBlockHashes.push('-'+hash);
-                        //console.log("ACCEPTED but NOT A PARENT:", hash, "in block", block.blockHash);
+                        console.log("ACCEPTED but NOT A PARENT:", hash, "in block", block.blockHash);
                     })
                     // console.log("block.acceptedBlockHashes",block.acceptedBlockHashes);
                 }

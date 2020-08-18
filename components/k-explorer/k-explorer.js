@@ -244,6 +244,38 @@ export class KExplorer extends LitElement{
 				-webkit-mask-image:url("${basePath}resources/mask/close-2.png");
 			}
 
+			/* Tooltip container */
+			.tooltip {
+				position: relative;z-index:1;
+			}
+			
+			/* Tooltip text */
+			.tooltip .tooltiptext {
+				visibility: hidden;
+				display:flex;flex-direction:column;
+				max-width: 170px;
+				min-width:130px;
+				font-size: 0.9rem;
+				font-weight:normal;
+				background-color: black;
+				color: #fff;
+				text-align: center;
+				padding: 10px ;
+				border-radius: 5px;
+				/* Position the tooltip text - see examples below! */
+				position: absolute;
+				z-index:1;
+				top:100%;
+				left:1%;
+			}
+			
+			/* Show the tooltip text when you mouse over the tooltip container */
+			.tooltip:hover .tooltiptext {
+				visibility: visible;
+			}
+			
+			.link-tooltip {color:#07b9b9;text-decoration:none;font-weight:bold;}
+
 			[hidden]{display:none}
 			@media(max-width:425px){
 				.heading{padding:5px 10px}
@@ -452,9 +484,13 @@ export class KExplorer extends LitElement{
                     <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                     <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
                     <tr><td>Timestamp</td><td><strong>${getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
-                    <tr><td>Blue Score</td><td><strong>${data.blueScore}</strong></td></tr>
+                    <tr><td><span class="tooltip">Blue Score <span class="tooltiptext">The blue score of a block is the number of blue blocks in its past. 
+							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#blue-score" 
+							target="_blank">Learn more</a></span></span></td><td><strong>${data.blueScore}</strong></td></tr>
                     <tr>
-                        <td>Confirmations</td>
+                        <td><span class="tooltip">Confirmations <span class="tooltiptext">A block's number of confirmations is the difference in blue score between the selected tip and the block's accepting block + 1.
+							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#confirmations" 
+							target="_blank">Learn more</a></span></span></td>
                         <td>
                             <strong>
                                 <k-block-cfm
@@ -463,8 +499,12 @@ export class KExplorer extends LitElement{
                             </strong>
                         </td>
                     </tr>
-                    <tr><td>Is Chain Block</td><td><strong>${data.isChainBlock}</strong></td></tr>
-                    <tr><td>Mass</td><td><strong>${data.mass}</strong></td></tr>
+                    <tr><td><span class="tooltip">Is Chain Block<span class="tooltiptext">A block on the selected parent chain.
+							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#chain-block" 
+							target="_blank">Learn more</a></span></span></td><td><strong>${data.isChainBlock}</strong></td></tr>
+                    <tr><td><span class="tooltip">Mass<span class="tooltiptext">A measure used to approximate the storage and computational costs of transactions and blocks. 
+							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#mass" 
+							target="_blank">Learn more</a></span></span></td><td><strong>${data.mass}</strong></td></tr>
                     <tr><td>Nonce</td><td>${data.nonce}</td></tr>
                     <tr title="ECMH commitment to the UTXO up to and including this block.">
                     	<td>UTXO Commitment</td>
@@ -599,13 +639,25 @@ export class KExplorer extends LitElement{
 				<table cellpadding="0" cellspacing="0" border="0">
 					<thead>
 						<tr>
-							<th class="id">ID</th>
-							<th class="name">Hash</th>
+							<th class="id"><span class="tooltip">ID<span class="tooltiptext">
+								A non-malleable transaction identifier used for referring to transactions everywhere, except in the block hash merkle root.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-id" 
+								target="_blank">Learn more</a></span></span></th>
+							<th class="name"><span class="tooltip">Hash<span class="tooltiptext">
+								A transaction identifier used only when building the block hash merkle root.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
+								target="_blank">Learn more</a></span></span></th>
 							<th class="confirmations">Confirmations</th>
 							<th class="ins-outs">Inputs / Outputs</th>
 							<th class="mass">Mass</th>
-							<th class="payload-hash">Payload hash</th>
-							<th class="payload" width="10%">Payload</th>
+							<th class="payload-hash"><span class="tooltip">Payload hash<span class="tooltiptext">
+								The hash of the arbitrary data field, payload, in a transaction.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#payload-hash"
+								target="_blank">Learn more</a></span></span></th>
+							<th class="payload" width="10%"><span class="tooltip">Payload<span class="tooltiptext">
+								A field inside a transaction, used to store arbitrary data and code (i.e., subnetwork-specific logic).
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#payload"
+								target="_blank">Learn more</a></span></span></th>
 							<th class="lock-time">Lock Time</th>
 							<th class="gas">GAS</th>
 							<th class="sub-network-id">Sub-Network id</th>

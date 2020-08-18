@@ -35,6 +35,8 @@ menuPanelStyle.innerHTML = `
     menu-panel .close-menu {
         cursor:pointer;
     }
+    .link {color:var(--dagviz-link-color); text-decoration:none;}
+    .links{margin-top: 30px;}
 `;
 
 document.head.appendChild(menuPanelStyle);
@@ -72,6 +74,11 @@ class MenuPanel extends BaseElement{
         </div>
         <div class="items"></div>
         <a class="toggle tutorial-link" title="Open Tutorial" @click="${this.openTutorial}">TUTORIAL</a>
+        
+        <div class="links">
+            <a class="toggle link" href="https://discord.gg/WmGhhzk" target="_blank"><i class="fal fa-comment-dots" style="padding-right:5px;"></i>Discord</a>
+            <a class="toggle link" href="https://github.com/kaspanet" target="_blank"><i class="fab fa-github" style="padding-right:5px;"></i>GitHub</a>
+        </div>
         `;
 	}
 
@@ -82,6 +89,7 @@ class MenuPanel extends BaseElement{
 
     toggle() {
         this.hidden_ = !this.hidden_;
+        console.log("HIDDEN in TOGGLE",this.hidden_);
         let width;
         //$(this).css('display', this.hidden_ ? 'none' : 'block');
         if(this.hidden_) {
@@ -107,8 +115,18 @@ class MenuPanel extends BaseElement{
             top : `${y}px`
         });
     }
+
+    onWindowClick(e){
+        console.log("HIDDEN", this.hidden_);
+		if(this.hidden_)
+            return;
+        this.toggle();
+
+	}
     
 	firstUpdated() {
+
+        this.renderRoot.addEventListener("click",this._onClick.bind(this));
 
         this.anchorEl = document.getElementById('menu-anchor');
         $(this.anchorEl).on('click', (e) => {
@@ -143,7 +161,23 @@ class MenuPanel extends BaseElement{
 		// ['mousedown','mouseup','mousemove'].forEach((event) => {
 		// 	this.addEventListener(event, (e) => { this.onMouseEvent(event,e); });
 		// })
+    }
+    _onClick(e){
+		// if(this.disabled)
+		// 	return
+		this.toggle();
 	}
+
+    connectedCallback(){
+    	super.connectedCallback();
+    	this._onWindowClick = this._onWindowClick||this.onWindowClick.bind(this);
+    	window.addEventListener("click", this._onWindowClick, {capture:true})
+    }
+	disconnectedCallback(){
+    	super.disconnectedCallback();
+    	window.removeEventListener("click", this._onWindowClick);
+    	
+    }
 
 }
 
