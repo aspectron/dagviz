@@ -679,10 +679,12 @@ export class GraphNodeLink{
 				arrowType = '-teal';
 			}
 			else if(color){
-				if(node&&node.selected)
+				if(node&&node.selected){
 					stroke = this.defaultColor;
+					strokeWidth = 10;}
 				else {
-					strokeWidth = 2;
+					stroke = 'var(--graph-link-parents-color)';
+					strokeWidth = 7;
 				}
 			}
 		//}
@@ -1282,7 +1284,14 @@ export class GraphNode{
 					link.highlight(false,null,true);
 				});
 			}
+			(this.parentLinks || []).forEach((l)=>{
+				l.highlight(true, l.source, false); 
+			});
+			(this.linkNodes || []).forEach((l)=>{
+				l.highlight(true, l.source, false); 
+			});
 
+			// console.log("THIS.DATA", this.data);
 			(this.parentLinks || []).forEach((l)=>{
 				if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == false){
 					l.highlight(false, l.source, true); 
