@@ -1257,7 +1257,7 @@ export class App {
 
 		this.io.on('dag/selected-tip', (data) => {
 			return;
-
+			
 			this.verbose && console.log('dag/selected-tip:', data);
 
 			this.ctx.lastBlockData = data;
@@ -1290,7 +1290,7 @@ export class App {
 			Object.values(nodes).forEach(node => {
 				if(removedBlockHashes.includes(node.data.acceptingBlockHash)) {
 					node.data.acceptingBlockHash = null;
-					updateMap[node.data.blockHash] = block;
+					updateMap[node.data.blockHash] = node;
 				}
 			});			
 

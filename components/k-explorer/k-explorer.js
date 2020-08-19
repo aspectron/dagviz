@@ -473,7 +473,7 @@ export class KExplorer extends LitElement{
 				${this.debug?html`<pre>${this.renderJSON(data)}</pre>`:''}
 				<table>
                     <tr>
-	                    <td>Block Hash</td>
+						<td>Block Hash</td>
                     	<td>
                     		${data.blockHash} 
 		                    <i @click="${this.copyHashToClipboard}" class='is-link fal fa-clipboard'></i>
@@ -483,13 +483,16 @@ export class KExplorer extends LitElement{
                     <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                     <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
                     <tr><td>Timestamp</td><td><strong>${getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
-                    <tr><td><span class="tooltip">Blue Score </span><span class="tooltiptext">The blue score of a block is the number of blue blocks in its past. 
+                    <tr><td><flow-reference>Blue Score<div slot="tooltip">
+							The blue score of a block is the number of blue blocks in its past. 
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#blue-score" 
-							target="_blank">Learn more</a></span></td><td><strong>${data.blueScore}</strong></td></tr>
+							target="_blank">Learn more</a></div></flow-reference></td>
+					<td><strong>${data.blueScore}</strong></td></tr>
                     <tr>
-                        <td><span class="tooltip">Confirmations <span class="tooltiptext">A block's number of confirmations is the difference in blue score between the selected tip and the block's accepting block + 1.
+                        <td><flow-reference>Confirmations <div slot="tooltip">
+							A block's number of confirmations is the difference in blue score between the selected tip and the block's accepting block + 1.
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#confirmations" 
-							target="_blank">Learn more</a></span></span></td>
+							target="_blank">Learn more</a></div></flow-reference></td>
                         <td>
                             <strong>
                                 <k-block-cfm
@@ -498,12 +501,16 @@ export class KExplorer extends LitElement{
                             </strong>
                         </td>
                     </tr>
-                    <tr><td><span class="tooltip">Is Chain Block<span class="tooltiptext">A block on the selected parent chain.
+                    <tr><td><flow-reference>Is Chain Block<div slot="tooltip">
+							A block on the selected parent chain.
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#chain-block" 
-							target="_blank">Learn more</a></span></span></td><td><strong>${data.isChainBlock}</strong></td></tr>
-                    <tr><td><span class="tooltip">Mass<span class="tooltiptext">A measure used to approximate the storage and computational costs of transactions and blocks. 
+							target="_blank">Learn more</a></div></flow-reference></td>
+							<td><strong>${data.isChainBlock}</strong></td></tr>
+                    <tr><td><flow-reference>Mass<div slot="tooltip">
+							A measure used to approximate the storage and computational costs of transactions and blocks. 
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#mass" 
-							target="_blank">Learn more</a></span></span></td><td><strong>${data.mass}</strong></td></tr>
+							target="_blank">Learn more</a></div></flow-reference></td>
+							<td><strong>${data.mass}</strong></td></tr>
                     <tr><td>Nonce</td><td>${data.nonce}</td></tr>
                     <tr title="ECMH commitment to the UTXO up to and including this block.">
                     	<td>UTXO Commitment</td>
@@ -638,29 +645,43 @@ export class KExplorer extends LitElement{
 				<table cellpadding="0" cellspacing="0" border="0">
 					<thead>
 						<tr>
-							<th class="id"><span class="tooltip">ID<span class="tooltiptext">
+							<th class="id"><flow-reference>ID<div slot="tooltip">
 								A non-malleable transaction identifier used for referring to transactions everywhere, except in the block hash merkle root.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-id" 
-								target="_blank">Learn more</a></span></span></th>
-							<th class="name"><span class="tooltip">Hash<span class="tooltiptext">
+								target="_blank">Learn more</a></div></flow-reference></th>
+							<th class="name"><flow-reference>Hash<div slot="tooltip">
 								A transaction identifier used only when building the block hash merkle root.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
 								target="_blank">Learn more</a></span></span></th>
 							<th class="confirmations">Confirmations</th>
 							<th class="ins-outs">Inputs / Outputs</th>
 							<th class="mass">Mass</th>
-							<th class="payload-hash"><span class="tooltip">Payload hash<span class="tooltiptext">
+							<th class="payload-hash"><flow-reference>Payload hash<div slot="tooltip">
 								The hash of the arbitrary data field, payload, in a transaction.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#payload-hash"
-								target="_blank">Learn more</a></span></span></th>
-							<th class="payload" width="10%"><span class="tooltip">Payload<span class="tooltiptext">
+								target="_blank">Learn more</a></div></flow-reference></th>
+							<th class="payload" width="10%"><flow-reference>Payload<div slot="tooltip">
 								A field inside a transaction, used to store arbitrary data and code (i.e., subnetwork-specific logic).
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#payload"
-								target="_blank">Learn more</a></span></span></th>
+								target="_blank">Learn more</a></div></flow-reference></th>
 							<th class="lock-time">Lock Time</th>
-							<th class="gas">GAS</th>
-							<th class="sub-network-id">Sub-Network id</th>
-							<th class="accepting-block-hash">Merging Chain Block Hash</th>
+							<th class="gas"><flow-reference>GAS<div slot="tooltip">
+								A measure of computation cost for subnetwork transactions.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#gas"
+								target="_blank">Learn more</a></div></flow-reference>
+							</th>
+							<th class="sub-network-id"><flow-reference>Sub-Network id<div slot="tooltip">
+								The subnetwork mechanism in Kaspa's consensus layer allows nodes with a common interest to form 
+								nested networks with their own rules within the greater Kaspa network.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#subnetwork"
+								target="_blank">Learn more</a></div></flow-reference>
+							</th>
+							<th class="accepting-block-hash"><flow-reference>Merging Chain Block Hash<div slot="tooltip">
+								When a chain block B is added to the DAG, transactions from blue blocks that B merges, 
+								which spend outputs available in the UTXO set, are accepted, while transactions which do not are rejected.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#accepted-transactions"
+								target="_blank">Learn more</a></div></flow-reference>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
