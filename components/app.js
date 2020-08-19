@@ -1287,7 +1287,7 @@ export class App {
 				}
 			});
 
-			nodes.forEach(node => {
+			Object.values(nodes).forEach(node => {
 				if(removedBlockHashes.includes(node.data.acceptingBlockHash)) {
 					node.data.acceptingBlockHash = null;
 					updateMap[node.data.blockHash] = block;

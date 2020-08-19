@@ -89,7 +89,6 @@ class MenuPanel extends BaseElement{
 
     toggle() {
         this.hidden_ = !this.hidden_;
-        console.log("HIDDEN in TOGGLE",this.hidden_);
         let width;
         //$(this).css('display', this.hidden_ ? 'none' : 'block');
         if(this.hidden_) {
@@ -117,7 +116,6 @@ class MenuPanel extends BaseElement{
     }
 
     onWindowClick(e){
-        console.log("HIDDEN", this.hidden_);
 		if(this.hidden_)
             return;
         this.toggle();

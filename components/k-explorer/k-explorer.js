@@ -253,8 +253,7 @@ export class KExplorer extends LitElement{
 			.tooltip .tooltiptext {
 				visibility: hidden;
 				display:flex;flex-direction:column;
-				max-width: 170px;
-				min-width:130px;
+				width:200px;
 				font-size: 0.9rem;
 				font-weight:normal;
 				background-color: black;
@@ -484,9 +483,9 @@ export class KExplorer extends LitElement{
                     <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                     <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
                     <tr><td>Timestamp</td><td><strong>${getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
-                    <tr><td><span class="tooltip">Blue Score <span class="tooltiptext">The blue score of a block is the number of blue blocks in its past. 
+                    <tr><td><span class="tooltip">Blue Score </span><span class="tooltiptext">The blue score of a block is the number of blue blocks in its past. 
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#blue-score" 
-							target="_blank">Learn more</a></span></span></td><td><strong>${data.blueScore}</strong></td></tr>
+							target="_blank">Learn more</a></span></td><td><strong>${data.blueScore}</strong></td></tr>
                     <tr>
                         <td><span class="tooltip">Confirmations <span class="tooltiptext">A block's number of confirmations is the difference in blue score between the selected tip and the block's accepting block + 1.
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#confirmations" 
