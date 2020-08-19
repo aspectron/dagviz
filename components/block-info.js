@@ -136,6 +136,8 @@ class BlockInfo extends BaseElement{
                 border: 4px solid rgba(0,0,0,0);
             }
             .is-link{cursor:pointer}
+
+            .red .cfm {display:none;}
 		`;
 	}
 
@@ -152,8 +154,11 @@ class BlockInfo extends BaseElement{
 
         const block = this.getBlock();
         const { data } = block;
-
+console.log("BLOCk:",block);
         let ident = data.blockHash.replace(/^0+/,'').substring(0,10);
+
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
+
 
         return html`
                 <link rel="stylesheet" type="text/css" href="/resources/fonts/fontawesome/css/all.min.css" />
@@ -177,7 +182,7 @@ class BlockInfo extends BaseElement{
                 </div>
                 <div class='info-basic'>
                     <span class='blockHash'>${ident}</span>
-                        &Delta;${data.blueScore} (<k-block-cfm blue-score="${data.blueScore}"></k-block-cfm>)<br/>
+                        &Delta;${data.blueScore} ${isBlue?html`(<k-block-cfm blue-score="${data.blueScore}"></k-block-cfm>)`:''} <br/>
                         ${this.getTS(new Date(data.timestamp*1000))} 
                 </div>
                 <div class='info-advanced'>
