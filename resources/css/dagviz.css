@@ -28,6 +28,7 @@ body{
 	--graph-node-text-color-dark:#000;
 	--graph-link-tealing-color:rgba(0, 150, 136, 1);
 	--graph-link-selected-color:blue;
+	--graph-link-parents-color:#666;
 
 	--graph-shape-unknown-color:rgba(184,163,136,1);
 
