@@ -10,18 +10,18 @@ body{
 	--graph-color-a-3:#0058bf; /*rgba(83, 191, 252,1);*/
 	--graph-color-a-4:#0058bf; /*rgba(43, 179, 255,1); */
 	--graph-color-a-5:rgba(194,244,255,0.99);
-	--graph-color-new-1:var(--bg-color);
-	--graph-color-new-2:var(--bg-color);
-	--graph-color-new-3:var(--bg-color);
-	--graph-color-new-4:var(--bg-color);
+	--graph-color-new-1:rgb(235, 235, 235);
+	--graph-color-new-2:rgb(235, 235, 235);
+	--graph-color-new-3:rgb(235, 235, 235);
+	--graph-color-new-4:rgb(235, 235, 235);
 	--graph-color-new-5:var(--bg-color);
-
+	
 	--graph-color-b-1: #f63c3c; /*rgba(249,164,192,0.99);*/
 	--graph-color-b-2: #c90000; /*rgba(251,116,118,1);/*hover*/
 	--graph-color-b-3:#c90000; /*rgba(251,116,118,1);*/
 	--graph-color-b-4:#c90000; /*rgba(251,116,118,1);*/
 	--graph-color-b-5:rgba(255,194,194,0.99);
-
+	
 	--graph-node-selector-stroke:rgba(0,0,0,0.5);
 	--graph-node-selector-fill:rgba(0,0,0,0.5);
 	--graph-node-text-color:#FFF;
@@ -51,12 +51,19 @@ body{
 }
 body.k-theme-dark{
 	opacity:1;
+	background-color:var(--bg-color);
 	--bg-color:#202020;
 	--k-close-btn-bg-color:#202020;
-	background-color:var(--bg-color);
 	--graph-node-link-default-color-1:rgba(255,255,255,0.95);
 	--graph-node-link-default-color-2:rgba(255,255,255,0.95);
+	--graph-node-selector-stroke:rgb(201, 197, 197);
+	--graph-node-selector-fill:rgb(201, 197, 197);
 	--graph-square-stroke:#c6c6c6;
+	--graph-link-parents-color:rgba(212, 208, 208, 0.95);
+	--graph-color-new-1:rgb(201, 197, 197);
+	--graph-color-new-2:rgb(201, 197, 197);
+	--graph-color-new-3:rgb(201, 197, 197);
+	--graph-color-new-4:rgb(201, 197, 197);
 	--graph-color-a-1:#0077c2;
 	--graph-color-a-3:#022338;
 	--graph-color-b-1:#ba2d65;
@@ -88,28 +95,37 @@ body.k-theme-light{
 }
 
 
-#explorer{margin-right:16px;margin-top:15px;margin-left:50px;}
+#explorer{margin-left:30px;}
 #search{
-	min-width:320px;flex:1;border:none;border-bottom:1px solid #888;
-	height:24px;font-family:'Cousine';font-size:16px;
-	margin:2px;padding-left:30px;background-color:transparent;
+	min-width:600px;border:none;flex:1;/*border-bottom:1px solid #888;*/
+	font-family:'Cousine';font-size:16px;
+	background-color:transparent;
 }
-#search-wrapper{padding:0px 50px;background-color:var(--bg-color);align-items:center;}
-.input-icon {
-	position: absolute;
-	left: 3px;
-	top: calc(50% - 0.5em); /* Keep icon in center of input, regardless of the input height */
+#search-wrapper{
+	margin-left:30px;
+	padding:0px 10px 0px 10px;
+	background-color:var(--bg-color);
+	border-radius:8px;
+	/* align-items:left; */
+	max-width:600px;
+	max-height:56px;
+	border:1px solid var(--flow-primary-color);
 }
-input{
-	padding-left: 17px;
-}
-.input-wrapper{
-	position: relative;}
+
 #logo{
 	background:url('/resources/images/k-subtract.svg') center no-repeat;
-	background-size:contain;width:66px;height:58px;margin-right:16px;
+	background-size:contain;width:66px;height:56px;
 	pointer-events:initial;
-	/*background-color:var(--bg-color);*/
+
+}
+
+.group-btns{
+	--flow-btn-padding:10px 20px;
+	--flow-group-btns-border-width: 1px;
+	--flow-btn-color: var(--flow-primary-color);
+	--flow-btn-hover-bg-color: var(--flow-primary-color);
+	--flow-group-btns-active-bg-color: var(--flow-primary-color);
+	
 }
 .toggle{
 	cursor:pointer;margin:2px 8px 2px 8px;padding:2px;display:block;
@@ -156,7 +172,7 @@ body{
 }
 
 
-#left{position:absolute;left:20px;top:80px;user-select:none;}
+#left{position:absolute;left:20px;top:120px;user-select:none;}
 #left .tool{
 	background-position:center center;
 	background-size:cover;background-repeat:no-repeat;transition:all 0.15s;
@@ -174,31 +190,32 @@ body{
 	opacity:0.6;display:block;margin:2px;display:flex;
 	flex-direction:row;justify-content:left; position: absolute;
 	z-index: 0;
-	top:50%;
-	left: 7%;
+	top:100%;
+	left: 5%;
 	
 }
 
 .tooltip i{display:block;margin:2px 4px 2px 4px;font-size:18px;position:relative;}
 .tooltip .text{display:block;margin:2px 4px 2px 4px;}
 
-#menu-bar,#top{pointer-events:none;}
+#menu-bar,#top{pointer-events:none;margin-top:2px;}
 #menu-bar .menu-item, .menu-items{pointer-events:initial;}
-
+#search-wrapper,
+/* .menu-items{max-height:49px;} */
 #menu-bar,
 .menu-items{
 	display:flex;flex-direction:row;
 	align-items:center;
+	
 }
 .menu-items{height:56px; align-items: center;}
 #menu-bar .flex,
 .menu-items .flex{flex:1;}
 .menu-item i,
-.icon-wrapper i{font-size:24px;line-height:56px;width:56px;}
+.icon-wrapper i{font-size:24px;line-height:50px;width:30px;}
 .menu-item{
 	cursor:pointer;height:56px;min-width:48px;text-align:center;
 	background-color:var(--bg-color);
-	/*margin-bottom:5px;*/
 }
 .menu-item>img{
 	width:24px;height:auto;transition:all 0.1s;margin-top:16px;
@@ -210,16 +227,15 @@ body{
 .menu-item .orient-S{transform:rotate(180deg);}
 .menu-item .orient-W{transform:rotate(270deg);}
 .menu-items .menu-item{margin-bottom:0px;}
-#search ::placeholder{color:#bbb;}
+/* #search ::placeholder{color:#bbb;} */
+::placeholder{color:var(--flow-primary-color);}
 #search:focus{outline:none;}
 .search-btn{opacity:0;transition:opacity 1s;}
 #tracking *{opacity:0.25;}
 #tracking.tracking-enabled *{opacity:1;}
-
 .search-btn>img{display:initial;}
-
 #info{font-size:16px;margin-left:80px;margin-top:30px;}
-#rate{font-size:16px; margin-top:8px; color:#333; }
+#rate{font-size:16px; margin:12px 0px 0px 12px; color:#333;}
 .block-info-tip{font-family:"Cousine";font-size:14px;}
 .block-info-tip tr td{vertical-align:top;text-shadow:0px 0px 2px white;}
 .block-info-tip tr td i{
@@ -248,7 +264,7 @@ body.orient-v #timenav{
 body.orient-v #dagViz{height:100vh;width:100vw;}
 .win{
 	position:fixed;z-index:-1;width:100%;height:calc(100% - 70px);
-	left:0px;top:70px;opacity:0;transition:opacity 0.2s ease;
+	left:0px;top:80px;opacity:0;transition:opacity 0.2s ease;
 	background-color:rgba(255,255,255,0.5);
 }
 .win.active{z-index:10000;opacity:1;}
@@ -301,7 +317,7 @@ body.k-theme-dark{
 	--navigator-thumb-stroke-color:#6a6a6a;
 	--navigator-thumb-fill-color:#363636;
 	--navigator-thumb-text-fill-color:#c3c2c2;
-	--last-block-widget-border-color:#FFF;
+	/*--last-block-widget-border-color:#FFF;*/
 }
 .k-theme-dark #get-multi-select-link,
 .k-theme-dark #menu-bar #explorer>img,

@@ -45,20 +45,19 @@
 			<div id='logo' tooltip="fa fa-arrow-to-left:Go to the Genesis block"></div>
 			<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast-green.png' tooltip="Track"><span>Track</span></div>
 			<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"><span>Orientation</span></div>
-			<div id="explorer" class="menu-item"><img src='/resources/images/icons/genealogy.png' tooltip="Toggle Explorer"><flow-btn class="vis">Visualizer</flow-btn><flow-btn class="exp">Explorer</flow-btn></div>
+			<div id="explorer" class="menu-item">
+				<flow-group-btns class="group-btns" selected="" toggleable><flow-btn>Visualizer</flow-btn><flow-btn>Explorer</flow-btn></flow-group-btns>
+			</div>
 			<div id="search-wrapper" class="menu-items">
-				<!-- <div class='icon-wrapper'><i class='fal fa-search' style='font-size:22px;' tooltip="Search for blue score of block "></i></div> -->
-				<div class="input-wrapper">
-					<input type="text" id="search" tooltip="Search for blue score of block " placeholder="Enter blue score or hash...">
-					<label for="search" class="fal fa-search input-icon"></label>
-				</div>
+				<div class='icon-wrapper'><i class='fal fa-search' style='font-size:22px;color:var(--flow-primary-color);'></i></div>
+				<input type="text" id="search" placeholder="Search block hash, blue score, tx id, tx hash or address...">
 				<div id="search-execute" class="menu-item search-btn"><i class='fal fa-arrow-alt-right'></i></div>
 				<div id="search-clear" class="menu-item xsearch-btn"><i class='fal fa-times'></i></div>
 			</div>
-			<div id='rate'></div>
 			<div class="flex" desktop-only></div>
 			<div id="menu-anchor" class="menu-item" data-menu-align="right" data-menu-v-offset="-56"><i class='fal fa-bars' tooltip="Settings"></i></div>
 		</div>
+		<div id='rate'></div>
 		<div id='info'></div>
 	</div>
 	<div id="left">
