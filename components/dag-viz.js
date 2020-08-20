@@ -681,7 +681,7 @@ export class GraphNodeLink{
 			else if(color){
 				if(node&&node.selected){
 					stroke = this.defaultColor;
-					strokeWidth = 10;}
+					strokeWidth = 7;}
 				else {
 					stroke = 'var(--graph-link-parents-color)';
 					strokeWidth = 7;
@@ -1291,7 +1291,7 @@ export class GraphNode{
 				l.highlight(true, l.source, false); 
 			});
 
-			// console.log("THIS.DATA", this.data);
+			console.log("THIS.DATA", this.data);
 			(this.parentLinks || []).forEach((l)=>{
 				if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == false){
 					l.highlight(false, l.source, true); 

@@ -228,8 +228,8 @@ export class KExplorer extends LitElement{
 			.heading .btn.close-btn{
 				position:absolute;
 				margin-left:10px;
-				right:20px;
-				top:-50px;
+				right:18px;
+				top:-55px;
 				padding:0px;
 				width:30px;
 				height:30px;
@@ -458,6 +458,8 @@ export class KExplorer extends LitElement{
 	}
 	renderBlock(){
 		let data = this.block;
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
+		console.log("DATA",data);
 		if(!data)
 			return html``;
 		return html`
@@ -488,7 +490,7 @@ export class KExplorer extends LitElement{
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#blue-score" 
 							target="_blank">Learn more</a></div></flow-reference></td>
 					<td><strong>${data.blueScore}</strong></td></tr>
-                    <tr>
+					${isBlue?html`<tr>
                         <td><flow-reference>Confirmations <div slot="tooltip">
 							A block's number of confirmations is the difference in blue score between the selected tip and the block's accepting block + 1.
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#confirmations" 
@@ -500,7 +502,8 @@ export class KExplorer extends LitElement{
                                     cfm="${data.confirmations}"></k-block-cfm>
                             </strong>
                         </td>
-                    </tr>
+                    </tr>`:''}
+                    
                     <tr><td><flow-reference>Is Chain Block<div slot="tooltip">
 							A block on the selected parent chain.
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#chain-block" 
@@ -532,6 +535,14 @@ export class KExplorer extends LitElement{
                     	<td>Parent Block Hashes</td>
                     	<td>
                     		${(data.parentBlockHashes||[]).map(v=>
+                    			html`<div class="k-link" data-b-hash="${v}">${v}</div>`
+                    		)}
+                    	</td>
+					</tr>
+					<tr>
+                    	<td>Merged Block Hashes</td>
+                    	<td>
+                    		${(data.acceptedBlockHashes||[]).map(v=>
                     			html`<div class="k-link" data-b-hash="${v}">${v}</div>`
                     		)}
                     	</td>
