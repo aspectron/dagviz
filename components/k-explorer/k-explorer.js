@@ -204,6 +204,8 @@ export class KExplorer extends LitElement{
 				animation:var(--k-highlight-animation, k-highlight-ani-1) 2s;
 			}
 
+			.block-hashes{display:flex;flex-direction:row;justify-content:space-between;max-width:700px;}
+
 			@keyframes k-highlight-ani-1{
 				0%  {background: transparent;}
 				50% {background:var(--k-highlight-bg-color, green);color:var(--k-highlight-color, #FFF)}
@@ -459,7 +461,13 @@ export class KExplorer extends LitElement{
 	renderBlock(){
 		let data = this.block;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
-		console.log("DATA",data);
+		// console.log("DATA",data);
+		let par_only = data.parentBlockHashes.filter(val => !data.acceptedBlockHashes.includes(val));
+		let par_mer = data.parentBlockHashes.filter(val => data.acceptedBlockHashes.includes(val));
+		let mer_only = data.acceptedBlockHashes.filter(val => !data.parentBlockHashes.includes(val));
+		// console.log("PARENTS AND MERGED", par_mer);
+		// console.log("PARENTS ONLY",par_only);
+		// console.log("MERGED ONLY",mer_only);
 		if(!data)
 			return html``;
 		return html`
@@ -531,22 +539,31 @@ export class KExplorer extends LitElement{
                     	<td>Accepting Block Hash</td>
                     	<td class="k-link" data-b-hash="${data.acceptingBlockHash}">${data.acceptingBlockHash}</td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                     	<td>Parent Block Hashes</td>
                     	<td>
                     		${(data.parentBlockHashes||[]).map(v=>
                     			html`<div class="k-link" data-b-hash="${v}">${v}</div>`
                     		)}
                     	</td>
-					</tr>
+					</tr> -->
 					<tr>
-                    	<td>Merged Block Hashes</td>
+						<td><flow-reference>Block Hashes<div slot="tooltip">
+						Block Hashes is the combination of Parent Block Hashes and <a class="link-tooltip" href="https://docs.kas.pa/kaspa/reference/consensus/merged-blocks" 
+							target="_blank">Merged Block Hashes</a></div></flow-reference>
+						</td>
                     	<td>
-                    		${(data.acceptedBlockHashes||[]).map(v=>
-                    			html`<div class="k-link" data-b-hash="${v}">${v}</div>`
+                    		${(par_mer||[]).map(v=>
+                    			html`<div class="block-hashes k-link"><div class="k-link" data-b-hash="${v}">${v}</div><div>P, M</div></div>`
+							)}
+							${(par_only||[]).map(v=>
+                    			html`<div class="block-hashes k-link"><div class="k-link" data-b-hash="${v}">${v}</div><div>P</div></div>`
+							)}
+							${(mer_only||[]).map(v=>
+                    			html`<div class="block-hashes k-link"><div class="k-link" data-b-hash="${v}">${v}</div><div>M</div></div>`
                     		)}
-                    	</td>
-                    </tr>
+						</td>
+					</tr>
                     <!--tr>
                     	<td>Child Block Hashes</td>
                     	<td>

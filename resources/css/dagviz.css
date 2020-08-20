@@ -120,7 +120,7 @@ body.k-theme-light{
 }
 
 .group-btns{
-	--flow-btn-padding:10px 20px;
+	--flow-btn-padding:13px 20px;
 	--flow-group-btns-border-width: 1px;
 	--flow-btn-color: var(--flow-primary-color);
 	--flow-btn-hover-bg-color: var(--flow-primary-color);
