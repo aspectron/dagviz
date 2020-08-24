@@ -97,7 +97,7 @@ body.k-theme-light{
 
 #explorer{margin-left:30px;}
 #search{
-	min-width:600px;border:none;flex:1;/*border-bottom:1px solid #888;*/
+	min-width:500px;border:none;flex:1;/*border-bottom:1px solid #888;*/
 	font-family:'Cousine';font-size:16px;
 	background-color:transparent;
 }
