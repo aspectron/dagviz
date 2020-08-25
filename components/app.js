@@ -889,9 +889,9 @@ export class App {
 			this.ctls.track.toggle();
 		});
 
-		const $explorerImg = $('#explorer');
-		$explorerImg.click((e) => {
-			if(this.kExplorerWin && this.kExplorerWin.classList.contains("active")){
+		const $viewTypeBtns = $('#viewTypeBtns');
+		$viewTypeBtns.on("group-btn-select", e=>{
+			if(this.kExplorerWin && e.detail.selected == "visualizer"){
 				this.kExplorerWin.close();
 				this.storeUndo();
 				return
@@ -1644,11 +1644,7 @@ export class App {
 			this.kExplorer.hideSettings = true;
 			this.kExplorerWin = document.querySelector("#explorerWin");
 			this.kExplorerWin.close = ()=>{
-				document.body.classList.toggle("explorer-active", false);
-				if(this.kExplorerWin.classList.contains("active")){
-					this.kExplorerWin.classList.remove("active");
-					this.storeUndo()
-				}
+				this.updateViewType('visualizer');
 			}
 			this.kExplorer.setApi(new KApi());
 			let $body = $(document.body);
@@ -1711,11 +1707,24 @@ export class App {
 		}
 		if(!method)
 			return
-		this.kExplorerWin.classList.add("active");
-		document.body.classList.toggle("explorer-active", true);
+		
+		this.updateViewType('explorer');
 		if(this.kExplorer.callApi)
 			this.kExplorer.callApi([method, ...paths], params);
 		
+	}
+
+	updateViewType(type="explorer"){
+		document.body.classList.toggle("explorer-active", type == "explorer");
+		$("#viewTypeBtns")[0].selected = type;
+		if(type == "explorer"){
+			this.kExplorerWin.classList.add("active");
+		}else{
+			if(this.kExplorerWin.classList.contains("active")){
+				this.kExplorerWin.classList.remove("active");
+				this.storeUndo()
+			}
+		}
 	}
 
 	async focusOnBlock(hash) {
