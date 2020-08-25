@@ -257,7 +257,7 @@ class DAGViz {
         const app = new WebApp();
         const flowRouter = new FlowRouter(app, {
             rootFolder:path.dirname(__filename),
-            folders:['/components']
+            folders:[{url:'/components', folder:'/components'}]
         });
 
         if(this.args.kdx) {
