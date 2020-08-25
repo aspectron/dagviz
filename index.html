@@ -46,7 +46,11 @@
 			<div id="tracking" class="menu-item"><img src='/resources/images/icons/multicast-green.png' tooltip="Track"><span>Track</span></div>
 			<div id="orientation" class="menu-item"><img src='/resources/images/icons/north-direction.png' tooltip="Change orientation"><span>Orientation</span></div>
 			<div id="explorer" class="menu-item">
-				<flow-group-btns class="group-btns" selected="" toggleable><flow-btn>Visualizer</flow-btn><flow-btn>Explorer</flow-btn></flow-group-btns>
+				<flow-group-btns class="group-btns" selected="visualizer" 
+					toggleable>
+					<flow-btn data-value="visualizer">Visualizer</flow-btn>
+					<flow-btn data-value="explorer">Explorer</flow-btn>
+				</flow-group-btns>
 			</div>
 			<div id="search-wrapper" class="menu-items">
 				<div class='icon-wrapper'><i class='fal fa-search' style='font-size:22px;color:var(--flow-primary-color);'></i></div>
