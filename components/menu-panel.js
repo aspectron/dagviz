@@ -87,17 +87,21 @@ class MenuPanel extends BaseElement{
         window.tutorial(0);
     }
 
-    toggle() {
+    toggle(from) {
+        //console.log("from", from, this.hidden_?'was-hidden':'was-visible')
         this.hidden_ = !this.hidden_;
+        
         let width;
         //$(this).css('display', this.hidden_ ? 'none' : 'block');
         if(this.hidden_) {
+            this.removeWindowEvent();
             width = this.getBoundingClientRect().width;
             $(this).css('opacity', 0);
             dpc(300, () => {
                 $(this).css('display', 'none');
             })
         } else {
+            this.addWindowEvent();
             $(this).css('opacity', 0);
             $(this).css('display', 'flex');
             width = this.getBoundingClientRect().width;
@@ -118,13 +122,16 @@ class MenuPanel extends BaseElement{
     onWindowClick(e){
 		if(this.hidden_)
             return;
-        this.toggle();
+        let p = e.target.closest("menu-panel");
+        if(p && p == this)
+            return
+        this.toggle("onWindowClick");
 
 	}
     
 	firstUpdated() {
 
-        this.renderRoot.addEventListener("click",this._onClick.bind(this));
+        //this.renderRoot.addEventListener("click",this._onClick.bind(this));
 
         this.anchorEl = document.getElementById('menu-anchor');
         $(this.anchorEl).on('click', (e) => {
@@ -132,7 +139,7 @@ class MenuPanel extends BaseElement{
             this.toggle();
         });
 
-        $('.close-menu',this).on('click', ()=>{
+        $('.close-menu', this).on('click', ()=>{
             this.toggle();
         });
 
@@ -166,15 +173,21 @@ class MenuPanel extends BaseElement{
 		this.toggle();
 	}
 
-    connectedCallback(){
-    	super.connectedCallback();
-    	this._onWindowClick = this._onWindowClick||this.onWindowClick.bind(this);
-    	window.addEventListener("click", this._onWindowClick, {capture:true})
+    addWindowEvent(){
+        if(!this._onWindowClick){
+        	this._onWindowClick = this.onWindowClick.bind(this);
+            window.addEventListener("click", this._onWindowClick, {capture:true})
+        }
     }
-	disconnectedCallback(){
-    	super.disconnectedCallback();
-    	window.removeEventListener("click", this._onWindowClick);
-    	
+	removeWindowEvent(){
+        if(this._onWindowClick){
+    	    window.removeEventListener("click", this._onWindowClick);
+            this._onWindowClick = null;
+        }
+    }
+    disconnectedCallback(){
+        super.disconnectedCallback();
+        this.removeWindowEvent();
     }
 
 }
