@@ -502,6 +502,7 @@ export class GraphNodeLink{
 		this.target.attachNode();
 		this.linkIndex = 0;//holder.getNodeSortedIndex(this.source);
 		this.isTealing = false;
+		this.isHighlighted = false;
 
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
@@ -642,10 +643,16 @@ export class GraphNodeLink{
 		}
 	}
 
-	highlight(color, node=null, isTealing=null) {
+	highlight(isHighlighted=null, node=null, isTealing=null) {
 		if(isTealing!==null)
 			this._isTealing = isTealing;
 		isTealing = this._isTealing;
+
+		if(isHighlighted != null){
+			isHighlighted = !!(isHighlighted && !isTealing)
+			this.isHighlighted = isHighlighted;
+		}
+		isHighlighted = this.isHighlighted;
 
 		//isTealing = isTealing || !!this.source.parentLinks.find(l=>l.isTealing);
 		//console.log('highlight arrows ->', node);
@@ -654,9 +661,9 @@ export class GraphNodeLink{
 		let stroke = this.defaultColor;
 		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth);
 		let arrowType = '';
-		//if(color) {
+		//if(isHighlighted) {
 			if(this.isChainBlockLink) {
-				strokeWidth = 7;//color?7:strokeWidth;
+				strokeWidth = 7;//isHighlighted?7:strokeWidth;
 				if(isTealing)
 					stroke = 'var(--graph-link-tealing-color)';
 				else
@@ -668,7 +675,7 @@ export class GraphNodeLink{
 			else
 			if(this.source.selected && this.target.selected){
 				stroke = 'var(--graph-link-selected-color)';
-				strokeWidth = color?5:strokeWidth;
+				strokeWidth = isHighlighted?5:strokeWidth;
 				arrowType = '-selected';
 			}
 			else
@@ -678,7 +685,7 @@ export class GraphNodeLink{
 				isTealing = true;
 				arrowType = '-teal';
 			}
-			else if(color){
+			else if(isHighlighted){
 				if(node&&node.selected){
 					stroke = this.defaultColor;
 					strokeWidth = 7;}
@@ -704,7 +711,7 @@ export class GraphNodeLink{
 		//	p.transition().duration(200)
 		//}
 		
-		let opacity = (color || isTealing) ? 1 : this.defaultOpacity
+		let opacity = (isHighlighted || isTealing) ? 1 : this.defaultOpacity
 		if(p.__opacity != opacity){
 			p.__opacity = opacity;
 			p.style('opacity', opacity)
@@ -1273,68 +1280,73 @@ export class GraphNode{
 
 	
 	highlightLinks(highlight = true) {
+		let isTealing = highlight;
 		// console.log("MY CHILDREN LINKS", this.parentLinks);
 		// console.log('MY PARENTS LINKS', this.linkNodes);
-		if(highlight) {
+		//if(highlight) {
 			let cbh = this.data.childBlockHashes
 			if(!cbh || !cbh.includes(this.data.acceptingBlockHash)) {
 				let links = this.holder.getAcceptanceLinks(this.data.blockHash,this.data.acceptingBlockHash);
 				this.holder.indirectLinks.push(...links);
 				(links || []).forEach((link)=>{
-					link.highlight(false,null,true);
+					link.highlight(false, null, isTealing);
 				});
 			}
 			(this.parentLinks || []).forEach((l)=>{
-				l.highlight(true, l.source, false); 
+				l.highlight(highlight, l.source, false); 
 			});
 			(this.linkNodes || []).forEach((l)=>{
-				l.highlight(true, l.source, false); 
+				l.highlight(highlight, l.source, false); 
 			});
 
 			// console.log("THIS.DATA", this.data);
 			(this.parentLinks || []).forEach((l)=>{
-				if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == false){
-					l.highlight(false, l.source, true); 
-				}
-				else if(l.target.data.acceptingBlockHash == l.source.id && l.target.data.isChainBlock == true){
-					l.highlight(false, l.source, true);
-					
-					(this.linkNodes || []).forEach((l)=>{
-						if(l.source.data.acceptedBlockHashes.includes(l.target.id))
-							l.highlight(false, l.source, true);
-					});
+				if(l.target.data.acceptingBlockHash != l.source.id)
+					return
+				l.highlight(false, l.source, isTealing);
+				if(l.target.data.isChainBlock !== true)
+					return
+				
+				(this.linkNodes || []).forEach((l)=>{
+					if(l.source.data.acceptedBlockHashes.includes(l.target.id))
+						l.highlight(false, l.source, isTealing);
+				});
 
-					let difference = this.data.acceptedBlockHashes.filter(x => !this.data.parentBlockHashes.includes(x));
+				let difference = this.data.acceptedBlockHashes.filter(x => !this.data.parentBlockHashes.includes(x));
 
-					let links = difference.map( hash => {
-						return this.holder.getAcceptanceLinks(hash,this.data.blockHash)
-					}).filter(v=>v).flat();
+				let links = difference.map( hash => {
+					return this.holder.getAcceptanceLinks(hash,this.data.blockHash)
+				}).filter(v=>v).flat();
 
-					this.holder.indirectLinks.push(...links);
+				this.holder.indirectLinks.push(...links);
 
-					//console.log("LINKS", links);
-					(links || []).forEach((link)=>{
-						link.highlight(false,null,true);
-					});
-				}
+				//console.log("LINKS", links);
+				(links || []).forEach((link)=>{
+					link.highlight(false, null, isTealing);
+				});
 				
 			});
 
-		}else {
-			this.holder.highlightLinks(this.getLinks(), null, this);
-		}
+		//}else {
+		//	this.holder.highlightLinks(this.getLinks(), null, this);
+		//}
 		
 	}
 
 	onNodeOut(){
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.removeClass('focus');
-		this.highlightConnectedBlocks(false)
+		this.highlightConnectedBlocks(false);
+		
 
 		this.$info.html('');
 
-		if(!this.selected)
+		if(!this.selected){
+			this.highlightLinks(false);
 			this.holder.highlightLinks(this.getLinks(), null, this);
+		}else{
+			this.select(true);
+		}
 
 		while (this.holder.indirectLinks.length){
 			let link = this.holder.indirectLinks.shift();
