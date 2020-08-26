@@ -13,10 +13,10 @@ import {buildPagination, getTS, copyToClipboard, renderPagination, btnStyle} fro
 import {debounce, basePath} from "./k-utils.js";
 import {KLastBlocks} from './k-last-blocks.js';
 
+
 export {KAPI, KLink, kLinkStyles, KBlock, KBlockCfm, KPath, KLastBlocks};
 export {isElementVisible, paginationStyle, scollbarStyle, loadingImgStyle, buildPagination};
 export {getTS, copyToClipboard, renderPagination, btnStyle}
-
 
 
 
@@ -735,8 +735,19 @@ export class KExplorer extends LitElement{
 		</div>
 		`;
 	}
+	commas(v, precision = 0) {
+		var parts = parseFloat(v).toString().split('.');
+//		var parts = parseFloat(v).toFixed(parseInt(precision)).toString().split('.');
+		parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		   return parts.join('.');
+	   }
 	renderTransaction(){
 		const t = this.transaction;
+		const amount_outputs = t.outputs.reduce((acc, cur) => acc + cur.value,0);
+		const amount_inputs = t.inputs.reduce((acc, cur) => acc + cur.value,0);
+		let fees =  amount_inputs - amount_outputs;
+		if (amount_inputs == 0)
+			fees = 0;
 		if(!t)
 			return html``;
 		return html`
@@ -765,6 +776,15 @@ export class KExplorer extends LitElement{
 					<tr class="ins-outs">
 						<td>Inputs / Outputs</td>
 						<td>${t.inputs.length} / ${t.outputs.length}</td>
+					</tr>
+					<tr class="">
+						<td>Amount</td>
+						<td>${this.commas(amount_outputs)}</td>
+						
+					</tr>
+					<tr class="">
+						<td>Fees</td>
+						<td>${this.commas(fees)}</td>
 					</tr>
 					<!--tr class="accepting-blue-score"><td>Accepting Blue Score</td><td>${t.acceptingBlockBlueScore}</td></tr-->
                 </table>
