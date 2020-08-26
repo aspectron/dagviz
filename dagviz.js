@@ -384,8 +384,11 @@ class DAGViz {
             //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 
+        const dataVars = new Map();
         app.get('/', (req, res, next)=>{
-            res.sendFile("./index.html");
+            let pkg = require("./package.json");
+            dataVars.set("version", pkg.version);
+            res.sendFile("./index.html", {vars:dataVars});
             //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 

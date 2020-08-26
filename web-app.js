@@ -47,7 +47,7 @@ class WebApp {
             res.end();
         }
         res.sendFile = (filePath, options={})=>{
-            let {contentType} = options;
+            let {contentType, vars} = options;
             contentType = contentType || mime.contentType(path.extname(filePath));
             
             fs.readFile(filePath, null, (err, data)=>{
@@ -57,6 +57,12 @@ class WebApp {
                 } else {
                     if(contentType)
                         res.writeHead(200, {'Content-Type': contentType});
+                    if(vars){
+                        data = data+"";
+                        vars.forEach((v, k)=>{
+                            data = data.replace(new RegExp('<% '+k+' %>'), v);
+                        })
+                    }
                     res.write(data);
                 }
                 res.end();

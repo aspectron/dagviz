@@ -29,6 +29,7 @@
 	<script type="module" src="/node_modules/@aspectron/flow-ux/flow-ux.js"></script>
 	<script type="module" src="/components/app.js" crossorigin></script>
 	<script type="module" src="/components/app-tutorial.js" crossorigin></script>
+	<script type="module" src="/components/app-startup-dialog.js" crossorigin></script>
 	<script type="module" src="/components/navigator.js" crossorigin></script>
 	<script type="module" src="/components/block-info.js" crossorigin></script>
 	<script type="module" src="/components/menu-panel.js" crossorigin></script>
@@ -39,6 +40,7 @@
 </head>
 <body>
 	<app-tutorial></app-tutorial>
+	<app-startup-dialog></app-startup-dialog>
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='top'>
 		<div id="menu-bar">
@@ -90,10 +92,17 @@
 		import { App } from '/components/app.js';
 		window.addEventListener("WebComponentsReady", ()=>{
 			console.log("WebComponentsReady")
+			let {localStorage} = window;
 		
-			if(window.localStorage && window.localStorage.tutorial!=1){
+			if(localStorage && localStorage.tutorial!=1){
 				localStorage.tutorial = 1;
 				window.tutorial();
+			}
+
+			const version = '<% version %>';
+			if(localStorage && localStorage.version!=version){
+				localStorage.version = version;
+				window.showStartupDialog(true);
 			}
 			//localStorage.tutorial = 0;
 			
