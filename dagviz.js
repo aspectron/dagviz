@@ -380,7 +380,9 @@ class DAGViz {
         */
 
         app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next)=>{
-            res.sendFile("./index.html");
+            let pkg = require("./package.json");
+            dataVars.set("version", pkg.version);
+            res.sendFile("./index.html", {vars:dataVars});
             //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 
@@ -632,7 +634,7 @@ class DAGViz {
     async restoreLastBlockHash() {
         let rows = await this.sql(`SELECT hash FROM last_block_hash WHERE id = 1`);
 
-console.log("LAST BLOCK RETURN ROWS:", rows);
+        console.log("LAST BLOCK RETURN ROWS:", rows);
 
         let row = rows.shift();
         if(!row)
@@ -666,6 +668,28 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
             });
 
         });
+    }
+
+    fetchAddressTxs(address, options={}) {
+        return new Promise((resolve,reject) => {
+            let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
+            rp({url: `${this.kasparov}/transactions/address/${address}?${args}`, rejectUnauthorized}).then((text) => {
+                let data = null;
+                try {
+                    data = JSON.parse(text);
+                } catch(ex) {
+                    reject(ex);
+                }
+                resolve(data);
+            }, (err) => {
+                if((err+"").indexOf('ECONNREFUSED'))
+                    console.log("ECONNREFUSED".red, `${this.kasparov}/transactions/address/${address}?${args}`)
+                else
+                    console.log(err);
+                reject(err);
+            });
+            
+        })
     }
 
     fetch(options) {
@@ -1230,17 +1254,36 @@ console.log("LAST BLOCK RETURN ROWS:", rows);
 
     async doSearch(text) {
 
+        let blocks = null;
+
         //console.log('text length:',text.length);
-        if(text.length == 64) {
-            let blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=$1`, [text]);
-            //console.log(blocks);
-            blocks = blocks.map(block => this.deserealizeBlock(block));
-            // console.log("responding:",blocks);
-            return Promise.resolve({blocks});
+        if(/^(kaspatest:|kaspa:)/.test(text) || text.length == 42){
+            let adress = text;
+            if(adress.indexOf(":")>-1)
+                adress = adress.split(":")[1];
+            if(adress.length == 42){
+                //blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=$1`, [_text]);
+                let transactions = await this.fetchAddressTxs(text)
+                
+                let hashes = transactions.filter(t=>t.acceptingBlockHash)
+                            .map(t=>t.acceptingBlockHash);
+                //console.log("doSearch:transactions hashes", hashes)
+                blocks = [];
+                if(hashes.length)
+                    blocks = await this.sql(format(`SELECT * FROM blocks WHERE blockHash IN (%L)`, hashes));
+            }
         }
 
-        return Promise.reject('Not Found');
+        if(!blocks && text.length == 64) {
+            blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=$1`, [text]);
+        }
 
+        //console.log(blocks);
+        blocks = blocks.map(block => this.deserealizeBlock(block));
+        // console.log("responding:",blocks);
+        return Promise.resolve({blocks});
+
+        //return Promise.reject('Not Found');
     }
 
     sleep(t) {
