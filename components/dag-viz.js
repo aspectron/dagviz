@@ -644,6 +644,7 @@ export class GraphNodeLink{
 	}
 
 	highlight(isHighlighted=null, node=null, isTealing=null) {
+		/// console.log("highlight 123");
 		if(isTealing!==null)
 			this._isTealing = isTealing;
 		isTealing = this._isTealing;
@@ -662,10 +663,13 @@ export class GraphNodeLink{
 		let strokeWidth = this.holder.buildStrokeWidth(this.defaultStrokeWidth);
 		let arrowType = '';
 		//if(isHighlighted) {
+			// console.log("IS CHAIN BLOCK", this.isChainBlockLink);
 			if(this.isChainBlockLink) {
-				strokeWidth = 7;//isHighlighted?7:strokeWidth;
-				if(isTealing)
+				strokeWidth = 4;//isHighlighted?7:strokeWidth;
+				if(isTealing) {
 					stroke = 'var(--graph-link-tealing-color)';
+					strokeWidth = 7;//isHighlighted?7:strokeWidth;
+				}
 				else
 				if(this.source.selected && this.target.selected){
 					stroke = 'var(--graph-link-selected-color)';
