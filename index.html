@@ -40,7 +40,7 @@
 </head>
 <body>
 	<app-tutorial></app-tutorial>
-	<app-startup-dialog></app-startup-dialog>
+	<!--app-startup-dialog></app-startup-dialog-->
 	<dag-viz id="dagViz"></dag-viz>
 	<div id='top'>
 		<div id="menu-bar">
@@ -99,11 +99,12 @@
 				window.tutorial();
 			}
 
-			const version = '<% version %>';
+			/*const version = '<% version %>';
 			if(localStorage && localStorage.version!=version){
 				localStorage.version = version;
 				window.showStartupDialog(true);
 			}
+			*/
 			//localStorage.tutorial = 0;
 			
 			$(document).ready(()=>{
