@@ -1861,10 +1861,13 @@ export class App {
 
 	fetchSearch(v) {
 		return new Promise((resolve,reject) => {
-			if(this.activeView == "explorer"){
-				if(/^(kaspatest:|kaspa:)/.test(v))
+			// if(this.activeView == "explorer"){
+				if(/^(kaspatest:|kaspa:)/.test(v)){
+					v=v.trim();
+					//console.log("VVVVVVVVVVVVVVVV",`"${v}"`);
 					return this.openExplorer("transactions/address/"+v);
-			}
+				}
+			// }
 			$.ajax('/search?q='+(v+'').trim(), {
 				dataType: 'json',
 				// timeout: 500,     // timeout milliseconds
