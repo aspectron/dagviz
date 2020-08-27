@@ -939,15 +939,30 @@ export class GraphNode{
 		if(!block)
 			return false;
 		isBlue = isBlue || !!(block.acceptingBlockHash || block.isChainBlock);
-		let isNew = false;
+		if(isBlue)
+			return false;
+
+		let isNew = true;
 		let childBlockHashes = block.childBlockHashes || [];
-		if(!isBlue){
-			isNew = !childBlockHashes.find(hash=>{
-				if(!hash)
-					return
-				return !this.isNewNode(this.holder.nodes[hash]);
-			})
+		childBlockHashes.find(hash=>{
+			let b = this.holder.nodes[hash]
+			if(!hash || !b)
+				return
+			let n = this.isNewNode(b.data);
+			/*if(block.blueScore == 72960 && n){
+				console.log("n:", b.data)
+			}*/
+			if(!n){
+				isNew = false;
+				return true
+			}
+		})
+
+		/*
+		if(block.blueScore == 72960){
+			console.log(block.blockHash, isNew, childBlockHashes.join(","))
 		}
+		*/
 
 		return isNew;
 	}
@@ -955,6 +970,16 @@ export class GraphNode{
 		let isBlue = !!(block.acceptingBlockHash || block.isChainBlock);
 		let isNew = this.isNewNode(block, isBlue)
 		let isRed = !isBlue && !isNew;
+		/*
+		if(!window.___block)
+			window.___block = [];
+		if(window.___block.length <10 && block.blueScore == 72960)
+			window.___block.push({childs:block.childBlockHashes, isBlue, isNew, isRed, hash:block.blockHash,  b:block});
+		if(window.___block.length == 9 && !window.___blockprint){
+			window.___blockprint = true;
+			console.log("blockblockblock", window.___block)
+		}
+		*/
 		return {isBlue, isNew, isRed}
 	}
 	initElements(){
