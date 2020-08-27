@@ -39,6 +39,7 @@ const BLOCK_PROPERTIES = [
     "blueScore",
     "isChainBlock",
     "mass",
+    "acceptedBlockHashes"
 ];
  
 class DAGViz {

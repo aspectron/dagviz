@@ -36,6 +36,7 @@ const BLOCK_PROPERTIES = [
     "blueScore",
     "isChainBlock",
     "mass",
+    "acceptedBlockHashes"
 ];
 
 export class Block extends GraphNode {
@@ -704,16 +705,17 @@ export class App {
 		});
 
 		new MultiChoice(this.ctx, 'highlightNewBlock',{
-			30:'30 sec',
+			1:'ON',
+			/*30:'30 sec',
 			15:'15 sec',
 			10:'10 sec',
 			5:'5 sec',
-			3:'3 sec',
+			3:'3 sec',*/
 			0:'OFF'
 		}, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
 			advanced:true,
 			update:(text, v)=>{
-				this.updateNewBlockTimer(+v)
+				this.setHighlightNewBlock(+v)
 			}
 		});
 
@@ -1174,7 +1176,7 @@ export class App {
 	initIO() {
 		this.io = io();
 
-		this.newBlocks = new Map();
+		//this.newBlocks = new Map();
 
 		this.io.on('dag/blocks', (data) => {
 
@@ -1191,15 +1193,19 @@ export class App {
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];
 			// this.ctx.lastBlockDataTS = Date.now();
+			/*
 			this.highlightNewBlockTimer();
 			if(this.ctx.highlightNewBlock>0){
-				let cTS = Date.now();
+				//let cTS = Date.now() + 1000000000;
 				blocks.forEach(b=>{
-					b.cTS = cTS;
-					b.isNew = 1;
-					this.newBlocks.set(b.blockHash, {cTS});
+					if(b.acceptingBlockHash || b.isChainBlock)
+						return
+					//b.cTS = cTS;
+					//b.isNew = 1;
+					this.newBlocks.set(b.blockHash, 1);//{cTS});
 				})
 			}
+			*/
 
 			this.lastBlockWidget.updateBlocks(blocks);
 			let ce = new CustomEvent("k-last-blocks", {detail:{blocks}})
@@ -1276,41 +1282,41 @@ export class App {
 
 			const { addedChainBlocks, removedBlockHashes } = args;
 			const { nodes } = this.graph;
-			const updateMap = { };
+			const updated = new Map();
 
 			removedBlockHashes.forEach((hash) => {
 				const node = nodes[hash];
 				if(node) {
 					node.data.isChainBlock = false;
 					// node.data.acceptingBlockHash = null;
-					updateMap[node.data.blockHash] = node;
+					updated.set(node.data.blockHash, node);
 				}
 			});
 
 			Object.values(nodes).forEach(node => {
 				if(removedBlockHashes.includes(node.data.acceptingBlockHash)) {
 					node.data.acceptingBlockHash = null;
-					updateMap[node.data.blockHash] = node;
+					updated.set(node.data.blockHash, node);
 				}
-			});			
+			});		
 
 			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
 				const { hash, acceptedBlockHashes } = instr;
 				const ref = nodes[hash];
 				if(ref) {
 					ref.data.isChainBlock = true;
-					updateMap[ref.data.blockHash] = ref;
+					updated.set(ref.data.blockHash, ref);
 				}
 				acceptedBlockHashes.forEach((target) => {
 					const node = nodes[target];
 					if(node) {
 						node.data.acceptingBlockHash = hash;
-						updateMap[node.data.blockHash] = node;
+						updated.set(node.data.blockHash, node);
 					}
 				});
 			});
 
-			Object.values(updateMap).forEach((node) => {
+			updated.forEach((node) => {
 				node.updateStyle();
 				node.rebuildLinks();
 			});
@@ -1496,27 +1502,34 @@ export class App {
 		this.initContext(state);
 	}
 
+	/*
 	highlightNewBlockTimer(ts){
-		let t = ts;
-		ts = ts || Date.now() - (this.ctx.highlightNewBlock*1000);
-		let {nodes} = this.graph, b, isNew;
+		//let t = ts;
+		//ts = ts || Date.now() - (this.ctx.highlightNewBlock*1000);
+		let {nodes} = this.graph, b;//, isNew;
 		this.newBlocks.forEach((o, blockHash)=>{
 			b = nodes[blockHash];
-			isNew = (o.cTS >= ts);
+			//isNew = (o.cTS >= ts);
 			if(b){
 				if(b.data.acceptingBlockHash != b.__acceptingBlockHash)// || b.data.isChainBlock != b.__isChainBlock)
 				//if(b.data.acceptingBlockHash || b.data.isChainBlock)
-					isNew = false;
-				if(!isNew){
-					b.data.isNew = false;
+				//	isNew = false;
+				//if(!isNew){
+				//	b.data.isNew = false;
 					b.updateStyle();
-				}
+				//}
 			}
-			if(!isNew)
+			if(b.data.acceptingBlockHash || b.data.isChainBlock || b.data.acceptedBlockHashes)
 				this.newBlocks.delete(blockHash);
 		})
 	}
+	*/
 
+	setHighlightNewBlock(ON){
+		this.highlightNewBlocks = ON == 1;
+		this.graph.highlightNewBlocks = this.highlightNewBlocks;
+	}
+	/*
 	updateNewBlockTimer(highlightNewBlock, time=0){
 		if(highlightNewBlock){
 			if(this.highlightNewBlockTimerId)
@@ -1532,8 +1545,8 @@ export class App {
 			this.highlightNewBlockTimer(Date.now() + 100000)
 			clearInterval(this.highlightNewBlockTimerId);
 		}
-
 	}
+	*/
 	
 	async initContext(state) {
 		// pos, k, select, all ctls
@@ -1554,7 +1567,7 @@ export class App {
 				this.ctx.updateOffset();
 			}
 		}
-		this.updateNewBlockTimer(+state.highlightNewBlock);
+		this.setHighlightNewBlock(+state.highlightNewBlock);
 
 		if(state.k) {
 			const t = this.graph.paintEl.transform;

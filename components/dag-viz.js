@@ -939,7 +939,8 @@ export class GraphNode{
 		let shapeConfig = this.getShapeConfig();
 		let zoom = this.holder.paintEl.transform.k
 		const data = this.data;
-		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
+		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
+		const isNew = this.holder.highlightNewBlocks && !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
 		const isRed = !isBlue;
 		/*
 		this._xx = this._xx || {count:0};
@@ -952,7 +953,7 @@ export class GraphNode{
 		*/
 		// if(this.data.blockHash == "00000df00264b8faaa9ab07eeb1dcc9a84b908aac4e467cef1caf0dceaf9cb1f")
 		// 	console.log("RB CHECK:",this.data.blockHash,isBlue,isRed);
-		if(data.isNew){
+		if(isNew){
 			data.color = 'var(--graph-color-new-1)';
 			data.highlightColor_before = 'var(--graph-color-new-2)'
 			data.highlightColor = 'var(--graph-color-new-3)'
@@ -1004,7 +1005,7 @@ export class GraphNode{
 		})
 
 		const textColor = data.textColor || 
-			(data.isNew ? 'var(--graph-node-text-color-dark)' : 'var(--graph-node-text-color)');
+			(isNew ? 'var(--graph-node-text-color-dark)' : 'var(--graph-node-text-color)');
 
 		if(this.quality != 'low') {
 			if(!this.textEl)
@@ -1090,7 +1091,8 @@ export class GraphNode{
 	updateStyle(force){
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		if(data.isNew)
+		const isNew = !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
+		if(this.holder.highlightNewBlocks && isNew)
 			data.color = 'var(--graph-color-new-1)';
 		else if(isBlue)
 			data.color = 'var(--graph-color-a-1)';
