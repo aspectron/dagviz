@@ -935,16 +935,33 @@ export class GraphNode{
 		if(this.linkNodes)
 			this.linkNodes.forEach(node => node.setStaticPosition(x, y));	
 	}
+	isNewNode(block, isBlue=false){
+		if(!block)
+			return false;
+		isBlue = isBlue || !!(block.acceptingBlockHash || block.isChainBlock);
+		let isNew = false;
+		let childBlockHashes = block.childBlockHashes || [];
+		if(!isBlue){
+			isNew = !childBlockHashes.find(hash=>{
+				if(!hash)
+					return
+				return !this.isNewNode(this.holder.nodes[hash]);
+			})
+		}
+
+		return isNew;
+	}
+	getBlockTypes(block){
+		let isBlue = !!(block.acceptingBlockHash || block.isChainBlock);
+		let isNew = this.isNewNode(block, isBlue)
+		let isRed = !isBlue && !isNew;
+		return {isBlue, isNew, isRed}
+	}
 	initElements(){
 		let shapeConfig = this.getShapeConfig();
 		let zoom = this.holder.paintEl.transform.k
 		const data = this.data;
-		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		const isNew = !isBlue && (
-				//(!data.acceptedBlockHashes || !data.acceptedBlockHashes.length) ||
-				((data.childBlockHashes||"")+"")==""
-			)
-		const isRed = !isBlue && !isNew;
+		const {isBlue, isNew, isRed} = this.getBlockTypes(data);
 		/*
 		this._xx = this._xx || {count:0};
 		if(!this._xx[this.data.blockHash])
@@ -1093,14 +1110,7 @@ export class GraphNode{
 	}
 	updateStyle(force){
 		const data = this.data;
-		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		const isNew = !isBlue && (
-				//(!data.acceptedBlockHashes || !data.acceptedBlockHashes.length) ||
-				((data.childBlockHashes||"")+"")==""
-			)
-		//if(isNew){
-			//console.log("data.childBlockHashes", data.childBlockHashes+"")
-		//}
+		const {isBlue, isNew, isRed} = this.getBlockTypes(data);
 		if(isNew)
 			data.color = 'var(--graph-color-new-1)';
 		else if(isBlue)
