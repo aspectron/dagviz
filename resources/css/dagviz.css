@@ -78,6 +78,7 @@ body.k-theme-dark{
 	--flow-primary-color:  rgba(0,150,136,1);
 	--flow-border-color:  rgba(0,150,136,1);
 	--dagviz-link-color: #c3c2c2;
+	--flow-tooltip-text-bg:#423f3f;
 }
 body.k-theme-light{
 	opacity:1;
