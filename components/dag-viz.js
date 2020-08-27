@@ -1020,6 +1020,7 @@ export class GraphNode{
 		this.color 	= data.color;
 		this.size 	= data.size;
 		this.quality = this.holder.ctx.quality;
+		this.isChainBlock = data.isChainBlock;
 
 		/*this.removeElEvents();
 		if(this.el)
@@ -1143,7 +1144,12 @@ export class GraphNode{
 		else
 			data.color = 'var(--graph-color-b-1)';
 
-		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
+		if(force || 
+			this.isChainBlock != data.isChainBlock || 
+			data.shape != this.shape || 
+			data.color != this.color ||
+			data.size != this.size || 
+			this.quality != this.holder.ctx.quality) {
 			/*
 			if(Date.now()%100 === 0)
 			console.log("xxx", {
