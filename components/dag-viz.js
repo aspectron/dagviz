@@ -940,8 +940,11 @@ export class GraphNode{
 		let zoom = this.holder.paintEl.transform.k
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		const isNew = this.holder.highlightNewBlocks && !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
-		const isRed = !isBlue;
+		const isNew = !isBlue && (
+				//(!data.acceptedBlockHashes || !data.acceptedBlockHashes.length) ||
+				((data.childBlockHashes||"")+"")==""
+			)
+		const isRed = !isBlue && !isNew;
 		/*
 		this._xx = this._xx || {count:0};
 		if(!this._xx[this.data.blockHash])
@@ -1091,8 +1094,14 @@ export class GraphNode{
 	updateStyle(force){
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		const isNew = !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
-		if(this.holder.highlightNewBlocks && isNew)
+		const isNew = !isBlue && (
+				//(!data.acceptedBlockHashes || !data.acceptedBlockHashes.length) ||
+				((data.childBlockHashes||"")+"")==""
+			)
+		//if(isNew){
+			//console.log("data.childBlockHashes", data.childBlockHashes+"")
+		//}
+		if(isNew)
 			data.color = 'var(--graph-color-new-1)';
 		else if(isBlue)
 			data.color = 'var(--graph-color-a-1)';
