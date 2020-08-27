@@ -704,13 +704,9 @@ export class App {
 			}
 		});
 
+		/*
 		new MultiChoice(this.ctx, 'highlightNewBlock',{
 			1:'ON',
-			/*30:'30 sec',
-			15:'15 sec',
-			10:'10 sec',
-			5:'5 sec',
-			3:'3 sec',*/
 			0:'OFF'
 		}, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
 			advanced:true,
@@ -718,7 +714,7 @@ export class App {
 				this.setHighlightNewBlock(+v)
 			}
 		});
-
+		*/
 
 	}
 
@@ -1177,11 +1173,24 @@ export class App {
 		this.io = io();
 
 		//this.newBlocks = new Map();
-
+		let count = 0;
 		this.io.on('dag/blocks', (data) => {
 
 			let { blocks } = data;
 			blocks = blocks.map(data => this.deserealizeBlock(data));
+
+			/*
+			if(count>20)
+				blocks = blocks.map(d=>{
+					d.isChainBlock = false;
+					return d;
+				})
+			*/
+
+			if(!window.___blocks)
+				window.___blocks = blocks;
+
+			count++;
 
 			const ts = Date.now();
 			while(this.blockTimings[0] < ts-1000*60)
@@ -1227,18 +1236,25 @@ export class App {
 				this.graph.updateSimulation();
 			}
 			let oldLastBlock = this.ctx.lastBlockData;
+			let tipBlock = this.ctx.tipBlock;
 			let newLastBlock = blocks[blocks.length-1];
 			blocks.forEach(b=>{
+				if(b.isChainBlock && (!tipBlock || b.blueScore > tipBlock.blueScore)){
+					tipBlock = b;
+				}
 				if(b.blueScore > newLastBlock.blueScore){
 					console.log("#### found newLastBlock ###")
 					newLastBlock = b;
 				}
 			})
+
 			if(!oldLastBlock || oldLastBlock.blueScore<=newLastBlock.blueScore){
 				this.ctx.lastBlockData = newLastBlock;
 				this.ctx.lastBlockDataTS = Date.now();
 				this.verbose && console.log("dag/blocks: newLastBlock", newLastBlock.blueScore, newLastBlock)
 			}
+
+			this.ctx.tipBlock = tipBlock;
 
 			//console.log("newLastBlock.blueScore", newLastBlock.blueScore, this.ctx.max)
 			if(newLastBlock.blueScore > this.ctx.max)
@@ -1261,7 +1277,9 @@ export class App {
 		// 		this.ctx.updateMax(v);
 		// });
 
+		/*
 		this.io.on('dag/selected-tip', (data) => {
+			console.log("selected-tip:data", data)
 			return;
 			
 			this.verbose && console.log('dag/selected-tip:', data);
@@ -1276,6 +1294,7 @@ export class App {
 			this.createBlocks([data]);
 			this.graph.updateSimulation();
 		});
+		*/
 
 		this.io.on('dag/selected-parent-chain', (args) => {
 			this.verbose && console.log('dag/selected-parent-chain', args);
@@ -1300,7 +1319,7 @@ export class App {
 				}
 			});		
 
-			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
+			(count<20) && addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
 				const { hash, acceptedBlockHashes } = instr;
 				const ref = nodes[hash];
 				if(ref) {
@@ -1316,10 +1335,16 @@ export class App {
 				});
 			});
 
+			let tipBlock = this.ctx.tipBlock;
 			updated.forEach((node) => {
+				if(node.data.isChainBlock && (!tipBlock || node.data.blueScore > tipBlock.blueScore)){
+					tipBlock = node.data;
+				}
 				node.updateStyle();
 				node.rebuildLinks();
 			});
+
+			this.ctx.tipBlock = tipBlock;
 
 		});
 
@@ -1372,6 +1397,43 @@ export class App {
 	}
 	centerGraphBy(nodeId){
 		this.graph.centerBy(nodeId);
+	}
+
+	isBlueBlock(block){
+		return !!(block.acceptingBlockHash || block.isChainBlock)
+	}
+
+	isTipBlock(b){
+		//console.log("xxxxx", this.ctx.tipBlock, b.blockHash)
+		return (this.ctx.tipBlock||{}).blockHash == b.blockHash;
+	}
+
+	isRedBlock(block, depth=0){
+		if(depth > 5)
+			return false;
+
+		if(this.isBlueBlock(block))//(block.blueScore>=(this.ctx.lastBlockData || {blueScore:0}).blueScore))
+			return false;
+		if(!block.childBlockHashes)//|| !block.childBlockHashes.filter(b=>b!="").length)
+			return false;
+		//console.log("block.childBlockHashes", block.childBlockHashes)
+
+		let tipBlockHash = (this.ctx.tipBlock||{}).blockHash;
+		
+		if(!tipBlockHash)
+			return false;
+		let {parentBlockHashes} = block;
+		if(!parentBlockHashes)
+			return false;
+		//console.log("parentBlockHashes", parentBlockHashes)
+		return !!parentBlockHashes.find(hash=>{
+			let b = this.graph.nodes[hash];
+			if(!b)
+				return;
+			if(b.data.blockHash==tipBlockHash || this.isRedBlock(b.data, depth+1)){
+				return true;
+			}
+		});
 	}
 
 	async updateRegion(o) {
@@ -1456,6 +1518,15 @@ export class App {
 		// console.log("max, min", this.fullFetch, {forward, reverse, max, min, from, to})
 		let { blocks, max : max_ } = await this.fetch({ from : Math.floor(from), to : Math.ceil(to) });
 		this.ctx.updateMax(max_);
+
+		/*
+		window.___blocks = blocks;
+		let last = blocks[blocks.length-1];
+		console.log("blocks", blocks)
+		if(last){
+			console.log("isRedBlock", this.isRedBlock(last))
+		}
+		*/
 
 		this.region = this.getRegion();
 		//console.log("xxxxx",this.ctx.position, region.position, range, region.range);
@@ -1567,7 +1638,7 @@ export class App {
 				this.ctx.updateOffset();
 			}
 		}
-		this.setHighlightNewBlock(+state.highlightNewBlock);
+		this.setHighlightNewBlock(1);//+state.highlightNewBlock);
 
 		if(state.k) {
 			const t = this.graph.paintEl.transform;

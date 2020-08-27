@@ -6,7 +6,7 @@
   "dependencies": {
     "@aspectron/flow-router": "*",
     "@aspectron/flow-utils": "*",
-    "@aspectron/flow-ux": "*",
+    "@aspectron/flow-ux": "file:../flow-ux",
     "@aspectron/flow-async": "*",
     "@aspectron/flow-process": "*",
     "@webcomponents/webcomponentsjs": "*",

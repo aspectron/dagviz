@@ -940,8 +940,8 @@ export class GraphNode{
 		let zoom = this.holder.paintEl.transform.k
 		const data = this.data;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		const isNew = this.holder.highlightNewBlocks && !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
-		const isRed = !isBlue;
+		const isRed = !isBlue && this.holder.ctx.app.isRedBlock(data);
+		const isNew = !isBlue && !isRed;
 		/*
 		this._xx = this._xx || {count:0};
 		if(!this._xx[this.data.blockHash])
@@ -953,22 +953,26 @@ export class GraphNode{
 		*/
 		// if(this.data.blockHash == "00000df00264b8faaa9ab07eeb1dcc9a84b908aac4e467cef1caf0dceaf9cb1f")
 		// 	console.log("RB CHECK:",this.data.blockHash,isBlue,isRed);
-		if(isNew){
-			data.color = 'var(--graph-color-new-1)';
+		if(this.holder.ctx.app.isTipBlock(data)){
+			data.color = '#00FF00';
 			data.highlightColor_before = 'var(--graph-color-new-2)'
 			data.highlightColor = 'var(--graph-color-new-3)'
-			data.highlightColor_after = 'var(--graph-color-new-4)'
+			data.highlightColor_after = 'var(--graph-color-new-4)';
 		}else if(isBlue){
 			data.color = 'var(--graph-color-a-1)';
 			data.highlightColor_before = 'var(--graph-color-a-2)'
 			data.highlightColor = 'var(--graph-color-a-3)'
 			data.highlightColor_after = 'var(--graph-color-a-4)'
-		}
-		else{
+		}else if(isRed){
 			data.color = 'var(--graph-color-b-1)';
 			data.highlightColor_before = 'var(--graph-color-b-2)'
 			data.highlightColor = 'var(--graph-color-b-3)'
 			data.highlightColor_after = 'var(--graph-color-b-4)'
+		}else{
+			data.color = 'var(--graph-color-new-1)';
+			data.highlightColor_before = 'var(--graph-color-new-2)'
+			data.highlightColor = 'var(--graph-color-new-3)'
+			data.highlightColor_after = 'var(--graph-color-new-4)'
 		}
 
 		this.shape 	= data.shape;
@@ -1090,14 +1094,26 @@ export class GraphNode{
 	}
 	updateStyle(force){
 		const data = this.data;
+		//const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
+		//const isNew = !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock;
-		const isNew = !isBlue && (!data.acceptedBlockHashes || !data.acceptedBlockHashes.length);
-		if(this.holder.highlightNewBlocks && isNew)
-			data.color = 'var(--graph-color-new-1)';
+		const isRed = !isBlue && this.holder.ctx.app.isRedBlock(data);
+		//if(data.parentBlockHashes)
+		//	console.log("isRed", !!this.holder.ctx.tipBlock, this.holder.ctx.app.isRedBlock(data))
+		//const isNew = !isBlue && !isRed;
+		if(this.holder.ctx.app.isTipBlock(data)){
+			//console.log("is isTipBlock", data)
+			data.color = '#00FF00';
+			data.highlightColor_before = 'var(--graph-color-new-2)'
+			data.highlightColor = 'var(--graph-color-new-3)'
+			data.highlightColor_after = 'var(--graph-color-new-4)'
+		}else if(isRed)
+			data.color = 'var(--graph-color-b-1)';
 		else if(isBlue)
 			data.color = 'var(--graph-color-a-1)';
 		else
-			data.color = 'var(--graph-color-b-1)';
+			data.color = 'var(--graph-color-new-1)';
+			
 
 		if(force || data.shape != this.shape || data.color != this.color || data.size != this.size || this.quality != this.holder.ctx.quality) {
 			/*
