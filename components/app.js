@@ -704,20 +704,20 @@ export class App {
 			}
 		});
 
-		new MultiChoice(this.ctx, 'highlightNewBlock',{
-			1:'ON',
-			/*30:'30 sec',
-			15:'15 sec',
-			10:'10 sec',
-			5:'5 sec',
-			3:'3 sec',*/
-			0:'OFF'
-		}, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
-			advanced:true,
-			update:(text, v)=>{
-				this.setHighlightNewBlock(+v)
-			}
-		});
+		// new MultiChoice(this.ctx, 'highlightNewBlock',{
+		// 	1:'ON',
+		// 	/*30:'30 sec',
+		// 	15:'15 sec',
+		// 	10:'10 sec',
+		// 	5:'5 sec',
+		// 	3:'3 sec',*/
+		// 	0:'OFF'
+		// }, 'HIGHLIGHT NEW','fa fa-palette:Highlight new blocks', {
+		// 	advanced:true,
+		// 	update:(text, v)=>{
+		// 		this.setHighlightNewBlock(+v)
+		// 	}
+		// });
 
 
 	}
