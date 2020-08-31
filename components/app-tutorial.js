@@ -147,6 +147,12 @@ class AppTutorial extends BaseElement{
 				
 			}
 			
+			[light] {
+				display: var(--light-display);
+			}
+			[dark] {
+				display: var(--dark-display);
+			}
 		`];
 	}
 
@@ -174,8 +180,8 @@ class AppTutorial extends BaseElement{
 						many blocks are created in parallel.
 				</div>
 				<div class="intro">
-					<img src="/resources/images/tutorial/dag-intro.png" mobile />
-					<img src="/resources/images/tutorial/frame7.png" desktop />
+					<img src="/resources/images/tutorial/dag-intro.png" dark />
+					<img src="/resources/images/tutorial/light/frame7.png" light />
 				</div>
 			</flow-page>
 			${
@@ -212,6 +218,8 @@ class AppTutorial extends BaseElement{
 						<div class="text">
 						The “blue score” of a block is a generalization of the block height in a chain; 
 						it represents the number of blue blocks in the block’s past.
+						<img src="/resources/images/tutorial/light/frame5.png" light />
+						<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
 						</div>
 					</flow-page>
 					<flow-page>
@@ -219,6 +227,8 @@ class AppTutorial extends BaseElement{
 						The recursive process of selecting the parent with the highest blue score, 
 						“the selected parent”, results in the identification of a chain within the blockDAG,
 						 “the selected parent chain”.
+						<img src="/resources/images/tutorial/light/frame5a.png" light />
+						<img src="/resources/images/tutorial/dark/frame5a-dark.png" dark />
 						</div>
 					</flow-page>
 					<flow-page>
@@ -233,6 +243,8 @@ class AppTutorial extends BaseElement{
 						Confirmations in PHANTOM are a generalization of confirmations in a chain,
 						 and are defined by the blue score of the chain blocks atop the transaction. 
 						 The fast block rate enables fast confirmation of transactions.
+						 <img src="/resources/images/tutorial/light/frame3.gif" light />
+						<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
 						</div>
 					</flow-page>
 					<flow-page>
@@ -240,15 +252,15 @@ class AppTutorial extends BaseElement{
 						Blocks contain transactions in the UTXO-model format.
 						</div>
 						<div >
-							<img src="/resources/images/tutorial/frame9.png" mobile />
-							<img src="/resources/images/tutorial/frame9.png" desktop />
+							<img src="/resources/images/tutorial/light/frame9.png" light />
+							<img src="/resources/images/tutorial/dark/frame9-dark.png" dark />
 						</div>
 					</flow-page>
 					<flow-page>
 						<div class="text">I. R. LEGEND</div>
 						<div >
-							<img src="/resources/images/tutorial/legend1.png" mobile />
-							<img src="/resources/images/tutorial/legend1.png" desktop />
+							<img src="/resources/images/tutorial/light/legend1.png" light />
+							<img src="/resources/images/tutorial/dark/legend-dark.png" dark />
 						</div>
 					</flow-page>
 					<flow-page>
@@ -256,8 +268,8 @@ class AppTutorial extends BaseElement{
 						Controls and keyboard shortcuts
 						</div>
 						<div >
-							<img src="/resources/images/tutorial/dag-intro.png" mobile />
-							<img src="/resources/images/tutorial/desktop-keys.png" desktop />
+							<img src="/resources/images/tutorial/light/desktop-keys.png" light/>
+							<img src="/resources/images/tutorial/dark/desktop-keys-dark.png" dark />
 						</div>
 					</flow-page>
 					
