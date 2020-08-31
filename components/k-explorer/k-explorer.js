@@ -229,10 +229,10 @@ export class KExplorer extends LitElement{
 
 			.heading .btn.close-btn{
 				position:absolute;
-				margin-left:10px;
+				/*margin-left:10px;*/
 				right:18px;
 				top:-55px;
-				padding:0px;
+				padding:5px;
 				width:30px;
 				height:30px;
 				border:0px;
