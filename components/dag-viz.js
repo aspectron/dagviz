@@ -507,7 +507,7 @@ export class GraphNodeLink{
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
 			this.defaultColor = 'var(--graph-node-link-default-color-1)';
-			this.defaultStrokeWidth = 4;
+			this.defaultStrokeWidth = 7;
 			this.defaultOpacity = 0.95;
 		} else 
 		{
@@ -957,7 +957,12 @@ export class GraphNode{
 				return true
 			}
 		})
-
+		//if one of the node's children is blue , then isNew is not new anymore
+		this.parentLinks.forEach(link=>{
+			if(link.source.isChainBlock || link.source.data.acceptingBlockHash)
+				isNew=false;
+			
+		});
 		/*
 		if(block.blueScore == 72960){
 			console.log(block.blockHash, isNew, childBlockHashes.join(","))
@@ -1170,14 +1175,22 @@ export class GraphNode{
 			.style('transform', `translate(${this.x}px, ${this.y}px)`)
 		if(this.holder.ctx._arrows == "multi")
 			this.updateLinkIndexes();
-		this.updateArrowHead();	
-		if(this.linkNodes)
-			this.linkNodes.forEach(node=>{
-				if(this.holder.ctx._arrows == "multi")
-					node.target.updateLinkIndexes();
-				node.updateStyle()
-			});
-		this.parentLinks.forEach(link=>link.updateStyle())
+		this.updateArrowHead();
+		if(this.linkNodes){
+				this.linkNodes.forEach(node=>{
+					if(this.holder.ctx._arrows == "multi")
+						node.target.updateLinkIndexes();
+						//node.updateStyle();
+				});
+				let acc = this.linkNodes.slice();
+				acc.concat(this.linkNodes.map(link=>link.target));
+				acc.forEach(link=>link.updateStyle());
+		}
+
+		let accum = this.parentLinks.slice();
+		accum.concat(this.parentLinks.map(link=>link.source));
+		accum.forEach(link=>link.updateStyle());
+		// this.parentLinks.forEach(link=>link.updateStyle());
 	}
 	addParentLink(link){
 		let index = this.parentLinks.findIndex(l=>l.data.child == link.data.child)
