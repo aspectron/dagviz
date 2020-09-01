@@ -831,11 +831,12 @@ export class App {
 		let searchEl = document.getElementById('search');
 		const $searchBtn = $('.search-btn');
 		const $search = $(searchEl);
-		$search.on('keyup', (e) => {
+		
+		const update = (e) => {
 			console.log(e);
 			const v = $search.val();
 			metrics.innerHTML = v;
-
+			
 			let left = searchEl.offsetLeft;
 			let width = Math.max(200,metrics.clientWidth+40);
 			let max = window.innerWidth - left - 128;
@@ -852,7 +853,17 @@ export class App {
 				this.search(v);
 			}
 
+		};
+
+		$search.on('keyup',update);
+		$search.on('paste',(e)=>{
+			dpc(250,()=>{
+				update(e);
+			});
 		});
+	
+		
+		
 
 		$('#search-execute').on('click', () => {
 			const v = $search.val();
@@ -1874,7 +1885,7 @@ export class App {
 
 	fetchSearch(v) {
 		return new Promise((resolve,reject) => {
-			// if(this.activeView == "explorer"){
+		console.log("VVVVV",v);	// if(this.activeView == "explorer"){
 				if(/^(kaspatest:|kaspa:)/.test(v)){
 					v=v.trim();
 					//console.log("VVVVVVVVVVVVVVVV",`"${v}"`);
@@ -1895,6 +1906,7 @@ export class App {
 						reject(errorMessage);
 				}
 			});
+		console.log("VVVVV",v);
 		});
 	}
 
