@@ -46,10 +46,10 @@ class AppTutorial extends BaseElement{
 				overflow:auto;
 				padding:10px;
 				box-sizing:border-box;
-				display:flex;
+				/*display:flex;
 				flex-direction:column; 
 				justify-content: space-evenly; 
-				align-items: center;
+				align-items: center;*/
 				padding-bottom:32px;
 				background-color:var(--bg-color, #FFF);
 			}
@@ -168,7 +168,7 @@ class AppTutorial extends BaseElement{
 		
 		return html`
 		
-		<flow-pages id="pages" class="has-dots" @change="${this.onSlideChange}" dotoffset="${isMobile?0:40}">
+		<flow-pages id="pages" class_="has-dots" @change="${this.onSlideChange}" dotoffset="${isMobile?0:40}">
 		
 			<!-- <div slot="title">${this.slideTitle||'Kaspa Tutorial'}</div> -->
   
@@ -259,19 +259,19 @@ class AppTutorial extends BaseElement{
 			}
 
 			<div slot="buttons" class="buttons">
-				<flow-btn data-btn="skip" @click="${this.skipTutorial}">
-				<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#times"></use></svg>
+				<!--flow-btn data-btn="skip" @click="${this.skipTutorial}">
+					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#times"></use></svg>
 					<span>SKIP</span>
-				</flow-btn>
+				</flow-btn-->
 				<div class="flex" style="align-items:center";le></div>
-				<flow-btn data-btn="prev">
+				<!--flow-btn data-btn="prev">
 					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#arrow-alt-left"></use></svg>
 					<span>PREVIOUS</span>
-				</flow-btn>
+				</flow-btn-->
 
-				<flow-btn data-btn="next">
-					<span>NEXT</span>
-					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#arrow-alt-right"></use></svg>
+				<flow-btn data-btn="close" @click="${this.skipTutorial}">
+					<span>CLOSE</span>
+					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#times"></use></svg>
 				</flow-btn>
 			</div>
 			
