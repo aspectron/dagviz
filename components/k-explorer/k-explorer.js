@@ -282,6 +282,11 @@ export class KExplorer extends LitElement{
 				.heading{padding:5px 10px}
 				th,td{padding:5px}
 				.items{padding-left:0px;margin-top:0px;}
+				.heading .btn.close-btn{
+					right:15px;
+					width:20px;
+					height:20px;
+				}
 			}
 
 		`];
