@@ -172,57 +172,43 @@ class AppTutorial extends BaseElement{
 		
 			<!-- <div slot="title">${this.slideTitle||'Kaspa Tutorial'}</div> -->
   
-			<flow-page class="active">
-				<div class="text">
-						Kaspa is a <flow-link url="https://en.bitcoin.it/wiki/Proof_of_work">PoW</flow-link>-based 
-						ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a blockDAG.
-						A new block gets added to the blockDAG every second and
-						many blocks are created in parallel.
-				</div>
-				<div class="intro">
-					<img src="/resources/images/tutorial/dag-intro.png" dark />
-					<img src="/resources/images/tutorial/light/frame7.png" light />
-				</div>
-			</flow-page>
-			${
-				isMobile ? html`
-					<flow-page>
-						<div class="text">Unlike a blockchain, blocks are not orphaned. Kaspa merges 
-							all blocks into one blockDAG by allowing them to reference multiple parents.
+					<flow-page class="active">
+						<div class="text">
+								Kaspa is a <flow-link url="https://en.bitcoin.it/wiki/Proof_of_work">PoW</flow-link>-based 
+								ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a blockDAG.
+								A new block gets added to the blockDAG every second and
+								many blocks are created in parallel.
+						</div>
 
+						<div class="intro">
+							<img src="/resources/images/tutorial/dag-intro.png" dark />
+							<img src="/resources/images/tutorial/light/frame7.png" light />
 						</div>
-					</flow-page>
-				` : 
-				html`
-					<flow-page>
+			
 						<div class="text">Unlike a blockchain, blocks are not orphaned. Kaspa merges 
 							all blocks into one blockDAG by allowing them to reference multiple parents.
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						Rather than deciding on which conflicting blocks to discard, 
 						the consensus protocol governing the blockDAG, known as PHANTOM, 
 						orders blocks created in parallel. PHANTOM is a generalization 
 						of Bitcoin’s Nakamoto Consensus.
 						</div>
-					</flow-page>
-					<flow-page>
+				
 						<div class="text">
 						PHANTOM favors blocks that are mined on top of up-to-date blocks and 
 						that are propagated sufficiently quickly (i.e. “blue blocks”) 
 						over those withheld or propagated over slow communication channels (i.e. “red blocks”).
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						The “blue score” of a block is a generalization of the block height in a chain; 
 						it represents the number of blue blocks in the block’s past.
 						<img src="/resources/images/tutorial/light/frame5.png" light />
 						<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						The recursive process of selecting the parent with the highest blue score, 
 						“the selected parent”, results in the identification of a chain within the blockDAG,
@@ -230,15 +216,13 @@ class AppTutorial extends BaseElement{
 						<img src="/resources/images/tutorial/light/frame5a.png" light />
 						<img src="/resources/images/tutorial/dark/frame5a-dark.png" dark />
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						Each new block inherits the colouring and thus the order of its past from its 
 						selected parent, and merges blocks created in parallel to its selected parent, 
 						following a colouring and ordering procedure defined by the protocol.
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						Confirmations in PHANTOM are a generalization of confirmations in a chain,
 						 and are defined by the blue score of the chain blocks atop the transaction. 
@@ -246,8 +230,7 @@ class AppTutorial extends BaseElement{
 						 <img src="/resources/images/tutorial/light/frame3.gif" light />
 						<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						Blocks contain transactions in the UTXO-model format.
 						</div>
@@ -255,15 +238,13 @@ class AppTutorial extends BaseElement{
 							<img src="/resources/images/tutorial/light/frame9.png" light />
 							<img src="/resources/images/tutorial/dark/frame9-dark.png" dark />
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">I. R. LEGEND</div>
 						<div >
 							<img src="/resources/images/tutorial/light/legend1.png" light />
 							<img src="/resources/images/tutorial/dark/legend-dark.png" dark />
 						</div>
-					</flow-page>
-					<flow-page>
+					
 						<div class="text">
 						Controls and keyboard shortcuts
 						</div>
@@ -274,36 +255,8 @@ class AppTutorial extends BaseElement{
 					</flow-page>
 					
 					
-				`
+				
 			}
-			<!-- <flow-page class="dagviz-slide" data-title='Dagviz Tutorial'>
-				<div class="items">
-					<table cellpadding="0" cellspacing="0" border="0">
-						<thead>
-						<tr><th width="30%">Keys / UI</th><th class="fn">Function</th></tr>
-						</thead>
-						<tbody>
-						<tr><td>← →<br>Drag mouse</td><td>Pan the blockDAG</td></tr>
-						<tr><td>Home</td><td>Go to Genesis</td></tr>
-						<tr><td>End</td><td>Track live blocks</td></tr>
-						<tr><td>Ctrl + <b>+/-</b>  or Mouse wheel</td><td>Zoom in/out</td></tr>
-						<tr>
-							<td><b>/</b></td><td>Focus search box</td>
-						</tr>
-						<tr>
-							<td><img _class="shadow" src="/resources/images/tutorial/blue-score-navigator.png" /></td>
-							<td>Blue Score navigator</td>
-						</tr>
-						<tr>
-							<td><img _class="shadow" src="/resources/images/tutorial/switch-to-explorer.png" /></td>
-							<td>Switch to explorer</td>
-						</tr>
-						</tbody>
-					</table>
-				</div>
-				<div></div>
-				<div><img src="/resources/images/tutorial/legend.png" /></div>
-			</flow-page> -->
 
 			<div slot="buttons" class="buttons">
 				<flow-btn data-btn="skip" @click="${this.skipTutorial}">
