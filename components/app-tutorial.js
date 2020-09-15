@@ -145,7 +145,7 @@ class AppTutorial extends BaseElement{
 				justify-content: space-evenly; 
 				align-items: center;
 				/*padding: 20px;*/
-				margin-bottom:150px;
+				margin-bottom:200px;
 			}
 
 			
@@ -177,9 +177,9 @@ class AppTutorial extends BaseElement{
 						
 						<div class="section">
 							<div class="text">
-								Kaspa is a <flow-link url="https://en.bitcoin.it/wiki/Proof_of_work">PoW</flow-link>-based 
+								Kaspa is a <flow-link href="https://en.bitcoin.it/wiki/Proof_of_work">PoW</flow-link>-based 
 								ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a 
-								<flow-link url="https://docs.kas.pa/kaspa/reference/blockdag"> blockDAG.</flow-link>
+								<flow-link href="https://docs.kas.pa/kaspa/reference/blockdag"> blockDAG.</flow-link>
 								A new block gets added to the blockDAG every second and
 								many blocks are created in parallel.</div>
 							<img src="/resources/images/tutorial/light/frame1.png" light />
@@ -189,8 +189,9 @@ class AppTutorial extends BaseElement{
 
 
 						<div class="section">
-							<div class="text">Unlike a blockchain, blocks are not <flow-link url="https://en.bitcoin.it/wiki/Orphan_Block">orphaned</flow-link>.
-							 Kaspa merges all blocks into one blockDAG by allowing them to reference multiple parents.
+							<div class="text">Unlike a blockchain, blocks are not 
+								<flow-link href="https://en.bitcoin.it/wiki/Orphan_Block">orphaned</flow-link>.
+								 Kaspa merges all blocks into one blockDAG by allowing them to reference multiple parents.
 							</div>
 						</div>
 					
@@ -198,10 +199,11 @@ class AppTutorial extends BaseElement{
 
 						<div class="section">
 							<div class="text">
-							Rather than deciding on which conflicting blocks to discard, 
-							the consensus protocol governing the blockDAG, known as PHANTOM, 
-							orders blocks created in parallel. PHANTOM is a generalization 
-							of Bitcoin’s Nakamoto Consensus.</div>
+								Rather than deciding on which conflicting blocks to discard, 
+								the consensus protocol governing the blockDAG, known as 
+								<flow-link href="https://eprint.iacr.org/2018/104.pdf">PHANTOM</flow-link>, 
+								orders blocks created in parallel. PHANTOM is a generalization 
+								of Bitcoin’s Nakamoto Consensus.</div>
 							<img src="/resources/images/tutorial/light/frame3.gif" light />
 							<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
 						</div>
@@ -209,9 +211,11 @@ class AppTutorial extends BaseElement{
 
 						<div class="section">
 							<div class="text">
-							PHANTOM favors blocks that are mined on top of up-to-date blocks and 
-							that are propagated sufficiently quickly (i.e. “blue blocks”) 
-							over those withheld or propagated over slow communication channels (i.e. “red blocks”).</div>
+								PHANTOM favors blocks that are mined on top of up-to-date blocks and 
+								that are propagated sufficiently quickly (i.e. 
+								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/blue-set">blue blocks</flow-link>”) 
+								over those withheld or propagated over slow communication channels (i.e.
+								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/red-set">red blocks</flow-link>”).</div>
 							<img src="/resources/images/tutorial/light/frame4.png" light />
 							<img src="/resources/images/tutorial/dark/frame4-dark.png" dark />
 						</div>
@@ -220,8 +224,9 @@ class AppTutorial extends BaseElement{
 
 						<div class="section">
 							<div class="text">
-							The “blue score” of a block is a generalization of the block height in a chain; 
-							it represents the number of blue blocks in the block’s past.</div>
+								The “<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/blue-score">blue score</flow-link>”
+								of a block is a generalization of the block height in a chain; 
+								it represents the number of blue blocks in the block’s past.</div>
 							<img src="/resources/images/tutorial/light/frame5.png" light />
 							<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
 						</div>
@@ -229,9 +234,10 @@ class AppTutorial extends BaseElement{
 
 						<div class="section">
 							<div class="text">
-							The recursive process of selecting the parent with the highest blue score, 
-							“the selected parent”, results in the identification of a chain within the blockDAG,
-							“the selected parent chain”.</div>
+								The recursive process of selecting the parent with the highest blue score, 
+								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/selected-parent">the selected parent</flow-link>”,
+								results in the identification of a chain within the blockDAG,
+								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/selected-parent-chain">the selected parent chain</flow-link>”.</div>
 							<img src="/resources/images/tutorial/light/frame6.png" light />
 							<img src="/resources/images/tutorial/dark/frame6-dark.png" dark />
 						</div>
@@ -242,7 +248,8 @@ class AppTutorial extends BaseElement{
 							<div class="text">
 							Each new block inherits the colouring and thus the order of its past from its 
 							selected parent, and merges blocks created in parallel to its selected parent, 
-							following a colouring and ordering procedure defined by the protocol.</div>
+							following a <flow-link href="https://docs.kas.pa/kaspa/archive/archive/phantom-ghostdag#phantom">colouring and ordering</flow-link>
+							procedure defined by the protocol.</div>
 							<img src="/resources/images/tutorial/light/frame7.png" light />
 							<img src="/resources/images/tutorial/dark/frame7.png" dark />
 						</div>
@@ -251,7 +258,8 @@ class AppTutorial extends BaseElement{
 
 						<div class="section">
 							<div class="text">
-							Confirmations in PHANTOM are a generalization of confirmations in a chain,
+							<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/confirmations">Confirmations</flow-link>
+							in PHANTOM are a generalization of confirmations in a chain,
 							and are defined by the blue score of the chain blocks atop the transaction. 
 							The fast block rate enables fast confirmation of transactions.</div>
 							<img src="/resources/images/tutorial/light/frame8.gif" light />
@@ -259,7 +267,9 @@ class AppTutorial extends BaseElement{
 						</div>
 						
 						<div class="section">
-							<div class="text">Blocks contain transactions in the UTXO-model format.</div>
+							<div class="text"><flow-link href="https://docs.kas.pa/kaspa/reference/blocks">Blocks</flow-link>
+							contain <flow-link href="https://docs.kas.pa/kaspa/reference/transactions">transactions</flow-link>
+							in the <flow-link href="https://docs.kas.pa/kaspa/reference/txo/utxo">UTXO</flow-link>-model format.</div>
 							<img src="/resources/images/tutorial/light/frame9.png" light />
 							<img src="/resources/images/tutorial/dark/frame9-dark.png" dark />
 						</div>
