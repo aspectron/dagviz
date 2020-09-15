@@ -46,16 +46,11 @@ class AppTutorial extends BaseElement{
 				overflow:auto;
 				padding:10px;
 				box-sizing:border-box;
-				/*display:flex;
-				flex-direction:column; 
-				justify-content: space-evenly; 
-				align-items: center;*/
 				padding-bottom:32px;
 				background-color:var(--bg-color, #FFF);
 			}
 
-			/*flow-page > div:nth-child(1){*/
-				flow-page > div.intro {
+			flow-page > div.intro {
 				object-fit: contain;
 				min-width: 180px;
 				text-align: justify;
@@ -63,11 +58,11 @@ class AppTutorial extends BaseElement{
 			}
 
 			flow-page div img{
-				max-width:100%;
+				max-width:75%;
 				max-height:100%;	
 			}
 
-			.dagviz-slide{
+			/*.dagviz-slide{
 				flex-direction:row;
 				flex-wrap:wrap;0
 				overflow:auto;
@@ -107,8 +102,8 @@ class AppTutorial extends BaseElement{
 			tr:last-child td{border-bottom:0px;}
 			.shadow{box-shadow:2px 2px 4px 0px rgba(0, 0, 0, 0.3);}
 			td img{border:1px solid rgba(0, 0, 0, 0.1);height:auto;}
-			div.items{margin-bottom:20px;}
-			flow-page p{margin-bottom:10px;}
+			div.items{margin-bottom:20px;}*/
+			/*flow-page p{margin-bottom:10px;}*/
 
 			[mobile] { display: none; }
 			[desktop] { display: block; }
@@ -140,12 +135,19 @@ class AppTutorial extends BaseElement{
 				font-size:20px;
 				font-style:normal;
 				font-family: "Consolas";
-				/*border: 1px solid red;*/
 				width:75%;
-				/*padding:10px;*/
-				margin:10px 0px;;
+				margin:20px 0px;;
 				
 			}
+			.section {
+				display:flex;
+				flex-direction:column; 
+				justify-content: space-evenly; 
+				align-items: center;
+				/*padding: 20px;*/
+				margin-bottom:150px;
+			}
+
 			
 			[light] {
 				display: var(--light-display);
@@ -170,88 +172,114 @@ class AppTutorial extends BaseElement{
 		
 		<flow-pages id="pages" class_="has-dots" @change="${this.onSlideChange}" dotoffset="${isMobile?0:40}">
 		
-			<!-- <div slot="title">${this.slideTitle||'Kaspa Tutorial'}</div> -->
   
 					<flow-page class="active">
-						<div class="text">
+						
+						<div class="section">
+							<div class="text">
 								Kaspa is a <flow-link url="https://en.bitcoin.it/wiki/Proof_of_work">PoW</flow-link>-based 
-								ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a blockDAG.
+								ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a 
+								<flow-link url="https://docs.kas.pa/kaspa/reference/blockdag"> blockDAG.</flow-link>
 								A new block gets added to the blockDAG every second and
-								many blocks are created in parallel.
+								many blocks are created in parallel.</div>
+							<img src="/resources/images/tutorial/light/frame1.png" light />
+							<img src="/resources/images/tutorial/dark/frame1-dark.png" dark />
 						</div>
 
-						<div class="intro">
-							<img src="/resources/images/tutorial/dag-intro.png" dark />
+
+
+						<div class="section">
+							<div class="text">Unlike a blockchain, blocks are not <flow-link url="https://en.bitcoin.it/wiki/Orphan_Block">orphaned</flow-link>.
+							 Kaspa merges all blocks into one blockDAG by allowing them to reference multiple parents.
+							</div>
+						</div>
+					
+
+
+						<div class="section">
+							<div class="text">
+							Rather than deciding on which conflicting blocks to discard, 
+							the consensus protocol governing the blockDAG, known as PHANTOM, 
+							orders blocks created in parallel. PHANTOM is a generalization 
+							of Bitcoin’s Nakamoto Consensus.</div>
+							<img src="/resources/images/tutorial/light/frame3.gif" light />
+							<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
+						</div>
+
+
+						<div class="section">
+							<div class="text">
+							PHANTOM favors blocks that are mined on top of up-to-date blocks and 
+							that are propagated sufficiently quickly (i.e. “blue blocks”) 
+							over those withheld or propagated over slow communication channels (i.e. “red blocks”).</div>
+							<img src="/resources/images/tutorial/light/frame4.png" light />
+							<img src="/resources/images/tutorial/dark/frame4-dark.png" dark />
+						</div>
+					
+
+
+						<div class="section">
+							<div class="text">
+							The “blue score” of a block is a generalization of the block height in a chain; 
+							it represents the number of blue blocks in the block’s past.</div>
+							<img src="/resources/images/tutorial/light/frame5.png" light />
+							<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
+						</div>
+					
+
+						<div class="section">
+							<div class="text">
+							The recursive process of selecting the parent with the highest blue score, 
+							“the selected parent”, results in the identification of a chain within the blockDAG,
+							“the selected parent chain”.</div>
+							<img src="/resources/images/tutorial/light/frame6.png" light />
+							<img src="/resources/images/tutorial/dark/frame6-dark.png" dark />
+						</div>
+
+
+
+						<div class="section">
+							<div class="text">
+							Each new block inherits the colouring and thus the order of its past from its 
+							selected parent, and merges blocks created in parallel to its selected parent, 
+							following a colouring and ordering procedure defined by the protocol.</div>
 							<img src="/resources/images/tutorial/light/frame7.png" light />
+							<img src="/resources/images/tutorial/dark/frame7.png" dark />
 						</div>
-			
-						<div class="text">Unlike a blockchain, blocks are not orphaned. Kaspa merges 
-							all blocks into one blockDAG by allowing them to reference multiple parents.
+
+
+
+						<div class="section">
+							<div class="text">
+							Confirmations in PHANTOM are a generalization of confirmations in a chain,
+							and are defined by the blue score of the chain blocks atop the transaction. 
+							The fast block rate enables fast confirmation of transactions.</div>
+							<img src="/resources/images/tutorial/light/frame8.gif" light />
+							<img src="/resources/images/tutorial/dark/frame8.gif" dark />
 						</div>
-					
-						<div class="text">
-						Rather than deciding on which conflicting blocks to discard, 
-						the consensus protocol governing the blockDAG, known as PHANTOM, 
-						orders blocks created in parallel. PHANTOM is a generalization 
-						of Bitcoin’s Nakamoto Consensus.
-						</div>
-				
-						<div class="text">
-						PHANTOM favors blocks that are mined on top of up-to-date blocks and 
-						that are propagated sufficiently quickly (i.e. “blue blocks”) 
-						over those withheld or propagated over slow communication channels (i.e. “red blocks”).
-						</div>
-					
-						<div class="text">
-						The “blue score” of a block is a generalization of the block height in a chain; 
-						it represents the number of blue blocks in the block’s past.
-						<img src="/resources/images/tutorial/light/frame5.png" light />
-						<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
-						</div>
-					
-						<div class="text">
-						The recursive process of selecting the parent with the highest blue score, 
-						“the selected parent”, results in the identification of a chain within the blockDAG,
-						 “the selected parent chain”.
-						<img src="/resources/images/tutorial/light/frame5a.png" light />
-						<img src="/resources/images/tutorial/dark/frame5a-dark.png" dark />
-						</div>
-					
-						<div class="text">
-						Each new block inherits the colouring and thus the order of its past from its 
-						selected parent, and merges blocks created in parallel to its selected parent, 
-						following a colouring and ordering procedure defined by the protocol.
-						</div>
-					
-						<div class="text">
-						Confirmations in PHANTOM are a generalization of confirmations in a chain,
-						 and are defined by the blue score of the chain blocks atop the transaction. 
-						 The fast block rate enables fast confirmation of transactions.
-						 <img src="/resources/images/tutorial/light/frame3.gif" light />
-						<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
-						</div>
-					
-						<div class="text">
-						Blocks contain transactions in the UTXO-model format.
-						</div>
-						<div >
+						
+						<div class="section">
+							<div class="text">Blocks contain transactions in the UTXO-model format.</div>
 							<img src="/resources/images/tutorial/light/frame9.png" light />
 							<img src="/resources/images/tutorial/dark/frame9-dark.png" dark />
 						</div>
-					
-						<div class="text">I. R. LEGEND</div>
-						<div >
+
+
+
+						<div class="section">
+							<div class="text">I. R. LEGEND</div>
 							<img src="/resources/images/tutorial/light/legend1.png" light />
 							<img src="/resources/images/tutorial/dark/legend-dark.png" dark />
 						</div>
-					
-						<div class="text">
-						Controls and keyboard shortcuts
-						</div>
-						<div >
+
+
+						<div class="section">
+							<div class="text">Controls and keyboard shortcuts</div>
 							<img src="/resources/images/tutorial/light/desktop-keys.png" light/>
 							<img src="/resources/images/tutorial/dark/desktop-keys-dark.png" dark />
 						</div>
+
+
 					</flow-page>
 					
 					
