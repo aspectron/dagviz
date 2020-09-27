@@ -76,7 +76,7 @@ class MenuPanel extends BaseElement{
         <a class="toggle tutorial-link" title="Open Tutorial" @click="${this.openTutorial}">TUTORIAL</a>
         
         <div class="links">
-            <a class="toggle link" href="https://discord.gg/WmGhhzk" target="_blank"><i class="fal fa-comment-dots" style="padding-right:5px;"></i>Discord</a>
+            <a class="toggle link" href="https://discord.gg/vMT39xB" target="_blank"><i class="fal fa-comment-dots" style="padding-right:5px;"></i>Discord</a>
             <a class="toggle link" href="https://github.com/kaspanet" target="_blank"><i class="fab fa-github" style="padding-right:5px;"></i>GitHub</a>
         </div>
         `;
