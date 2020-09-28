@@ -54,7 +54,7 @@ then
 elif [[ $1 == 'aspectron' ]]
 then
     kasport=11224
-    mqttport=18792
+    mqttport=19792
     port=19990
     dbport=19989
     address="localhost"
