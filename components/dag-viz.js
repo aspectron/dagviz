@@ -506,23 +506,29 @@ export class GraphNodeLink{
 
 		if((this.source && this.source.data.isChainBlock) && (this.target && this.target.data.isChainBlock)) {
 			this.isChainBlockLink = true;
-			this.defaultColor = 'var(--graph-node-link-default-color-1)';
+			this.defaultColor = 'var(--graph-node-link-spc-color)';
 			this.defaultStrokeWidth = 7;
-			this.defaultOpacity = 0.95;
+			//this.defaultOpacity = 0.95;
 		} else 
 		{
-			this.defaultColor = 'var(--graph-node-link-default-color-2)';
+			this.defaultColor = 'var(--graph-node-link-parents-color)';
 			this.defaultStrokeWidth = 2;
-			this.defaultOpacity = 0.65;
+			//this.defaultOpacity = 0.65;
 		}
 
-		if(this.holder.ctx.quality == 'low')
-			this.defaultOpacity = 1;
+		// if(this.holder.ctx.quality == 'low')
+		// 	this.defaultOpacity = 1;
 
-		this.el.path.transition().duration(1000)
+		this.el.path//.transition().duration(1000)
 			.attr('stroke', this.defaultColor)
 			.attr('stroke-width', this.holder.buildStrokeWidth(this.defaultStrokeWidth) )
 			.style('opacity', this.defaultOpacity);
+
+		// this.highlight();
+	}
+
+	get defaultOpacity() {
+		return this.isChainBlockLink ? 0.8 : 0.65;
 	}
 
 	get isChainBlockLink(){
@@ -665,7 +671,7 @@ export class GraphNodeLink{
 		//if(isHighlighted) {
 			// console.log("IS CHAIN BLOCK", this.isChainBlockLink);
 			if(this.isChainBlockLink) {
-				strokeWidth = 4;//isHighlighted?7:strokeWidth;
+				strokeWidth = 7;//isHighlighted?7:strokeWidth;
 				if(isTealing) {
 					stroke = 'var(--graph-link-tealing-color)';
 					strokeWidth = 7;//isHighlighted?7:strokeWidth;
@@ -674,6 +680,9 @@ export class GraphNodeLink{
 				if(this.source.selected && this.target.selected){
 					stroke = 'var(--graph-link-selected-color)';
 					arrowType = '-selected';
+				}
+				else {
+					stroke = 'var(--graph-link-spc-color)';
 				}
 			}
 			else
@@ -714,8 +723,7 @@ export class GraphNodeLink{
 		//if(!this.holder.ctx.track){
 		//	p.transition().duration(200)
 		//}
-		
-		let opacity = (isHighlighted || isTealing) ? 1 : this.defaultOpacity
+		let opacity = (isHighlighted || isTealing) ? 1 : this.defaultOpacity;
 		if(p.__opacity != opacity){
 			p.__opacity = opacity;
 			p.style('opacity', opacity)
@@ -1176,20 +1184,36 @@ export class GraphNode{
 		if(this.holder.ctx._arrows == "multi")
 			this.updateLinkIndexes();
 		this.updateArrowHead();
+
+		let updates = [];
+
 		if(this.linkNodes){
 				this.linkNodes.forEach(node=>{
 					if(this.holder.ctx._arrows == "multi")
 						node.target.updateLinkIndexes();
 						//node.updateStyle();
 				});
-				let acc = this.linkNodes.slice();
-				acc.concat(this.linkNodes.map(link=>link.target));
-				acc.forEach(link=>link.updateStyle());
+
+				let _linkNodes = this.linkNodes.map(link=>{ return [...link?.target?.linkNodes || [],...link?.target?.parentLinks || []]; }).flat(2);
+				updates.push(...this.linkNodes.slice(), ..._linkNodes);
+				// let acc = this.linkNodes.slice();
+				// acc = acc.concat(this.linkNodes.map(link=>link.target));
+				// acc.forEach(link=>link.updateStyle());
 		}
 
-		let accum = this.parentLinks.slice();
-		accum.concat(this.parentLinks.map(link=>link.source));
-		accum.forEach(link=>link.updateStyle());
+		let _parentLinks = this.parentLinks.map(link=>{ 
+			let linkNodes = link?.source?.linkNodes;
+			return [
+				...link?.source?.parentLinks || [], 
+				...linkNodes || [],
+//				...(linkNodes ? linkNodes.map(link=>{return [...link?.target?.linkNodes || [],...link?.target?.parentLinks || []]; }) : [])
+			]; }).flat(2);
+		//console.log(_parentLinks);
+		updates.push(...this.parentLinks.slice(), ..._parentLinks);
+		// let accum = this.parentLinks.slice();
+		// accum = accum.concat(this.parentLinks.map(link=>link.source));
+		// accum.forEach(node=>node.updateStyle());
+		[...new Set(updates)].forEach(node=>node.updateStyle());
 		// this.parentLinks.forEach(link=>link.updateStyle());
 	}
 	addParentLink(link){
