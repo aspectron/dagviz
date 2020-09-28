@@ -47,12 +47,21 @@ class DAGViz {
     constructor() {
         this.args = utils.args();
 
-        this.kasparov = this.args['kasparov'] || `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
-        this.mqtt = {
-             address : this.args['mqtt-address'] || "mqtt://kasparov-dev-auxiliary-open-devnet.daglabs.com:1883",
-             username : this.args['mqtt-user'] || 'user',
-             password : this.args['mqtt-pass'] || 'pass'
-        };
+        if(this.args.kdx) {
+            this.kasparov = `http://localhost:11224`;
+            this.mqtt = {
+                address : "mqtt://localhost:19792",
+                username : this.args['mqtt-user'] || 'user',
+                password : this.args['mqtt-pass'] || 'pass'
+            };
+        } else {
+            this.kasparov = this.args['kasparov'] || `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
+            this.mqtt = {
+                address : this.args['mqtt-address'] || "mqtt://kasparov-dev-auxiliary-open-devnet.daglabs.com:1883",
+                username : this.args['mqtt-user'] || 'user',
+                password : this.args['mqtt-pass'] || 'pass'
+            };
+        }
 
         console.log(`kasparov api server at ${this.kasparov}`);
         this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
