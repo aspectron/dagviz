@@ -1295,7 +1295,7 @@ export class App {
 			const { nodes } = this.graph;
 			const updated = new Map();
 
-			removedBlockHashes.forEach((hash) => {
+			removedBlockHashes && removedBlockHashes.length && removedBlockHashes.forEach((hash) => {
 				const node = nodes[hash];
 				if(node) {
 					node.data.isChainBlock = false;
