@@ -187,7 +187,8 @@ if(E.flags['local-binaries'] || E.flags.pgsql) {
 }
 else
 if(E.flags.docker) {
-    E.run(['docker']);
+    E.runTask('docker');
+//    E.run(['docker']);
 }
 else
 if(!E.flags['local-binaries'])
