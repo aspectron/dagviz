@@ -162,6 +162,11 @@ class AppTutorial extends BaseElement{
 				display: var(--dark-display);
 			}
 
+			.title {
+				text-align:center;
+				font-size:1.4em;
+			}
+
 			@media(max-width:425px){
 				flow-pages{left:0px;right:0px;top:0px;width:100%;height:100%;}
 				flow-pages .buttons flow-btn{font-size:0.6rem}
@@ -194,6 +199,11 @@ class AppTutorial extends BaseElement{
 		
   
 					<flow-page class="active">
+						<div class="section">
+							<div class="text title">
+								Welcome to DAGViz - DAG Visualizer and Explorer for the Kaspa Network
+							</div>
+						</div>
 						
 						<div class="section">
 							<div class="text">
