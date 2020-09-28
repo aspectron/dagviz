@@ -29,6 +29,7 @@ body{
 	--graph-link-tealing-color:rgba(0, 150, 136, 1);
 	--graph-link-selected-color:blue;
 	--graph-link-parents-color:#666;
+	--graph-link-spc-color:#000;
 
 	--graph-shape-unknown-color:rgba(184,163,136,1);
 
@@ -60,6 +61,7 @@ body.k-theme-dark{
 	--graph-node-selector-fill:rgb(201, 197, 197);
 	--graph-square-stroke:#c6c6c6;
 	--graph-link-parents-color:rgba(212, 208, 208, 0.95);
+	--graph-link-spc-color: #eee;
 	--graph-color-new-1:rgb(201, 197, 197);
 	--graph-color-new-2:rgb(201, 197, 197);
 	--graph-color-new-3:rgb(201, 197, 197);
