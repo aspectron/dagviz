@@ -362,15 +362,15 @@ class AppTutorial extends BaseElement{
 
 			let pages = this.shadowRoot.getElementById("pages");
 			let wrapper = pages.shadowRoot.querySelector(".wrapper");
-			$(wrapper).touchwipe({
-				wipeLeft: function() { pages.showNext(); },
-				wipeRight: function() {pages.showPrevious(); },
-				wipeUp: function() {  },
-				wipeDown: function() { },
-				min_move_x: 20,
-				min_move_y: 20,
-				preventDefaultEvents: true
-			});
+			// $(wrapper).touchwipe({
+			// 	wipeLeft: function() { pages.showNext(); },
+			// 	wipeRight: function() {pages.showPrevious(); },
+			// 	wipeUp: function() {  },
+			// 	wipeDown: function() { },
+			// 	min_move_x: 20,
+			// 	min_move_y: 20,
+			// 	preventDefaultEvents: true
+			// });
 
 			pages.addEventListener("close-pages", ()=>{
 				this.skipTutorial();
