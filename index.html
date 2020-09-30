@@ -94,9 +94,11 @@
 			console.log("WebComponentsReady")
 			let {localStorage} = window;
 		
-			if(localStorage && localStorage.tutorial!=1){
-				localStorage.tutorial = 1;
-				window.tutorial();
+			if(!/noux/.test(window.location.href)) {
+				if(localStorage && localStorage.tutorial!=1){
+					localStorage.tutorial = 1;
+					window.tutorial();
+				}
 			}
 
 			/*const version = '<% version %>';
