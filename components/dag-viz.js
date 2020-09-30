@@ -1306,6 +1306,8 @@ export class GraphNode{
 	}
 
 	onNodeClick(e) {
+		if(this.holder.ctx.noux)
+			return;
 		this.$info.html('');
 		if (d3.event.defaultPrevented)
 			return
@@ -1323,26 +1325,28 @@ export class GraphNode{
 
 		if(!this.$info)
 			this.$info = $("#info");
-		this.$info.html(`
-		<table class='block-info-tip'>
-			<tr>
-				<td>
-					<i class="fa fal fa-cube"></i> 
-				</td>
-				<td>
-				<span class="caption">Block Hash:</span> <span class="value">${data.blockHash}</span><br/>
-				<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(data.timestamp*1000))}</span>&nbsp;
-				<span class="caption">Version:</span> <span class="value">${data.version}</span>&nbsp;
-				<span class="caption">Bits:</span> <span class="value">${data.bits}</span><br/>
-				<span class="caption">Blue Score:</span> <span class="value">${data.blueScore}</span>&nbsp;
-				<span class="caption">Mass:</span> <span class="value">${data.mass}</span>&nbsp;
-				<span class="caption">Nonce:</span> <span class="value">${data.nonce}</span>&nbsp;
-				<span class="caption">SPC:</span> <span class="value">${data.isChainBlock}</span>
-		
-				</td>
-			</tr>
-		</table>
-		`);
+		if(!this.holder.ctx.noux) {
+			this.$info.html(`
+			<table class='block-info-tip'>
+				<tr>
+					<td>
+						<i class="fa fal fa-cube"></i> 
+					</td>
+					<td>
+					<span class="caption">Block Hash:</span> <span class="value">${data.blockHash}</span><br/>
+					<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(data.timestamp*1000))}</span>&nbsp;
+					<span class="caption">Version:</span> <span class="value">${data.version}</span>&nbsp;
+					<span class="caption">Bits:</span> <span class="value">${data.bits}</span><br/>
+					<span class="caption">Blue Score:</span> <span class="value">${data.blueScore}</span>&nbsp;
+					<span class="caption">Mass:</span> <span class="value">${data.mass}</span>&nbsp;
+					<span class="caption">Nonce:</span> <span class="value">${data.nonce}</span>&nbsp;
+					<span class="caption">SPC:</span> <span class="value">${data.isChainBlock}</span>
+			
+					</td>
+				</tr>
+			</table>
+			`);
+		}
 		if(this.nodeInfoEl)
 			this.nodeInfoEl.addClass('focus');
 	}
@@ -1753,10 +1757,19 @@ export class DAGViz extends BaseElement {
 				this.linksEl.attr("stroke-width", w);
 			})
 			.on('start', (e)=>{
+				if(this.ctx.noux) {
+					if(!this.ctx.track)
+						window.app.ctls.track.setValue(true);
+					return;
+				}
+
 				window.app.enableUndo(false);
 				window.app.ctls.track.setValue(false);
 			})
 			.on('end', () => {
+				if(this.ctx.noux)
+					return;
+
 				window.app.enableUndo(true);
 				window.app.storeUndo();
 			})
@@ -2269,6 +2282,11 @@ export class DAGViz extends BaseElement {
 
 			let offset = `offset${this.ctx.direction.axis.toUpperCase()}`;
 
+			const displaceCenter = this.ctx.displaceCenter;
+			const displaceCenterH = displaceCenter; 
+			const displaceCenterV =displaceCenter;
+
+
 
 			// const pos = this.ctx.lastBlockData.data.blueScore;
 			// this.ctx.app.updateRegion({
@@ -2301,7 +2319,7 @@ export class DAGViz extends BaseElement {
 					t.x = +t.x.toFixed(4);
 					t.y = +t.y.toFixed(4);
 				}, 
-				//[offset] : (this.ctx.direction.h ? 0.3 : 0.3) * this.ctx.direction.sign
+				[offset] : (this.ctx.direction.h ? displaceCenterH : displaceCenterV) * this.ctx.direction.sign
 				// offsetX : this.ctx.direction.h ? 0.1 : 0, 
 				// offsetY : this.ctx.direction.v ? 0.1 : 0, 
 			});

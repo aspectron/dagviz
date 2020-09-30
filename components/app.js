@@ -3,6 +3,8 @@ import { KAPI, kLinkStyles, KPath} from '/components/k-explorer/k-explorer.js';
 
 import { html, BaseElement, css } from './base-element.js';
 
+const DEFAULT_TRACKING_TIMEOUT = 1000 * 60 * 60 * 1;
+
 class KApi extends KAPI{
 	constructor(options={}){
 		options = Object.assign(options, {
@@ -134,6 +136,7 @@ class GraphContext {
 		this['k-theme'] = 'light';
 		this.highlightNewBlock = 15;//seconds
 		this.advanced = false;
+		this.displaceCenter = 0;
 		//this.unit2Pos = {};
 
 		this.dir = 'E';
@@ -589,6 +592,14 @@ export class App {
 		this.blockTimings = [];
 	}
 
+	updateTrackingTimeout() {
+		if(this.tracking_timeout)
+			clearTimeout(this.tracking_timeout);
+		this.tracking_timeout = setTimeout(()=>{
+			this.ctls.track.setValue(false);
+		}, DEFAULT_TRACKING_TIMEOUT);
+	}
+
 	initCtls() {
 		this.ctls = { };
 		
@@ -598,6 +609,8 @@ export class App {
 					$("#tracking,body").addClass('tracking-enabled');
 				else
 					$("#tracking,body").removeClass('tracking-enabled');
+
+				this.updateTrackingTimeout();
 			}
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
@@ -1590,6 +1603,21 @@ export class App {
 				this.graph.setChartTransform(t);
 			}
 		}
+
+		if(state.displace) {
+			this.ctx.displaceCenter = parseFloat(state.displace);
+			console.log("setting initial displacement to",this.ctx.displaceCenter);
+		}
+
+		// if(state.notrackwidget) {
+
+		// }
+
+		if(state.noux) {
+			this.ctx.noux = true;
+			document.body.setAttribute('noux','');
+		}
+
 
 		if(state.select) {
 			try {
