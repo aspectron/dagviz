@@ -590,15 +590,29 @@ export class App {
 		this.lastBlockWidget = document.getElementsByTagName("last-block-widget")[0];
 
 		this.blockTimings = [];
+
+		// this.setReloadTimeout();
 	}
 
 	updateTrackingTimeout() {
+		return;
+
 		if(this.tracking_timeout)
 			clearTimeout(this.tracking_timeout);
 		this.tracking_timeout = setTimeout(()=>{
 			this.ctls.track.setValue(false);
 		}, DEFAULT_TRACKING_TIMEOUT);
 	}
+
+	setReloadTimeout() {
+		if(this.reload_timeout)
+			clearTimeout(this.reload_timeout);
+		this.reload_timeout = setTimeout(()=>{
+			this.reloadRegion();			
+		}, 5000);
+	}
+
+
 
 	initCtls() {
 		this.ctls = { };
@@ -611,6 +625,9 @@ export class App {
 					$("#tracking,body").removeClass('tracking-enabled');
 
 				this.updateTrackingTimeout();
+
+				if(v)
+					this.setReloadTimeout();
 			}
 		});
 		new Toggle(this.ctx,'curves','CURVES','fal fa-bezier-curve:Display connections as curves or straight lines');
@@ -1398,9 +1415,20 @@ export class App {
 		this.graph.centerBy(nodeId);
 	}
 
+	reloadRegion() {
+		console.log('reloadRegion');
+		return this.updateRegion({
+			fullFetch : true,
+			pos : this.ctx.position,
+			range : this.getViewRange()
+		})
+	}
+
 	async updateRegion(o) {
 		if(this.suspend)
 			return Promise.resolve();
+
+		//console.trace('updateRegion',o);
 
 		let { pos, range } = o;
 		//pos = Math.round(pos);
@@ -1581,6 +1609,7 @@ export class App {
 		if(state.pos) {
 			let position = parseFloat(state.pos);
 			if(this.ctx.position != position) {
+				// console.log("initContext Position Change:",this.ctx.position,position);
 				// if(position > this.ctx.max)
 				// 	position = this.ctx.max;
 				// if(position < this.ctx.min)
@@ -1598,15 +1627,16 @@ export class App {
 			let k_ = t.k;
 			const k = parseFloat(state.k);
 			if(!isNaN(k) && k && k != k_) {
+				// console.log('k change:',k,k_);
 				t.k = k;
-				updateTransform = true;
-				this.graph.setChartTransform(t);
+				// updateTransform = true;
+				this.graph.setChartTransform(t, true);
 			}
 		}
 
 		if(state.displace) {
 			this.ctx.displaceCenter = parseFloat(state.displace);
-			console.log("setting initial displacement to",this.ctx.displaceCenter);
+			// console.log("setting initial displacement to",this.ctx.displaceCenter);
 		}
 
 		// if(state.notrackwidget) {
@@ -1882,7 +1912,7 @@ export class App {
 	}
 
 	getRegion() {
-		let transform = this.graph.paintEl.transform;
+		const transform = this.graph.paintEl.transform;
 		const {sign, axis, size} = this.ctx.direction;
 		let position = -(transform[axis] / transform.k / this.ctx.unitDist) * sign;
 		const box = this.graph.graphHolder.getBoundingClientRect();
@@ -1890,6 +1920,14 @@ export class App {
 		let from = position - range / 2;
 		let to = position + range / 2;
 		return { position, range, from, to };
+	}
+
+	getViewRange() {
+		const transform = this.graph.paintEl.transform;
+		const {sign, axis, size} = this.ctx.direction;
+		const box = this.graph.graphHolder.getBoundingClientRect();
+		let range = Math.ceil(box[size] / transform.k / this.ctx.unitDist) * this.ctx.rangeScale;
+		return range;
 	}
 
 	fetchBlock(hash) {
