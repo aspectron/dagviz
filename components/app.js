@@ -1645,7 +1645,6 @@ export class App {
 
 		if(state.noux) {
 			this.ctx.noux = true;
-			document.body.setAttribute('noux','');
 		}
 
 

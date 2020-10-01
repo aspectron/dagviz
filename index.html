@@ -39,6 +39,10 @@
 	<style class="k-link-style"></style>
 </head>
 <body>
+	<script>
+		if(/noux/.test(window.location.href))
+			document.body.setAttribute('noux','');
+	</script>
 	<app-tutorial></app-tutorial>
 	<!--app-startup-dialog></app-startup-dialog-->
 	<dag-viz id="dagViz"></dag-viz>
@@ -101,6 +105,7 @@
 				}
 			} else {
 				localStorage.tutorial = 1;
+				// document.body.setAttribute('noux','');
 			}
 
 			/*const version = '<% version %>';
