@@ -201,7 +201,7 @@ class DAGViz {
             let t1 = this.rtbs[this.rtbs.length-1].timestamp;
             let delta = t1-t0;
             rate = 1.0 / (delta / this.rtbs.length);
-            console.log('delta:',delta,'rate:',rate,'t:',t0,'rtbs:',this.rtbs.length);
+            // console.log('delta:',delta,'rate:',rate,'t:',t0,'rtbs:',this.rtbs.length);
         }
 
         // console.log('received: dag/blocks',blocks);
