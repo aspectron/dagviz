@@ -1221,15 +1221,18 @@ export class App {
 
 		this.io.on('dag/blocks', (data) => {
 
-			let { blocks } = data;
+			let { blocks, rate } = data;
 			blocks = blocks.map(data => this.deserealizeBlock(data));
 
-			const ts = Date.now();
-			while(this.blockTimings[0] < ts-1000*60)
-				this.blockTimings.shift();
-			this.blockTimings.push(ts);
-			const rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
-			this.rateInfo.innerHTML = `${rate.toFixed(2)} blocks / sec`;
+			// const ts = Date.now();
+			// while(this.blockTimings[0] < ts-1000*60)
+			// 	this.blockTimings.shift();
+			// this.blockTimings.push(ts);
+			// const rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
+			if(rate)
+				this.rateInfo.innerHTML = `${rate.toFixed(2)} blocks / sec`;
+			else
+				this.rateInfo.innerHTML = `...`;
 
 			this.verbose && console.log('blocks:', blocks);
 			// this.ctx.lastBlockData = blocks[blocks.length-1];

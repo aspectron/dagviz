@@ -190,10 +190,19 @@ class DAGViz {
     async "dag/blocks"(block) {
 
         const ts = Date.now();
-        while(this.blockTimings[0] < ts-1000*15)
-            this.blockTimings.shift();
-        this.blockTimings.push(ts);
-        let rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
+        // while(this.blockTimings[0] < ts-1000*15)
+        //     this.blockTimings.shift();
+        // this.blockTimings.push(ts);
+        // let rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
+
+        let rate = NaN;
+        if(this.rtbs.length) {
+            let t0 = this.rtbs[0].timestamp;
+            let t1 = this.rtbs[this.rtbs.length-1].timestamp;
+            let delta = t1-t0;
+            rate = 1.0 / (delta / this.rtbs.length);
+            console.log('delta:',delta,'rate:',rate,'t:',t0,'rtbs:',this.rtbs.length);
+        }
 
         // console.log('received: dag/blocks',blocks);
         this.io.emit("dag/blocks",{ blocks : [this.serializeBlock(block)], rate});
@@ -227,13 +236,13 @@ class DAGViz {
         }
     }
 
-    static MAX_RTBS_BLOCKS = 1024;
+    static MAX_RTBS_BLOCKS = 2016;
 
     postRTB(block) {
-        this.rtbs.push(block.blockHash);    // parent chain block notifications
+        this.rtbs.push({ hash : block.blockHash, timestamp : block.timestamp });    // parent chain block notifications
         this.rtbsMap[block.blockHash] = true;
         while(this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
-            delete this.rtbsMap[this.rtbs.shift()];
+            delete this.rtbsMap[this.rtbs.shift().hash];
 
         return this.post([block]);
     }
