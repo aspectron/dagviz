@@ -205,7 +205,8 @@ class DAGViz {
         }
 
         // console.log('received: dag/blocks',blocks);
-        this.io.emit("dag/blocks",{ blocks : [this.serializeBlock(block)], rate});
+        this.last_mqtt_block_update = { blocks : [this.serializeBlock(block)], rate};
+        this.io.emit("dag/blocks",this.last_mqtt_block_update);
 
         this.lastBlockHash = block.blockHash;
         
@@ -433,12 +434,12 @@ class DAGViz {
 
             this.io = io(server);
             this.io.on('connection', (socket) => {
-              if(this.lastBlock)
-                  socket.emit('last-block-data', this.lastBlock);
+                if(this.lastBlock)
+                    socket.emit('last-block-data', this.lastBlock);
+                if(this.last_mqtt_block_update)
+                    socket.emit("dag/blocks",this.last_mqtt_block_update);
             })
-    
         });
-
     }
 
     async initDatabase() {
