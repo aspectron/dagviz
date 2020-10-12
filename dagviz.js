@@ -72,7 +72,7 @@ class DAGViz {
         this.skip = 0;
 
         this.blockTimings = [];
-
+        this.last_mqtt_block_updates = [];
     }
     
     async initRTBS() {
@@ -205,8 +205,11 @@ class DAGViz {
         }
 
         // console.log('received: dag/blocks',blocks);
-        this.last_mqtt_block_update = { blocks : [this.serializeBlock(block)], rate};
-        this.io.emit("dag/blocks",this.last_mqtt_block_update);
+        const data = { blocks : [this.serializeBlock(block)], rate};
+        while(this.last_mqtt_block_updates.length > 10)
+            this.last_mqtt_block_updates.shift();
+        this.last_mqtt_block_updates.push(data);
+        this.io.emit("dag/blocks",data);
 
         this.lastBlockHash = block.blockHash;
         
@@ -436,8 +439,8 @@ class DAGViz {
             this.io.on('connection', (socket) => {
                 if(this.lastBlock)
                     socket.emit('last-block-data', this.lastBlock);
-                if(this.last_mqtt_block_update)
-                    socket.emit("dag/blocks",this.last_mqtt_block_update);
+                for(const data of this.last_mqtt_block_updates)
+                    socket.emit("dag/blocks",data);
             })
         });
     }
