@@ -12,18 +12,23 @@ const { dpc } = require("@aspectron/flow-async");
 const PgSQL = require('./lib/pgsql');
 const basicAuth = require('basic-auth');
 const io = require('socket.io');//(http);
-const mqtt = require('mqtt');
+// const mqtt = require('mqtt');
 const path = require('path');
 const WebApp = require('./web-app.js');
 const FlowRouter = require('@aspectron/flow-router');
 const colors = require('colors');
+const { RPC } = require('kaspa-grpc-node');
 //const ejs = require('ejs')
 
 let args = utils.args();
 const DUMMY_TX = true;
 const USE_LOCAL_KASPAROV = !!args['use-local-kas'];
 const rejectUnauthorized = false;
-console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.white.bold)
+//console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.white.bold)
+
+const { Command } = require('commander');
+const program = new Command();
+
 
 const BLOCK_PROPERTIES = [
     "blockHash", 
@@ -47,6 +52,37 @@ class DAGViz {
     constructor() {
         this.args = utils.args();
 
+        const ports = {
+            mainnet: 16110,
+            testnet: 16210,
+            simnet: 16510,
+            devnet: 16610
+        }
+
+		program
+			.version('0.0.1', '--version')
+			.description('DAGViz')
+			.helpOption('--help','display help for command')
+			.option('--testnet','use testnet network')
+			.option('--devnet','use devnet network')
+			.option('--simnet','use simnet network')
+            .option('--rpc <address>','use custom RPC address <host:port>');
+        program.parse(process.argv);
+        this.options = program.opts();
+
+        let networks = Object.keys(ports);
+        let network = Object.keys(this.options).filter(n=>networks.includes(n)).shift() || 'mainnet';
+        console.log('network:',network);
+
+        this.host = this.options.rpc || `127.0.0.1:${ports[network]}`;
+         //console.log('connecting RPC to:',this.host);
+        // //console.log(this.options);
+        //process.exit(0);
+        // this.rpc = new RPC({ clientConfig:{ host } });
+
+
+
+/*
         if(this.args.kdx) {
             this.kasparov = `http://localhost:11224`;
             this.mqtt = {
@@ -62,9 +98,10 @@ class DAGViz {
                 password : this.args['mqtt-pass'] || 'pass'
             };
         }
-
         console.log(`kasparov api server at ${this.kasparov}`);
         this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
+*/
+        this.uid = 'dagviz';
 
         this.verbose = this.args.verbose ? true : false;
 
@@ -87,11 +124,12 @@ class DAGViz {
     }
 
     async init() {
-        await this.initRTBS();
-        await this.initDatabase();
-        await this.initDatabaseSchema();
-        await this.initLastBlockTracking();
-        await this.initMQTT();
+        await this.initRPC();
+        // await this.initRTBS();
+        // await this.initDatabase();
+        // await this.initDatabaseSchema();
+        // await this.initLastBlockTracking();
+        // await this.initMQTT();
         await this.initHTTP();
 
         return this.main();
@@ -110,6 +148,87 @@ class DAGViz {
             dpc(()=>{
                 process.exit(0);
             });
+    }
+
+    async initRPC() {
+        console.log
+        console.log('connecting RPC to:',this.host);
+        this.rpc = new RPC({ clientConfig:{ host : this.host } });
+        await this.rpc.connect();
+        console.log('RPC connected...');
+
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!!!!!!! WARNING - THIS IS AN IN-MEMORY EXPERIMENT !!!!!!!!!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        let blueScore = 0;
+        const map = new Map();
+        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest",(intake) => {
+
+            const { removedChainBlockHashes, addedChainBlocks } = intake;
+
+            const instr = {
+                removedBlockHashes : removedChainBlockHashes,
+//                addedChainBlocks = [ ]
+            }
+
+            let fakeBlocks = [];
+
+            instr.addedChainBlocks = addedChainBlocks.forEach((added) => {
+//console.log(block);
+
+                const acceptedBlockHashes = added.acceptedBlocks.map((accepted) => {
+                    let { hash } = accepted;
+                    let b = map.get(hash);
+                    if(b) {
+                        b.acceptingBlockHash = added.hash;
+                        fakeBlocks.push(b);
+                        // console.log(b);
+                    }
+                    return hash;
+                });
+
+                const parentBlockHashes = acceptedBlockHashes;
+
+                let data = {
+                    hash : added.hash,
+                    acceptedBlockHashes
+                };
+
+
+                let fakeBlock = {
+                    blockHash : added.hash,
+                    blueScore : blueScore++,
+                    timestamp : 0,
+                    acceptedBlockHashes,
+                    parentBlockHashes,
+                    acceptingBlockHash : null,
+                    isChainBlock : true // more fake data :/
+                };
+
+                map.set(fakeBlock.blockHash,fakeBlock);
+                fakeBlocks.push(fakeBlock);
+
+            })
+            // console.log(fakeBlocks);
+
+            if(!fakeBlocks.length) {
+                console.log('invalid change data:',intake);
+                return;
+            }
+
+
+
+            const serializedFakeBlocks = fakeBlocks.map(b=>this.serializeBlock(b));
+            this.io.emit("dag/blocks",{ blocks : serializedFakeBlocks, rate : null });
+            this.io.emit("dag/selected-parent-chain",instr);
+            // console.log(JSON.stringify(data,null,'\t'));
+        })
+    
     }
 
     async initLastBlockTracking() {
@@ -614,7 +733,10 @@ class DAGViz {
     }
 
     async main() {
-        
+        /*
+
+v2
+
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
         this.lastTotal = result.shift().total;
@@ -636,6 +758,7 @@ class DAGViz {
         dpc(3000, () => {
             this.updateRelations();
         });
+        */
     }
 
     log(...args) {
@@ -667,6 +790,9 @@ class DAGViz {
     }
 
     getBlockCount() {
+
+        return Promise.reject('refactoring');
+
         return new Promise((resolve, reject) => {
             rp({url: `${this.kasparov}/blocks/count`, rejectUnauthorized}).then((text) => {
                 let data = null;
@@ -694,6 +820,10 @@ class DAGViz {
     }
 
     fetchAddressTxs(address, options={}) {
+
+        return Promise.reject('refactoring');
+
+
         return new Promise((resolve,reject) => {
             let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
             rp({url: `${this.kasparov}/transactions/address/${address}?${args}`, rejectUnauthorized}).then((text) => {
@@ -716,6 +846,9 @@ class DAGViz {
     }
 
     fetch(options) {
+
+        return Promise.reject('refactoring');
+
         return new Promise((resolve,reject) => {
             let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
             rp({url: `${this.kasparov}/blocks?${args}`, rejectUnauthorized}).then((text) => {
@@ -1072,6 +1205,8 @@ class DAGViz {
     }
 
     dataSlice(args) {
+        return Promise.reject('refactoring');
+
         return new Promise(async (resolve, reject) => {
 
             let { from, to, unit } = args;
