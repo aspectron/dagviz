@@ -1,13 +1,14 @@
 const crypto = require('crypto');
+const util = require('util');
 const fs = require('fs');
 //const mysql = require('mysql');
-const { Pool : PgPool } = require('pg');
+const {Pool: PgPool, Client} = require('pg');
 const format = require('pg-format');
 var http = require('http')
 var serveStatic = require('serve-static')
 const rp = require('request-promise');
 const utils = require('@aspectron/flow-utils');
-const { dpc } = require("@aspectron/flow-async");
+const {dpc} = require("@aspectron/flow-async");
 //const MySQL = require('./lib/mysql');
 const PgSQL = require('./lib/pgsql');
 const basicAuth = require('basic-auth');
@@ -17,7 +18,7 @@ const path = require('path');
 const WebApp = require('./web-app.js');
 const FlowRouter = require('@aspectron/flow-router');
 const colors = require('colors');
-const { RPC } = require('kaspa-grpc-node');
+const {RPC} = require('kaspa-grpc-node');
 //const ejs = require('ejs')
 
 let args = utils.args();
@@ -26,17 +27,17 @@ const USE_LOCAL_KASPAROV = !!args['use-local-kas'];
 const rejectUnauthorized = false;
 //console.log(`!!! WARNING: 'USE_LOCAL_KASPAROV == ${USE_LOCAL_KASPAROV}'`.redBG.white.bold)
 
-const { Command } = require('commander');
+const {Command} = require('commander');
 const program = new Command();
 
 
 const BLOCK_PROPERTIES = [
-    "blockHash", 
-    "parentBlockHashes", 
-    "version", 
-    "hashMerkleRoot", 
-    "acceptedIdMerkleRoot", 
-    "utxoCommitment", 
+    "blockHash",
+    "parentHashes",
+    "version",
+    "hashMerkleRoot",
+    "acceptedIdMerkleRoot",
+    "utxoCommitment",
     "timestamp",
     "bits",
     "nonce",
@@ -46,7 +47,7 @@ const BLOCK_PROPERTIES = [
     "mass",
     "acceptedBlockHashes"
 ];
- 
+
 class DAGViz {
 
     constructor() {
@@ -59,49 +60,32 @@ class DAGViz {
             devnet: 16610
         }
 
-		program
-			.version('0.0.1', '--version')
-			.description('DAGViz')
-			.helpOption('--help','display help for command')
-			.option('--testnet','use testnet network')
-			.option('--devnet','use devnet network')
-			.option('--simnet','use simnet network')
-            .option('--rpc <address>','use custom RPC address <host:port>');
+        program
+            .version('0.0.1', '--version')
+            .description('DAGViz')
+            .helpOption('--help', 'display help for command')
+            .option('--testnet', 'use testnet network')
+            .option('--devnet', 'use devnet network')
+            .option('--simnet', 'use simnet network')
+            .option('--database-port <port>', 'the database port (default 8309)')
+            .option('--database-scheme  <scheme>', 'the database scheme')
+            .option('--database-user <user>', 'the database user')
+            .option('--database-password <password>', 'the database password')
+            .option('--rpc <address>', 'use custom RPC address <host:port>');
         program.parse(process.argv);
         this.options = program.opts();
 
         let networks = Object.keys(ports);
-        let network = Object.keys(this.options).filter(n=>networks.includes(n)).shift() || 'mainnet';
-        console.log('network:',network);
+        let network = Object.keys(this.options).filter(n => networks.includes(n)).shift() || 'mainnet';
+        console.log('network:', network);
 
         this.host = this.options.rpc || `127.0.0.1:${ports[network]}`;
-         //console.log('connecting RPC to:',this.host);
-        // //console.log(this.options);
-        //process.exit(0);
-        // this.rpc = new RPC({ clientConfig:{ host } });
 
 
-
-/*
-        if(this.args.kdx) {
-            this.kasparov = `http://localhost:11224`;
-            this.mqtt = {
-                address : "mqtt://localhost:19792",
-                username : this.args['mqtt-user'] || 'user',
-                password : this.args['mqtt-pass'] || 'pass'
-            };
-        } else {
-            this.kasparov = this.args['kasparov'] || `http://kasparov-dev-auxiliary-open-devnet.daglabs.com:8080`;
-            this.mqtt = {
-                address : this.args['mqtt-address'] || "mqtt://kasparov-dev-auxiliary-open-devnet.daglabs.com:1883",
-                username : this.args['mqtt-user'] || 'user',
-                password : this.args['mqtt-pass'] || 'pass'
-            };
-        }
-        console.log(`kasparov api server at ${this.kasparov}`);
-        this.uid = 'dagviz'+this.hash(this.kasparov).substring(0,10);
-*/
-        this.uid = 'dagviz';
+        this.databasePort = this.options.databasePort || 8309;
+        this.databaseUser = this.options.databaseUser || 'dagviz';
+        this.databasePassword = this.options.databasePassword || 'dagviz';
+        this.databaseScheme = this.options.databaseScheme || 'dagviz';
 
         this.verbose = this.args.verbose ? true : false;
 
@@ -111,23 +95,22 @@ class DAGViz {
         this.blockTimings = [];
         this.last_mqtt_block_updates = [];
     }
-    
-    async initRTBS() {
-        this.rtbs = [ ];
-        this.rtbsMap = { };
-        return Promise.resolve();
-    }
-    
 
-    hash(data,h='sha256') {
+    initRTBS() {
+        this.rtbs = [];
+        this.rtbsMap = {};
+    }
+
+
+    hash(data, h = 'sha256') {
         return crypto.createHash(h).update(data).digest('hex');
     }
 
     async init() {
         await this.initRPC();
-        // await this.initRTBS();
-        // await this.initDatabase();
-        // await this.initDatabaseSchema();
+        this.initRTBS();
+        await this.initDatabase();
+        await this.initDatabaseSchema();
         // await this.initLastBlockTracking();
         // await this.initMQTT();
         await this.initHTTP();
@@ -135,100 +118,32 @@ class DAGViz {
         return this.main();
     }
 
-    async shutdownPGSQL(){
-        if(this.pgSQL){
+    async shutdownPGSQL() {
+        if (this.pgSQL) {
             this.pgSQL.log("got shutdownPGSQL".brightYellow)
             await this.pgSQL.stop();
         }
     }
 
     async shutdown() {
-        if(this.pgSQL)
+        if (this.pgSQL)
             await this.pgSQL.stop();
-            dpc(()=>{
-                process.exit(0);
-            });
+        dpc(() => {
+            process.exit(0);
+        });
     }
 
     async initRPC() {
-        console.log
-        console.log('connecting RPC to:',this.host);
-        this.rpc = new RPC({ clientConfig:{ host : this.host } });
+        console.log('connecting RPC to:', this.host);
+        this.rpc = new RPC({clientConfig: {host: this.host}});
         await this.rpc.connect();
         console.log('RPC connected...');
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // !!!!!!!! WARNING - THIS IS AN IN-MEMORY EXPERIMENT !!!!!!!!!!
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (intake) =>
+            this.handleVirtualSelectedParentChainChanged(intake))
 
-        let blueScore = 0;
-        const map = new Map();
-        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest",(intake) => {
-
-            const { removedChainBlockHashes, addedChainBlocks } = intake;
-
-            const instr = {
-                removedBlockHashes : removedChainBlockHashes,
-//                addedChainBlocks = [ ]
-            }
-
-            let fakeBlocks = [];
-
-            instr.addedChainBlocks = addedChainBlocks.forEach((added) => {
-//console.log(block);
-
-                const acceptedBlockHashes = added.acceptedBlocks.map((accepted) => {
-                    let { hash } = accepted;
-                    let b = map.get(hash);
-                    if(b) {
-                        b.acceptingBlockHash = added.hash;
-                        fakeBlocks.push(b);
-                        // console.log(b);
-                    }
-                    return hash;
-                });
-
-                const parentBlockHashes = acceptedBlockHashes;
-
-                let data = {
-                    hash : added.hash,
-                    acceptedBlockHashes
-                };
-
-
-                let fakeBlock = {
-                    blockHash : added.hash,
-                    blueScore : blueScore++,
-                    timestamp : 0,
-                    acceptedBlockHashes,
-                    parentBlockHashes,
-                    acceptingBlockHash : null,
-                    isChainBlock : true // more fake data :/
-                };
-
-                map.set(fakeBlock.blockHash,fakeBlock);
-                fakeBlocks.push(fakeBlock);
-
-            })
-            // console.log(fakeBlocks);
-
-            if(!fakeBlocks.length) {
-                console.log('invalid change data:',intake);
-                return;
-            }
-
-
-
-            const serializedFakeBlocks = fakeBlocks.map(b=>this.serializeBlock(b));
-            this.io.emit("dag/blocks",{ blocks : serializedFakeBlocks, rate : null });
-            this.io.emit("dag/selected-parent-chain",instr);
-            // console.log(JSON.stringify(data,null,'\t'));
-        })
-    
+        this.rpc.subscribe("notifyBlockAddedRequest", (intake) =>
+            this.handleBlockAddedNotification(intake))
     }
 
     async initLastBlockTracking() {
@@ -238,9 +153,9 @@ class DAGViz {
     }
 
     async rewindToLastBlockHash() {
-        if(this.lastBlockHash) {
-            let rows = await this.sql(`SELECT * FROM blocks WHERE blockHash = '${this.lastBlockHash}'`);
-            if(rows.length) {
+        if (this.lastBlockHash) {
+            let rows = await this.sql(`SELECT * FROM blocks WHERE "blockHash" = '${this.lastBlockHash}'`);
+            if (rows.length) {
                 let id = parseInt(rows.shift().id);
                 id -= this.REWIND_BLOCK_PADDING;
                 this.skip = id;
@@ -260,42 +175,41 @@ class DAGViz {
 
     async initMQTT() {
 
-        if(this.args['disable-mqtt']) {
+        if (this.args['disable-mqtt']) {
             // console.log(`!!! WARNING: MQTT IS DISABLED`.redBG.brightWhite);
             return Promise.resolve();
         }
 
         console.log("MQTT connecting to:", this.mqtt);
 
-        const client = mqtt.connect(this.mqtt.address,{
-            clientId:"mqtt_"+Math.round(Date.now()*Math.random()).toString(16),
+        const client = mqtt.connect(this.mqtt.address, {
+            clientId: "mqtt_" + Math.round(Date.now() * Math.random()).toString(16),
             username: this.mqtt.username, //'user',
             password: this.mqtt.password //'pass'
         });
-        
-        client.subscribe("dag/blocks",{qos:1});
-        client.subscribe("dag/selected-tip",{qos:1});
-        client.subscribe("dag/selected-parent-chain",{qos:1});
-        client.on("connect",() => {
+
+        client.subscribe("dag/blocks", {qos: 1});
+        client.subscribe("dag/selected-tip", {qos: 1});
+        client.subscribe("dag/selected-parent-chain", {qos: 1});
+        client.on("connect", () => {
             console.log("MQTT connected");
 
             // this.resync(this.last_block_hash);
             this.rewindToLastBlockHash();
 
 
-
             // TODO @aspect - resync from last known
         })
-        
-        client.on('message',(topic, message, packet) => {
+
+        client.on('message', (topic, message, packet) => {
             // console.log('topic:',topic);
             //topic = 'MQTT_'+topic.replace(/\W/g,'_')+'';
             try {
-                if(this[topic])
+                if (this[topic])
                     this[topic](JSON.parse(message.toString()));
-            } catch(ex) {
+            } catch (ex) {
                 console.log(ex);
-                console.log('while parsing:',message.toString());
+                console.log('while parsing:', message.toString());
             }
             // console.log("MQTT message is "+ message);
             // console.log("MQTT topic is "+ topic);
@@ -303,10 +217,12 @@ class DAGViz {
     }
 
     serializeBlock(block) {
-        return BLOCK_PROPERTIES.map(p=>block[p]);
+        return BLOCK_PROPERTIES.map(p => block[p]);
     }
 
-    async "dag/blocks"(block) {
+    async handleBlockAddedNotification(notification) {
+
+        const block = notification.blockVerboseData;
 
         const ts = Date.now();
         // while(this.blockTimings[0] < ts-1000*15)
@@ -315,56 +231,54 @@ class DAGViz {
         // let rate = this.blockTimings.length / (ts - this.blockTimings[0]) * 1000;
 
         let rate = NaN;
-        if(this.rtbs.length) {
+        if (this.rtbs.length) {
             let t0 = this.rtbs[0].timestamp;
-            let t1 = this.rtbs[this.rtbs.length-1].timestamp;
-            let delta = t1-t0;
+            let t1 = this.rtbs[this.rtbs.length - 1].timestamp;
+            let delta = t1 - t0;
             rate = 1.0 / (delta / this.rtbs.length);
             // console.log('delta:',delta,'rate:',rate,'t:',t0,'rtbs:',this.rtbs.length);
         }
 
         // console.log('received: dag/blocks',blocks);
-        const data = { blocks : [this.serializeBlock(block)], rate};
-        while(this.last_mqtt_block_updates.length > 10)
+        const data = {blocks: [this.serializeBlock(block)], rate};
+        while (this.last_mqtt_block_updates.length > 10)
             this.last_mqtt_block_updates.shift();
         this.last_mqtt_block_updates.push(data);
-        this.io.emit("dag/blocks",data);
+        this.io.emit("dag/blocks", data);
 
         this.lastBlockHash = block.blockHash;
-        
+
         await this.storeLastBlockHash(block.blockHash);
 
         await this.postRTB(block);
     }
 
-    async "dag/selected-parent-chain"(args) {
+    async handleVirtualSelectedParentChainChanged(args) {
         // console.log("dag/selected-parent-chain");
-        this.io.emit("dag/selected-parent-chain",args);
+        this.io.emit("dag/selected-parent-chain", args);
 
-        const { addedChainBlocks, removedBlockHashes } = args;
+        const {addedChainBlocks, removedChainBlockHashes} = args;
 
-        if(removedBlockHashes && removedBlockHashes.length) {
+        if (removedChainBlockHashes && removedChainBlockHashes.length) {
             //this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
-            await this.sql(format(`UPDATE blocks SET isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
-            await this.sql(format(`UPDATE blocks SET acceptingBlockHash='' WHERE (blocks.acceptingBlockHash) IN (%L)`, removedBlockHashes));
+            await this.sql(format(`UPDATE blocks SET "isChainBlock"=FALSE WHERE ("blocks"."blockHash") IN (%L)`, removedChainBlockHashes));
+            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash"='' WHERE ("blocks"."acceptingBlockHash") IN (%L)`, removedChainBlockHashes));
         }
 
-        if(addedChainBlocks && addedChainBlocks.length) {
-            while(addedChainBlocks.length) {
-                let instr = addedChainBlocks.shift();
-                const { hash, acceptedBlockHashes } = instr;
-                await this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${hash}'`);
-                await this.sql(format(`UPDATE blocks SET acceptingBlockHash = '${hash}' WHERE (blockHash) IN (%L)`, acceptedBlockHashes));
-            }
+        for (const chainBlock of addedChainBlocks) {
+            const {hash, acceptedBlocks} = chainBlock;
+            const acceptedBlockHashes = acceptedBlocks.map(block => block.hash);
+            await this.sql(`UPDATE blocks SET "isChainBlock" = TRUE WHERE "blockHash" = '${hash}'`);
+            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash" = '${hash}' WHERE ("blockHash") IN (%L)`, acceptedBlockHashes));
         }
     }
 
     static MAX_RTBS_BLOCKS = 2016;
 
     postRTB(block) {
-        this.rtbs.push({ hash : block.blockHash, timestamp : block.timestamp });    // parent chain block notifications
+        this.rtbs.push({hash: block.blockHash, timestamp: block.timestamp});    // parent chain block notifications
         this.rtbsMap[block.blockHash] = true;
-        while(this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
+        while (this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
             delete this.rtbsMap[this.rtbs.shift().hash];
 
         return this.post([block]);
@@ -374,13 +288,13 @@ class DAGViz {
 
         // console.log("dag/selected-tip");
 
-        if(!message.blockHash)
+        if (!message.blockHash)
             return console.log('invalid mqtt message:', message);
-        
+
         const block = message;
 //        this.io.emit("dag/selected-tip", this.serializeBlock(block));
 
-        this.sql(`UPDATE blocks SET isChainBlock = TRUE WHERE blockHash = '${block.blockHash}'`);
+        this.sql(`UPDATE blocks SET "isChainBlock" = TRUE WHERE "blockHash" = '${block.blockHash}'`);
 
 
         this.postRTB(block);
@@ -395,144 +309,122 @@ class DAGViz {
         // `, [blocks]);
     }
 
+    async getBlockCount() {
+        const [{blockCount}] = await this.sql('select count(*) as "blockCount" from blocks;');
+        return Number(blockCount);
+    }
+
+    async getBlocks({order = 'ASC', skip = 0, limit = 25}) {
+        return this.sql(`select * from blocks order by id ${order} LIMIT ${limit} OFFSET ${skip};`);
+    }
+
+    async getBlockByHash(hash) {
+        return this.sql(format(`select * from blocks where "blockHash" = %L`, hash));
+    }
+
     async initHTTP() {
         const app = new WebApp();
         const flowRouter = new FlowRouter(app, {
-            rootFolder:path.dirname(__filename),
-            folders:[{url:'/components', folder:'/components'}]
+            rootFolder: path.dirname(__filename),
+            folders: [{url: '/components', folder: '/components'}]
         });
 
-        if(this.args.kdx) {
-            app.get('/stop', async(req, res)=>{
+        if (this.args.kdx) {
+            app.get('/stop', async (req, res) => {
                 await this.shutdownPGSQL();
-                res.sendJSON({ status : 'ok' }, 200);
-                dpc(()=>{
+                res.sendJSON({status: 'ok'}, 200);
+                dpc(() => {
                     process.exit(0);
                 });
             })
         }
 
-        
 
-        app.use((req, res, next)=>{
-            if(!this.args['with-auth'])
+        app.use((req, res, next) => {
+            if (!this.args['with-auth'])
                 return next();
             //if(req.url.match(/dag\-viz\.js$/))
             //    console.log("req", req.query._h)
 
             let auth = basicAuth(req);
-            if(!req.url.startsWith('/components') && 
+            if (!req.url.startsWith('/components') &&
                 !req.url.startsWith('/node_modules') &&
                 (!auth || auth.name != 'dag' || auth.pass != 'dag')) {
-                res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Please login"' });
+                res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Please login"'});
                 return res.end();
             }
 
             next();
         })
 
-        app.get('/data-slice', (req, res, next)=>{
-            this.dataSlice(req.query).then((data)=> {
+        app.get('/data-slice', (req, res, next) => {
+            this.dataSlice(req.query).then((data) => {
                 res.sendJSON(data)
             }, (err) => {
-                console.log('error:',err);
+                console.log('error:', err);
                 res.sendJSON({error: err.toString()}, 500)
             });
         });
 
-        app.get("/search", (req, res)=>{
+        app.get("/search", (req, res) => {
             let args = req.query.q || "";
             //console.log("getting query for:",args);
             this.doSearch(args).then((data) => {
-                console.log('search:resp:',data);
+                console.log('search:resp:', data);
                 res.sendJSON(data);
             }, (err) => {
-                console.log('error:',err);
+                console.log('error:', err);
                 res.sendJSON({error: err.toString()}, 500);
             });
         })
 
-        app.get("/get-block/:type/:data", (req, res)=>{
+        app.get("/get-block/:type/:data", (req, res) => {
             let {type, data} = req.params;
-            let args = type+"/"+data;
+            let args = type + "/" + data;
             //console.log("getting block:", args, req.params);
             this.getBlock(args).then((data) => {
                 res.sendJSON(data);
             }, (err) => {
-                console.log('error:',err);
+                console.log('error:', err);
                 res.sendJSON({error: err.toString()}, 500);
             });
         })
 
-        /*
-        app.get("/api/transactions", (req, res, next)=>{
-            if(!DUMMY_TX)
-                return next();
-            res.sendFile("./transactions-samples.json");
-        })
+        app.get("/api/blocks/count", async (req, res) => {
+            const blockCount = await this.getBlockCount();
+            res.sendJSON(blockCount);
+        });
 
-        app.get("/api/transaction/hash/:code", (req, res, next)=>{
-            if(!DUMMY_TX)
-                return next();
-            let result = require("./transactions-samples.json");
-            let tx = result.transactions[0];
-            res.sendJSON(tx)
-        })
-        */
-
-        app.get("/api", (req, res, next)=>{
-            const _path = req.url.substring(4);
-            let url = `${this.kasparov}${_path}`;
-            if(USE_LOCAL_KASPAROV)
-                url = `http://localhost:1234${_path}`;
-            console.log('api request:',url);
-            rp({url, rejectUnauthorized})
-            .then(text=>{
-                res.sendJSON(text);
-            })
-            .catch(err=>{
-                res.sendJSON({"dagviz-proxy-error": err.toString()}, 500);
+        app.get("/api/blocks", async (req, res) => {
+            const blocks = await this.getBlocks({
+                order: req.query.order === 'DESC' ? 'DESC' : 'ASC',
+                skip: Number(req.query.skip),
+                limit: Number(req.query.limit),
             });
-        })
+            res.sendJSON(blocks);
+        });
 
-        /*
-        let sendHtmlFile = (args={})=>{
-            let {res, next, file, data, options, contentType} = args;
-            if(!options)
-                options = {};
-            if(!data)
-                data = {};
-            if(!contentType)
-                contentType = 'text/html';
+        app.get("/api/block/:blockHash", async (req, res) => {
+            res.sendJSON(await this.deserealizeBlock(this.getBlockByHash(req.params.blockHash)));
+        });
 
-            ejs.renderFile(file, data, options, (err, html)=>{
-                if(err)
-                    return next(err);
-                res.writeHead(200, {'Content-Type': contentType});
-                res.write(html);
-                res.end();
-            })
-        }
-        this._hashMap = {};
-        let _H = ()=>{
-            let hash = this.hash(crypto.randomBytes(32));
-            this._hashMap[hash] = 1;
-            return hash;
-        }
-        */
+        app.get("/api/transactions/block", async (req, res) => {
+            res.sendJSON([]); // TODO: IMPLEMENT THIS
+        });
 
-        app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next)=>{
+
+        app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next) => {
             let pkg = require("./package.json");
             dataVars.set("version", pkg.version);
-            res.sendFile("./index.html", {vars:dataVars});
+            res.sendFile("./index.html", {vars: dataVars});
             //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 
         const dataVars = new Map();
-        app.get('/', (req, res, next)=>{
+        app.get('/', (req, res, next) => {
             let pkg = require("./package.json");
             dataVars.set("version", pkg.version);
-            res.sendFile("./index.html", {vars:dataVars});
+            res.sendFile("./index.html", {vars: dataVars});
             //sendHtmlFile({req, res, next, file:'./index.html', data:{_H}})
         })
 
@@ -543,11 +435,11 @@ class DAGViz {
         app.use('/node_modules', serveStatic('./node_modules'))
 
 
-        return new Promise((resolve,reject) => {
+        return new Promise((resolve, reject) => {
 
             let port = this.args.port || 8686;
             // Create server
-            const server = http.createServer((req, res)=>{
+            const server = http.createServer((req, res) => {
                 app.run(req, res);
             }).listen(port, () => {
                 console.log(`listening on ${port}`);
@@ -556,156 +448,92 @@ class DAGViz {
 
             this.io = io(server);
             this.io.on('connection', (socket) => {
-                if(this.lastBlock)
+                if (this.lastBlock)
                     socket.emit('last-block-data', this.lastBlock);
-                for(const data of this.last_mqtt_block_updates)
-                    socket.emit("dag/blocks",data);
+                for (const data of this.last_mqtt_block_updates)
+                    socket.emit("dag/blocks", data);
             })
         });
     }
 
     async initDatabase() {
-
-        const port = this.args.dbport || this.args['pgsql-port'] || 8309;
-
-//        const mySQL = new MySQL({ port, database : this.uid });
-        const pgSQL = this.pgSQL = new PgSQL({ port, database : this.uid });
-//        await mySQL.start()
-        await pgSQL.start()
-
-        let defaults = {
-            host : 'localhost',
+        const port = this.databasePort;
+        this.dbClient = new Client({
+            host: 'localhost',
             port,
-            user : 'dagviz',
-            password : 'dagviz',
-        };
-
-        return new Promise((resolve,reject) => {
-            //this.dbPool = mysql.createPool(Object.assign({ }, defaults, {
-            this.dbPool = new PgPool(Object.assign({ }, defaults, {
-                    // host : 'localhost', port,
-                user : 'dagviz',
-                password: 'dagviz',
-                database: this.uid, //'mysql',
-                //insecureAuth : true
-            }));
-
-            this.dbPool.on('error', (err) => {
-                if(!pgSQL.stopped)
-                    console.log(err);
-            })
-            
-            this.db = {
-                query : async (sql, args) => {
-                    if(pgSQL.stopped)
-                        return Promise.reject("pgSQL stopped - the platform is going down!");
-                    //console.log("sql:", sql, args)
-                    return new Promise((resolve,reject) => {
-                        this.dbPool.connect().then((client) => {
-                        //     //console.log("CONNECTION:",connection);
-                        //     if(err)
-                        //         return reject(err);
-
-                            client.query(sql, args, (err, result) => {
-                                client.release();
-                                    // console.log("SELECT GOT ROWS:",rows);
-                                resolve(result?.rows);
-                            });
-                        }, (err) => {
-                            //if(err) {
-                                console.log(`Error processing SQL query:`);
-                                console.log(sql);
-                                console.log(args);
-                                console.log(`SQL Error is: ${err.toString()}`)
-                                return reject(err);
-                            // }
-                            // reject(err);
-                        });
-                    });
-                }                
-            }
-            // this.db_.connect(async (err) => {
-            //     if(err) {
-            //         this.log(err);
-            //         this.log("FATAL - MYSQL STARTUP SEQUENCE! [2]".brightRed);
-            //         return reject(err);// resolve();
-            //     }
-
-            //     this.log("MySQL connection SUCCESSFUL!".brightGreen);
-
-
-                resolve();
-                // db.end(()=>{
-                //     this.log("MySQL client disconnecting.".brightGreen);
-                // });
-            // });
+            user: this.databaseUser,
+            password: this.databasePassword,
+            database: this.databaseScheme,
         });
+        this.dbClient.connect();
+        this.promisifiedQuery = util.promisify(this.dbClient.query.bind(this.dbClient));
     }
 
-    async sql(...args) { 
-        // console.log('SQL:'.brightGreen,args[0]);
-        let p = this.db.query(...args);
-        p.catch(e=>{
-            console.log("sql:exception:", [...args], e)
-        })
-        return p;
+    async sql(...args) {
+        const {rows} = await this.promisifiedQuery(...args);
+        return rows;
     }
 
     static DB_TABLE_BLOCKS_ORDER = [
-        'blockHash', 
-        'acceptingBlockHash',  
-        'version', 
-        'hashMerkleRoot', 
-        'acceptedIDMerkleRoot', 
-        'utxoCommitment', 
-        'timestamp', 
-        'bits', 
-        'nonce', 
-        'blueScore', 
-        'isChainBlock', 
-        'mass', 
-        'parentBlockHashes', 
+        'blockHash',
+        'acceptingBlockHash',
+        'version',
+        'hashMerkleRoot',
+        'acceptedIDMerkleRoot',
+        'utxoCommitment',
+        'timestamp',
+        'bits',
+        'nonce',
+        'blueScore',
+        'isChainBlock',
+        'mass',
+        'parentBlockHashes',
         'childBlockHashes',
         'acceptedBlockHashes'
     ];
 
+    static VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS = {
+        'hash': 'blockHash',
+        'version': 'version',
+        'hashMerkleRoot': 'hashMerkleRoot',
+        'acceptedIDMerkleRoot': 'acceptedIDMerkleRoot',
+        'utxoCommitment': 'utxoCommitment',
+        'time': 'timestamp',
+        'nonce': 'nonce',
+        'bits': 'bits',
+        'parentHashes': 'parentBlockHashes',
+        'blueScore': 'blueScore',
+    }
+
     async initDatabaseSchema() {
-        // await this.sql(`CREATE DATABASE IF NOT EXISTS ${this.uid} DEFAULT CHARACTER SET utf8;`);
-        // await this.sql(`USE ${this.uid}`);
         await this.sql(`
             CREATE TABLE IF NOT EXISTS blocks (
-                id                      BIGSERIAL PRIMARY KEY,
-                blockHash              CHAR(64)        NULL,
-                acceptingBlockHash      CHAR(64) NULL,
-                acceptingBlockTimestamp INT NULL,
-                version                 INT             NOT NULL,
-                hashMerkleRoot        CHAR(64)        NOT NULL,
-                acceptedIDMerkleRoot CHAR(64)        NOT NULL,
-                utxoCommitment         CHAR(64)        NOT NULL,
-                timestamp               INT        NOT NULL,
-                bits                    INT     NOT NULL,
-                nonce                   BYTEA  NOT NULL,
-                blueScore              BIGINT  NOT NULL,
-                isChainBlock          BOOLEAN         NOT NULL,
-                mass                    BIGINT          NOT NULL,
-                acceptedBlockHashes   TEXT NOT NULL,
-                parentBlockHashes   TEXT NOT NULL,
-                childBlockHashes   TEXT NOT NULL
+                "id"                      BIGSERIAL PRIMARY KEY,
+                "blockHash"              CHAR(64)        NULL,
+                "acceptingBlockHash"      CHAR(64) NULL,
+                "acceptingBlockTimestamp" INT NULL,
+                "version"                 INT             NOT NULL,
+                "hashMerkleRoot"        CHAR(64)        NOT NULL,
+                "acceptedIDMerkleRoot" CHAR(64)        NOT NULL,
+                "utxoCommitment"         CHAR(64)        NOT NULL,
+                "timestamp"               bigint NOT NULL,
+                "bits"                    INT     NOT NULL,
+                "nonce"                   BYTEA  NOT NULL,
+                "blueScore"              BIGINT  NOT NULL,
+                "isChainBlock"          BOOLEAN         NOT NULL,
+                "mass"                    BIGINT          NOT NULL,
+                "acceptedBlockHashes"   TEXT NOT NULL,
+                "parentBlockHashes"   TEXT NOT NULL,
+                "childBlockHashes"   TEXT NOT NULL
             );        
         `);
 
-        // PRIMARY KEY (id),
-        // UNIQUE INDEX idx_blocks_block_hash (blockHash),
-        // INDEX idx_blocks_timestamp (timestamp),
-        // INDEX idx_blocks_is_chain_block (isChainBlock),
-        // INDEX idx_blocks_blueScore (blueScore)
-
-        let blocks_idx = ['blockHash:UNIQUE','timestamp','isChainBlock','blueScore'];
-        while(blocks_idx.length) {
+        let blocks_idx = ['blockHash:UNIQUE', 'timestamp', 'isChainBlock', 'blueScore'];
+        while (blocks_idx.length) {
             let [idx, unique] = blocks_idx.shift().split(':');
-            await this.sql(`CREATE ${unique||''} INDEX IF NOT EXISTS idx_${idx} ON blocks (${idx})`);
+            await this.sql(`CREATE ${unique || ''} INDEX IF NOT EXISTS "idx_${idx}" ON blocks ("${idx}")`);
         }
-        
+
         //id                      BIGSERIAL PRIMARY KEY,
         await this.sql(`
             CREATE TABLE IF NOT EXISTS block_relations (
@@ -718,15 +546,15 @@ class DAGViz {
 
         //await this.sql(`CREATE UNIQUE INDEX idx_child ON block_relations (child)`);
         // UNIQUE INDEX idx_child (child)
-        
+
         await this.sql(`
             CREATE TABLE IF NOT EXISTS last_block_hash (
                 id                      BIGSERIAL PRIMARY KEY,
                 xid                     INT,
                 hash  CHAR(64) NOT NULL
             );
-        `);        
-                //UNIQUE INDEX idx_xid (xid)
+        `);
+        //UNIQUE INDEX idx_xid (xid)
 
         await this.sql(`CREATE UNIQUE INDEX IF NOT EXISTS idx_xid ON last_block_hash (xid)`);
 
@@ -759,6 +587,7 @@ v2
             this.updateRelations();
         });
         */
+        this.sync()
     }
 
     log(...args) {
@@ -783,102 +612,85 @@ v2
         console.log("LAST BLOCK RETURN ROWS:", rows);
 
         let row = rows.shift();
-        if(!row)
+        if (!row)
             return Promise.resolve(null);
         console.log('restoring last block hash:', row.hash);
         return row.hash;
     }
 
-    getBlockCount() {
-
-        return Promise.reject('refactoring');
-
-        return new Promise((resolve, reject) => {
-            rp({url: `${this.kasparov}/blocks/count`, rejectUnauthorized}).then((text) => {
-                let data = null;
-                try {
-                    data = JSON.parse(text);
-                } catch(ex) {
-                    reject(ex);
-                }
-                // console.log(data);
-                resolve(data);
-            }, (err) => {
-                if((err+"").indexOf('ECONNREFUSED')) {
-                    const ts = Date.now();
-                    if(!this.last_gbc_ts || ts > this.last_gbc_ts+1000*60) {
-                        console.log("ECONNREFUSED".red, `${this.kasparov}/blocks/count`,args);
-                        this.last_gbc_ts = ts;
-                    }
-                }
-                else
-                    console.log(err);
-                reject(err);
-            });
-
-        });
+    async getRPCHeaderCount() {
+        const result = await this.rpc.client.call('getBlockCountRequest', {});
+        return Number(result.headerCount);
     }
 
-    fetchAddressTxs(address, options={}) {
+    fetchAddressTxs(address, options = {}) {
 
         return Promise.reject('refactoring');
 
 
-        return new Promise((resolve,reject) => {
-            let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
+        return new Promise((resolve, reject) => {
+            let args = Object.entries(options).map(([k, v]) => `${k}=${v}`).join('&');
             rp({url: `${this.kasparov}/transactions/address/${address}?${args}`, rejectUnauthorized}).then((text) => {
                 let data = null;
                 try {
                     data = JSON.parse(text);
-                } catch(ex) {
+                } catch (ex) {
                     reject(ex);
                 }
                 resolve(data);
             }, (err) => {
-                if((err+"").indexOf('ECONNREFUSED'))
+                if ((err + "").indexOf('ECONNREFUSED'))
                     console.log("ECONNREFUSED".red, `${this.kasparov}/transactions/address/${address}?${args}`)
                 else
                     console.log(err);
                 reject(err);
             });
-            
+
         })
     }
 
-    fetch(options) {
+    async bluestBlockHash() {
+        const rows = await this.sql('SELECT "blockHash" FROM blocks order by "blueScore" desc limit 1');
+        if (rows.length === 0) {
+            return ""
+        }
+        const [bluestBlock] = rows;
+        return bluestBlock.blockHash;
+    }
 
-        return Promise.reject('refactoring');
+    async selectedTipHash() {
+        const rows = await this.sql('SELECT "blockHash" FROM blocks where "isChainBlock" order by "blueScore" desc limit 1');
+        if (rows.length === 0) {
+            return ""
+        }
+        return rows[0].blockHash;
+    }
 
-        return new Promise((resolve,reject) => {
-            let args = Object.entries(options).map(([k,v])=>`${k}=${v}`).join('&');
-            rp({url: `${this.kasparov}/blocks?${args}`, rejectUnauthorized}).then((text) => {
-                let data = null;
-                try {
-                    data = JSON.parse(text);
-                } catch(ex) {
-                    reject(ex);
-                }
-                resolve(data);
-            }, (err) => {
-                if((err+"").indexOf('ECONNREFUSED'))
-                    console.log("ECONNREFUSED".red, `${this.kasparov}/blocks?${args}`)
-                else
-                    console.log(err);
-                reject(err);
-            });
-            
-        })
+    async fetchBlocks() {
+        const bluestBlockHash = await this.bluestBlockHash();
+        const {blockVerboseData} = await this.rpc.client.call('getBlocksRequest', {
+            lowHash: bluestBlockHash,
+            includeBlockVerboseData: true
+        });
+        if (blockVerboseData.length === 1 && blockVerboseData[0].hash === bluestBlockHash) {
+            return {done: true}
+        }
+        return {blocks: blockVerboseData, done: false}
+    }
+
+    async fetchSelectedChain() {
+        const selectedTipHash = await this.selectedTipHash();
+        return this.rpc.client.call("getVirtualSelectedParentChainFromBlockRequest", {startHash: selectedTipHash})
     }
 
     async resetChain(dropdb = false) {
         console.log(`initiating database purge...`);
-        if(dropdb) {
+        if (dropdb) {
             await this.sql(`DROP TABLE blocks CASCADE`);
             await this.sql(`DROP TABLE block_relations CASCADE`);
             await this.sql(`DROP TABLE last_block_hash CASCADE`);
             await this.initDatabaseSchema();
-        }
-        else {
+        } else {
             await this.sql(`TRUNCATE TABLE blocks`);
             await this.sql(`TRUNCATE TABLE block_relations`);
         }
@@ -889,19 +701,11 @@ v2
         this.io.emit('chain-reset');
     }
 
-    sync() {
+    async sync() {
 
-        const skip = this.skip;
-        let limit = 100;
-        const order = 'asc';
-
-        if(this.args['rate-limit'])
-            limit = parseInt(this.args['rate-limit']) || 100;
-
-        this.verbose && process.stdout.write(` ...${this.lastTotal ? (skip/this.lastTotal * 100).toFixed(2)+'%' : skip}... `);
-
-        this.getBlockCount().then(async (total) => {
-            if(this.lastTotal !== undefined && this.lastTotal > total+1e4 || this.skip > total+1e3) {
+        try {
+            const total = await this.getRPCHeaderCount();
+            if (this.lastTotal !== undefined && this.lastTotal > total + 1e4 || this.skip > total + 1e3) {
                 console.log(`incloming total block count ${total}+1e4 is less than previous total ${this.lastTotal}`);
                 await this.resetChain();
                 dpc(1000, () => {
@@ -910,216 +714,110 @@ v2
                 return;
             }
 
-            if(!total) {
-                console.log(`error: nullish total received from /blocks/count received value is: "${total}"`);
-            }
-
-            if(total && total != this.lastTotal)
-                this.lastTotal = total;
-
-            if(this.skip > total) {
-                console.log(`ERROR: this.skip ${this.skip} > total ${total}`);
-            }
-
-            if(!total || this.skip == total) {
-                const wait = 2500;
-                return dpc(wait, () => {
-                    this.sync();
-                });
-            }
-                
             // console.log(`fetching: ${skip}`);
-            this.fetch({ skip, limit, order })
-            .then(async (blocks) => {
-
-
-                if(blocks && blocks.length) {
-
-                    if(blocks.length < 100)
-                        this.io.emit('blocks',blocks);
-        
-                    this.skip += blocks.length;
-
-                    const pre_ = blocks.length;
-                    blocks = blocks.filter(block=>!this.rtbsMap[block.blockHash]);
-                    const post_ = blocks.length;
-                    if(!this.tracking && pre_ != post_)
-                        this.tracking = true;
-                    if(blocks.length) {
-                        if(this.tracking) {
-                            console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
-                            console.log(' ->'+blocks.map(block=>block.blockHash).join('\n'));
-                            console.log(`possible MQTT failure, catching up via db sync...`);
-                        }
-
-                        await this.post(blocks);
-                    }
+            while (true) {
+                let {blocks, done} = await this.fetchBlocks();
+                if (done) {
+                    break;
                 }
-                const wait = (!blocks || blocks.length != 100) ? 1000 : 0;
-                //(blocks && blocks.length != 100) ? 1000 : 0;
-                dpc(wait, ()=> {
-                    this.sync();
-                });
-            }, (err) => {
-                //console.log(err);
-                const wait = 3500;
-                dpc(wait, ()=> {
-                    this.sync();
-                })
-            });
-            // .catch(e=>{
-            //     this.sync();
-            // })
-           
-        }, (err) => {
+
+                if (blocks.length < 100)
+                    this.io.emit('blocks', blocks);
+
+                this.skip += blocks.length;
+
+                const pre_ = blocks.length;
+                blocks = blocks.filter(block => !this.rtbsMap[block.hash]);
+                const post_ = blocks.length;
+                if (!this.tracking && pre_ != post_)
+                    this.tracking = true;
+                if (blocks.length) {
+                    if (this.tracking) {
+                        console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
+                        console.log(' ->' + blocks.map(block => block.blockHash).join('\n'));
+                        console.log(`possible MQTT failure, catching up via db sync...`);
+                    }
+
+                    await this.post(blocks);
+                }
+            }
+
+            const selectedChainChanges = await this.fetchSelectedChain();
+            await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
+        } catch (err) {
             const wait = 3500;
-            dpc(wait, ()=> {
+            console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds`)
+            dpc(wait, () => {
                 this.sync();
             })
+        }
+
+        const wait = 300 * 1000;
+        console.log(`Finished to sync. Restarting sync in ${wait} milliseconds`)
+        dpc(wait, () => {
+            this.sync();
         });
     }
 
     rewind(nblocks) {
         this.skip -= nblocks;
-        if(this.skip < 0)
+        if (this.skip < 0)
             this.skip = 0;
         console.log(`warning: rewinding ${nblocks}; new position ${this.skip}`);
     }
 
+    verboseBlockToDBBlock(verboseBlock) {
+        const dbBlock = {
+            mass: 0,
+            acceptedBlockHashes: '',
+        };
+        for (const field in verboseBlock) {
+            if (DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS.hasOwnProperty(field)) {
+                dbBlock[DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS[field]] = verboseBlock[field];
+            }
+        }
+        dbBlock.parentBlockHashes = verboseBlock.parentHashes.join(',');
+        dbBlock.bits = parseInt(verboseBlock.bits, 16);
+        dbBlock.childBlockHashes = '';
+        dbBlock.isChainBlock = Number(verboseBlock.blueScore) === 0; // Every block except genesis is not a chain block by default.
+        return dbBlock;
+    }
 
-    post(blocks) {
-        // console.log("DATA:",data);
+    async post(blocks) {
+        this.lastBlock = blocks[blocks.length - 1];
+        console.log('posting blocks...', blocks.length);
 
-        this.lastBlock = blocks[blocks.length-1];
-        // console.log('posting blocks...',blocks.length);
-
-        return new Promise(async (resolve,reject)=>{
-            //console.log("DOING POST") // 'acceptingBlockTimestamp',
-            
-
-            // let blocks = data.blocks;
-            let relations = [];
-
-            blocks.forEach(block => {
-                block.isChainBlock = block.isChainBlock === true ? 1 : 0;
-
-                if(block.parentBlockHashes) {
-                    block.parentBlockHashes.forEach(hash => relations.push([hash, block.blockHash, false]));
-                
-                
-                    // store accepted block hashes as a diff against parent block hashes
+        //console.log("DOING POST") // 'acceptingBlockTimestamp',
 
 
-                    // console.log("original accepted list",block.acceptedBlockHashes);
-                    let acceptingNonParents = block.parentBlockHashes.slice();
-                    block.acceptedBlockHashes = block.acceptedBlockHashes.map((acceptedHash) => {
-                        let idx = acceptingNonParents.indexOf(acceptedHash);
-                        if(idx == -1){
-                            if(block.isChainBlock)
-                                console.log("ACCEPTED BUT NOT PARENT:", acceptedHash, "in block", block.blockHash);
-                            return '+'+acceptedHash;
-                        }
-                        else {
-                            acceptingNonParents.splice(idx,1);
-                            return null;
-                        }
-                    }).filter(v=>v);
-                    // console.log("acceptingNonParents",acceptingNonParents);
-                    acceptingNonParents.forEach((hash) => {
-                        block.acceptedBlockHashes.push('-'+hash);
-                        // console.log("ACCEPTED but NOT A PARENT:", hash, "in block", block.blockHash);
-                    })
-                    // console.log("block.acceptedBlockHashes",block.acceptedBlockHashes);
-                }
-                
-                block.acceptedBlockHashes = block.acceptedBlockHashes.join(',');
-                // if(block.acceptedBlockHashes)
-                //     console.log('---',block.acceptedBlockHashes);
-                //console.log('---');
+        let relations = [];
 
-                // delete block.parentBlockHashes;
-                block.parentBlockHashes = block.parentBlockHashes.join(',');
-                block.childBlockHashes = '';
+        blocks.forEach(block => {
+            if (block.parentHashes) {
+                block.parentHashes.forEach(hash => relations.push([hash, block.hash, false]));
+            }
+        });
 
-                // if(block.acceptingBlockHash)
-                //     relations.push([block.acceptingBlockHash, block.blockHash]);
+        this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
-                if(block.acceptingBlockHash == null)
-                    block.acceptingBlockHash = '';
-                //delete block.acceptingBlockHash;
-            });
+        const dbBlocks = blocks.map(block => this.verboseBlockToDBBlock(block));
+        let blockData = dbBlocks.map(dbBlock => {
+            let values = DAGViz.DB_TABLE_BLOCKS_ORDER.map(key => format(`%L`, dbBlock[key])).join(',');
+            return `(${values})`;
+        }).join(',');
 
-            // sort fields for REPLACE INTO ... VALUES ? injection below
-            blocks = blocks.map(block => DAGViz.DB_TABLE_BLOCKS_ORDER.map(field => block[field]));
-                //Object.values(block));
+        const dbFields = DAGViz.DB_TABLE_BLOCKS_ORDER.map(field => '"' + field + '"')
 
-            this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
-
-//            INSERT INTO last_block_hash (xid, hash) VALUES (1, '${hash}')
-//            ON CONFLICT (xid) DO UPDATE SET hash = excluded.hash;
-
-            let blockData = blocks.map(block => {
-                let values = block.map(v => `'${v}'`).join(',');
-                return `(${values})`;
-            }).join(',');
-
-//            const VALUES = blocks.map(block)
-            const REPLACE = DAGViz.DB_TABLE_BLOCKS_ORDER.map(v => `${v} = EXCLUDED.${v}`).join(', ');
-
-            try {
-
-                await this.sql(`
-                    INSERT INTO blocks (${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')})
+        await this.sql(`
+                    INSERT INTO blocks (${dbFields.join(', ')})
                     VALUES ${blockData} 
-                    ON CONFLICT (blockHash) DO UPDATE
-                    SET 
-                        ${REPLACE}
+                    ON CONFLICT ("blockHash") DO NOTHING
                     ;
-                `);//, blocks);
+                `);
 
-                // await this.sql(query);
-                    
+        if (relations.length) {
 
-
-
-/*
-                let query = format(`
-                    INSERT INTO blocks (${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')})
-                    VALUES %L 
-                    ON CONFLICT (blockHash) DO UPDATE
-                    SET 
-                        ${REPLACE}
-                    ;
-                `, blocks);
-
-                await this.sql(query);
-  */                  
-/*
-                id                      BIGSERIAL PRIMARY KEY,
-                blockHash              CHAR(64)        NULL,
-                acceptingBlockHash      CHAR(64) NULL,
-                acceptingBlockTimestamp INT NULL,
-                version                 INT             NOT NULL,
-                hashMerkleRoot        CHAR(64)        NOT NULL,
-                acceptedIDMerkleRoot CHAR(64)        NOT NULL,
-                utxoCommitment         CHAR(64)        NOT NULL,
-                timestamp               INT        NOT NULL,
-                bits                    INT     NOT NULL,
-                nonce                   BIGINT  NOT NULL,
-                blueScore              BIGINT  NOT NULL,
-                isChainBlock          BOOLEAN         NOT NULL,
-                mass                    BIGINT          NOT NULL,
-                parentBlockHashes   TEXT NOT NULL,
-                childBlockHashes   TEXT NOT NULL
-
-*/
-
-                //     ${DAGViz.DB_TABLE_BLOCKS_ORDER.join(', ')}
-                // ) VALUES ?
-
-                if(relations.length) {
-
-                    let query = format(`
+            let query = format(`
                         INSERT INTO block_relations (
                             parent, child, linked
                         ) VALUES %L
@@ -1127,24 +825,10 @@ v2
                         SET linked = FALSE;
                     `, relations);
 
-                    await this.sql(query);
+            await this.sql(query);
+        }
 
-                    // await this.sql(`
-                    //     REPLACE INTO block_relations (
-                    //         parent, child, linked
-                    //     ) VALUES ?
-                    // `, [relations]);
-                }
-
-                await this.update();
-
-                resolve();
-
-            } catch(ex) {
-                //this.log(ex);
-                reject(ex.toString());
-            }
-        });
+        await this.update();
     }
 
 
@@ -1153,18 +837,18 @@ v2
 //        await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
         await this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
 
-        let hashMap = { }
+        let hashMap = {}
         rows.forEach((row) => {
             // hashMap[row.child] = true;
             hashMap[row.parent] = true;
         })
         let blockHashes = Object.keys(hashMap);
         // console.log(`+ processing ${blockHashes.length} blocks`)
-        while(blockHashes.length) {
+        while (blockHashes.length) {
             let hash = blockHashes.shift()
             let children = await this.sql(`SELECT * FROM block_relations WHERE parent = '${hash}'`);
             children = children.map(row => row.child);
-            await this.sql(`UPDATE blocks SET childBlockHashes = '${children.join(',')}' WHERE blockHash='${hash}'`);
+            await this.sql(`UPDATE blocks SET "childBlockHashes" = '${children.join(',')}' WHERE "blockHash"='${hash}'`);
             // console.log(`+ updating block children [${children.length}]`);
         }
 
@@ -1197,40 +881,38 @@ v2
     }
 
     NormalizeBlock(block) {
-        let o = { };
-        DAGViz.DB_TABLE_BLOCKS_ORDER.forEach(v => o[v] = block[v.toLowerCase()]);
-        if(block.lseq)
+        let o = {};
+        DAGViz.DB_TABLE_BLOCKS_ORDER.forEach(v => o[v] = block[v]);
+        if (block.lseq)
             o.lseq = block.lseq
         return o;
     }
 
     dataSlice(args) {
-        return Promise.reject('refactoring');
-
         return new Promise(async (resolve, reject) => {
 
-            let { from, to, unit } = args;
+            let {from, to, unit} = args;
             // console.log(`slice: ${from}-${to}`);
-            if(!from && !to) {
+            if (!from && !to) {
                 to = Date.now() / 1000;
                 from = to - 1000 * 60 * 60;
             }
 
-            if(!unit)
+            if (!unit)
                 reject('must supply units');
 
-            if(!['timestamp','lseq','blueScore'].includes(unit))
+            if (!['timestamp', 'lseq', 'blueScore'].includes(unit))
                 reject(`invalid unit '${unit}'`);
 
-            if(unit == 'lseq')
+            if (unit == 'lseq')
                 unit = 'id';
 
             from = parseInt(from);
             to = parseInt(to);
-            if(from < 0)
+            if (from < 0)
                 from = 0;
-            if(to < from)
-                to = from+10;
+            if (to < from)
+                to = from + 10;
 
             // console.log(`unit: ${unit} from: ${from} to: ${to}`);
 
@@ -1239,15 +921,15 @@ v2
             try {
                 // console.log("REQUESTING...")
 
-                let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to}`);
+                let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks WHERE "${unit}" >= ${from} AND "${unit}" <= ${to}`);
                 // let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
                 // console.log('result:',result);
                 let total = result.shift().total;
                 // console.log(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
-                let blocks = await this.sql(`SELECT * FROM blocks WHERE ${unit} >= ${from} AND ${unit} <= ${to} ORDER BY ${unit} LIMIT ${limit}`);
+                let blocks = await this.sql(`SELECT * FROM blocks WHERE "${unit}" >= ${from} AND "${unit}" <= ${to} ORDER BY "${unit}" LIMIT ${limit}`);
                 // console.log("BLOCKS:", blocks);
 
-                if(this.args.latency) {
+                if (this.args.latency) {
                     await this.sleep(parseInt(this.flags.latency));
                 }
                 // console.log(`SELECT blocks.blockHash, block_relations.parent, block_relations.child FROM blocks LEFT JOIN block_relations ON block_relations.child = blocks.blockHash WHERE blocks.${unit} >= ${from} AND blocks.${unit} <= ${to} LIMIT ${limit}`);
@@ -1286,12 +968,12 @@ v2
 
                 // [ blocks, relations ] = await Promise.all([blocks, relations]);
                 // console.log("RESPONDING...");
-                const blockHashMap = { };
+                const blockHashMap = {};
                 blocks = blocks.map(block => {
                     return this.deserealizeBlock(block);
                     // block.lseq = block.id;
-                    // block.parentblockhashes = block.parentblockhashes.split(',');
-                    // block.childblockhashes = block.childblockhashes.split(',');
+                    // block.parentBlockHashes = block.parentBlockHashes.split(',');
+                    // block.childBlockHashes = block.childBlockHashes.split(',');
                     // return this.NormalizeBlock(block);
                 });
                 // parents.forEach(({ parent, child}) => {
@@ -1312,27 +994,27 @@ v2
                 //     block.childBlockHashes.push(child);
                 // });
 
-                if(!blocks.length){
-                    resolve({ blocks, total, max:null });
+                if (!blocks.length) {
+                    resolve({blocks, total, max: null});
                     return
                 }
-                let tail = blocks.length-1;
+                let tail = blocks.length - 1;
                 let last = blocks[tail][unit];
-                if(last != blocks[0][unit]) {
+                if (last != blocks[0][unit]) {
                     let last = blocks[tail--][unit];
 
-                    while(tail && last == blocks[tail]) {
+                    while (tail && last == blocks[tail]) {
                         last = blocks[tail--][unit];
-                    }            
+                    }
                 }
 
                 let max = null;
-                if(this.lastBlock) {
+                if (this.lastBlock) {
                     max = this.lastBlock[unit];
                 }
                 // console.log(`blocks: ${blocks.length} last: ${last} total: ${total} max: ${max}`);
-                resolve({ blocks, last, total, max });
-            } catch(ex) {
+                resolve({blocks, last, total, max});
+            } catch (ex) {
                 console.log(ex);
                 reject(ex);
             }
@@ -1341,34 +1023,34 @@ v2
     }
 
     async getBlock(args_) {
-        
+
         let args = args_.split('/');
 
         let type = args.length > 1 ? args.shift() : 'blockHash';
 
         args = args.shift().split('x')
         // console.log('getBlock type:',type,'args:',args);
-        if(!['blockHash','lseq','block'].includes(type))
+        if (!['blockHash', 'lseq', 'block'].includes(type))
             return Promise.reject('invalid getBlock() type');
 
-        args = args.filter(v=>v);
+        args = args.filter(v => v);
 
-        if(!args.length)
+        if (!args.length)
             return Promise.reject(`invalid request: no arguments for ${type}`);
 
         type = {
-            'lseq' : 'id',
-            'block' : 'blockHash'
+            'lseq': 'id',
+            'block': 'blockHash'
         }[type] || type;
 
         //let hashes = hashes.split(':');
 
-        if(type == 'id') {
+        if (type == 'id') {
             args = args.map((arg) => {
-                return parseInt(arg,16);
+                return parseInt(arg, 16);
             });
         }
-        
+
         //console.log(`asing for blocks:`, args);
         let blocks = await this.sql(`SELECT * FROM blocks WHERE ${type} = ANY ($1)`, [args]);// ($1::list)`, [args]); $1::int[]
         //console.log("GOT BLOCKS:", blocks);
@@ -1382,30 +1064,35 @@ v2
 
     deserealizeBlock(block) {
         block.lseq = block.id;
-        block.parentblockhashes = block.parentblockhashes.split(',');
-        block.childblockhashes = block.childblockhashes.split(',');
+        if (block.parentBlockHashes === "") {
+            block.parentBlockHashes = []
+        } else {
+            block.parentBlockHashes = block.parentBlockHashes.split(',');
+        }
+        block.childBlockHashes = block.childBlockHashes.split(',');
 
-        let accepted_diff = block.acceptedblockhashes.split(',');
+        let accepted_diff = block.acceptedBlockHashes.split(',');
 
-        let abh = block.parentblockhashes.slice();
+        let abh = block.parentBlockHashes.slice();
         accepted_diff.forEach((v) => {
             let op = v.charAt(0);
             let hash = v.substring(1);
-            if(op == '-') {
+            if (op == '-') {
                 let idx = abh.indexOf(hash);
-                if(idx == -1) {
+                if (idx == -1) {
 
                 } else {
-                    abh.splice(idx,1);
+                    abh.splice(idx, 1);
                 }
-            } else if(op == '+') {
+            } else if (op == '+') {
                 abh.push(hash);
             }
         })
-        block.acceptedblockhashes = abh;
+        block.acceptedBlockHashes = abh;
 
-        // TODO @aspect - resolve to null 
-        block.acceptingblockhash = block.acceptingblockhash.trim();
+        if (block.acceptingBlockHash !== null) {
+            block.acceptingBlockHash = block.acceptingBlockHash.trim();
+        }
 
         return this.NormalizeBlock(block);
     }
@@ -1415,25 +1102,25 @@ v2
         let blocks = null;
 
         //console.log('text length:',text.length);
-        if(/^(kaspatest:|kaspa:)/.test(text) || text.length == 42){
+        if (/^(kaspatest:|kaspa:)/.test(text) || text.length == 42) {
             let adress = text;
-            if(adress.indexOf(":")>-1)
+            if (adress.indexOf(":") > -1)
                 adress = adress.split(":")[1];
-            if(adress.length == 42){
+            if (adress.length == 42) {
                 //blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=$1`, [_text]);
                 let transactions = await this.fetchAddressTxs(text)
-                
-                let hashes = transactions.filter(t=>t.acceptingBlockHash)
-                            .map(t=>t.acceptingBlockHash);
+
+                let hashes = transactions.filter(t => t.acceptingBlockHash)
+                    .map(t => t.acceptingBlockHash);
                 //console.log("doSearch:transactions hashes", hashes)
                 blocks = [];
-                if(hashes.length)
-                    blocks = await this.sql(format(`SELECT * FROM blocks WHERE blockHash IN (%L)`, hashes));
+                if (hashes.length)
+                    blocks = await this.sql(format(`SELECT * FROM blocks WHERE "blockHash" IN (%L)`, hashes));
             }
         }
 
-        if(!blocks && text.length == 64) {
-            blocks = await this.sql(`SELECT * FROM blocks WHERE blockHash=$1`, [text]);
+        if (!blocks && text.length == 64) {
+            blocks = await this.sql(`SELECT * FROM blocks WHERE "blockHash"=$1`, [text]);
         }
 
         //console.log(blocks);
@@ -1446,7 +1133,7 @@ v2
 
     sleep(t) {
         return new Promise((resolve) => {
-            dpc(t,resolve);
+            dpc(t, resolve);
         })
     }
 }
