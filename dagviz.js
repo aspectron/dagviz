@@ -18,7 +18,7 @@ const path = require('path');
 const WebApp = require('./web-app.js');
 const FlowRouter = require('@aspectron/flow-router');
 const colors = require('colors');
-const {RPC} = require('kaspa-grpc-node');
+const {RPC} = require('@kaspa/grpc-node');
 //const ejs = require('ejs')
 
 let args = utils.args();
