@@ -67,6 +67,7 @@ class DAGViz {
             .option('--testnet', 'use testnet network')
             .option('--devnet', 'use devnet network')
             .option('--simnet', 'use simnet network')
+            .option('--database-host <port>', 'the database host (default localhost)')
             .option('--database-port <port>', 'the database port (default 8309)')
             .option('--database-scheme  <scheme>', 'the database scheme')
             .option('--database-user <user>', 'the database user')
@@ -82,6 +83,7 @@ class DAGViz {
         this.host = this.options.rpc || `127.0.0.1:${ports[network]}`;
 
 
+        this.databaseHost = this.options.databaseHost || 'localhost';
         this.databasePort = this.options.databasePort || 8309;
         this.databaseUser = this.options.databaseUser || 'dagviz';
         this.databasePassword = this.options.databasePassword || 'dagviz';
@@ -459,7 +461,7 @@ class DAGViz {
     async initDatabase() {
         const port = this.databasePort;
         this.dbClient = new Client({
-            host: 'localhost',
+            host: this.databaseHost,
             port,
             user: this.databaseUser,
             password: this.databasePassword,
