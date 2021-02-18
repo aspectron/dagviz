@@ -67,6 +67,7 @@ class DAGViz {
             .option('--testnet', 'use testnet network')
             .option('--devnet', 'use devnet network')
             .option('--simnet', 'use simnet network')
+            .option('--listen <port>', 'the port to listen to')
             .option('--database-host <port>', 'the database host (default localhost)')
             .option('--database-port <port>', 'the database port (default 8309)')
             .option('--database-scheme  <scheme>', 'the database scheme')
@@ -81,6 +82,8 @@ class DAGViz {
         console.log('network:', network);
 
         this.host = this.options.rpc || `127.0.0.1:${ports[network]}`;
+
+        this.listenPort = this.options.listen || 8686;
 
 
         this.databaseHost = this.options.databaseHost || 'localhost';
@@ -439,7 +442,7 @@ class DAGViz {
 
         return new Promise((resolve, reject) => {
 
-            let port = this.args.port || 8686;
+            let port = this.listenPort;
             // Create server
             const server = http.createServer((req, res) => {
                 app.run(req, res);
