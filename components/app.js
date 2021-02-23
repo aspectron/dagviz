@@ -1222,7 +1222,6 @@ export class App {
 		this.io.on('dag/blocks', (data) => {
 
 			let { blocks, rate } = data;
-			blocks = blocks.map(data => this.deserealizeBlock(data));
 
 			// const ts = Date.now();
 			// while(this.blockTimings[0] < ts-1000*60)

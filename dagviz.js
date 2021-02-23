@@ -245,7 +245,8 @@ class DAGViz {
         }
 
         // console.log('received: dag/blocks',blocks);
-        const data = {blocks: [this.serializeBlock(block)], rate};
+        const dbBlock = this.verboseBlockToDBBlock(block);
+        const data = {blocks: [this.deserealizeBlock(dbBlock)], rate};
         while (this.last_mqtt_block_updates.length > 10)
             this.last_mqtt_block_updates.shift();
         this.last_mqtt_block_updates.push(data);
@@ -747,8 +748,9 @@ v2
                 }
             }
 
-            const selectedChainChanges = await this.fetchSelectedChain();
-            await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
+            // TODO: TEMPORARILY DISABLE
+            // const selectedChainChanges = await this.fetchSelectedChain();
+            // await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
         } catch (err) {
             const wait = 3500;
             console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds`)
@@ -1095,7 +1097,7 @@ v2
         })
         block.acceptedBlockHashes = abh;
 
-        if (block.acceptingBlockHash !== null) {
+        if (block.acceptingBlockHash) {
             block.acceptingBlockHash = block.acceptingBlockHash.trim();
         }
 
