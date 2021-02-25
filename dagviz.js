@@ -112,13 +112,14 @@ class DAGViz {
     }
 
     async init() {
+        await this.initHTTP();
         await this.initRPC();
         this.initRTBS();
         await this.initDatabase();
         await this.initDatabaseSchema();
         // await this.initLastBlockTracking();
         // await this.initMQTT();
-        await this.initHTTP();
+        
 
         return this.main();
     }
@@ -228,6 +229,7 @@ class DAGViz {
     async handleBlockAddedNotification(notification) {
 
         const block = notification.blockVerboseData;
+        //console.log("notification", notification)
 
         const ts = Date.now();
         // while(this.blockTimings[0] < ts-1000*15)
@@ -298,7 +300,7 @@ class DAGViz {
             return console.log('invalid mqtt message:', message);
 
         const block = message;
-//        this.io.emit("dag/selected-tip", this.serializeBlock(block));
+        //this.io.emit("dag/selected-tip", this.serializeBlock(block));
 
         this.sql(`UPDATE blocks SET "isChainBlock" = TRUE WHERE "blockHash" = '${block.blockHash}'`);
 
@@ -569,7 +571,7 @@ class DAGViz {
     async main() {
         /*
 
-v2
+        v2
 
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
@@ -678,6 +680,7 @@ v2
             lowHash: bluestBlockHash,
             includeBlockVerboseData: true
         });
+        //console.log("blockVerboseData", blockVerboseData[0], bluestBlockHash)
         if (blockVerboseData.length === 1 && blockVerboseData[0].hash === bluestBlockHash) {
             return {done: true}
         }
@@ -740,7 +743,7 @@ v2
                 if (blocks.length) {
                     if (this.tracking) {
                         console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
-                        console.log(' ->' + blocks.map(block => block.blockHash).join('\n'));
+                        console.log(' ->' + blocks.map(block => block.hash).join('\n'));
                         console.log(`possible MQTT failure, catching up via db sync...`);
                     }
 
@@ -792,7 +795,7 @@ v2
 
     async post(blocks) {
         this.lastBlock = blocks[blocks.length - 1];
-        console.log('posting blocks...', blocks.length);
+        console.log('posting blocks...', blocks.length, this.lastBlock.blueScore);
 
         //console.log("DOING POST") // 'acceptingBlockTimestamp',
 
@@ -841,7 +844,7 @@ v2
 
     async updateRelations() {
         let rows = await this.sql('SELECT * FROM block_relations WHERE linked = FALSE LIMIT 1000');
-//        await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
+        //await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
         await this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
 
         let hashMap = {}
