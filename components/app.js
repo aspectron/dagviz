@@ -1222,7 +1222,6 @@ export class App {
 		this.io.on('dag/blocks', (data) => {
 
 			let { blocks, rate } = data;
-			blocks = blocks.map(data => this.deserealizeBlock(data));
 
 			// const ts = Date.now();
 			// while(this.blockTimings[0] < ts-1000*60)
@@ -1324,36 +1323,37 @@ export class App {
 		this.io.on('dag/selected-parent-chain', (args) => {
 			this.verbose && console.log('dag/selected-parent-chain', args);
 
-			const { addedChainBlocks, removedBlockHashes } = args;
-			const { nodes } = this.graph;
+			const {addedChainBlocks, removedChainBlockHashes} = args;
+			const {nodes} = this.graph;
 			const updated = new Map();
 
-			removedBlockHashes && removedBlockHashes.length && removedBlockHashes.forEach((hash) => {
+			addedChainBlocks && removedChainBlockHashes.length && removedChainBlockHashes.forEach((hash) => {
 				const node = nodes[hash];
-				if(node) {
+				if (node) {
 					node.data.isChainBlock = false;
 					// node.data.acceptingBlockHash = null;
 					updated.set(node.data.blockHash, node);
 				}
 			});
 
-			removedBlockHashes && removedBlockHashes.length && Object.values(nodes).forEach(node => {
-				if(removedBlockHashes.includes(node.data.acceptingBlockHash)) {
+			removedChainBlockHashes && removedChainBlockHashes.length && Object.values(nodes).forEach(node => {
+				if (removedChainBlockHashes.includes(node.data.acceptingBlockHash)) {
 					node.data.acceptingBlockHash = null;
 					updated.set(node.data.blockHash, node);
 				}
-			});		
+			});
 
 			addedChainBlocks && addedChainBlocks.length && addedChainBlocks.forEach((instr) => {
-				const { hash, acceptedBlockHashes } = instr;
+				const {hash, acceptedBlocks} = instr;
 				const ref = nodes[hash];
-				if(ref) {
+				if (ref) {
 					ref.data.isChainBlock = true;
 					updated.set(ref.data.blockHash, ref);
 				}
+				const acceptedBlockHashes = acceptedBlocks.map(block => block.hash);
 				acceptedBlockHashes.forEach((target) => {
 					const node = nodes[target];
-					if(node) {
+					if (node) {
 						node.data.acceptingBlockHash = hash;
 						updated.set(node.data.blockHash, node);
 					}

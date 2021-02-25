@@ -1,7 +1,7 @@
 {
   "name": "dagviz",
   "description": "blockDAG Visualizer and Explorer",
-  "version": "3.6.0",
+  "version": "3.6.3",
   "private": true,
   "dependencies": {
     "@aspectron/flow-async": "*",
@@ -16,7 +16,7 @@
     "finalhandler": "*",
     "fs-extra": "*",
     "is-docker": "*",
-    "kaspa-grpc-node": "aspectron/kaspa-grpc-node",
+    "@kaspa/grpc-node": "*",
     "lit-element": "*",
     "mime-types": "*",
     "mkdirp": "*",
