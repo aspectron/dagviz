@@ -176,6 +176,8 @@ class AxisNavigator extends BaseElement{
 
 		let parentBox = this.getBoundingClientRect();
 		let canvasBox = this.canvas.getBoundingClientRect();
+		this.__parentBox = parentBox;
+		this.__canvasBox = canvasBox;
 		//let { width, height } = parentBox;
 		let { width, height } = canvasBox;
 		this.PIXEL_RATIO = this.getPixelRatio();
@@ -221,8 +223,8 @@ class AxisNavigator extends BaseElement{
 
 		if(!this.app || !this.app.ctx.max)
 			return
-		let parentBox = this.getBoundingClientRect();
-		let canvasBox = this.canvas.getBoundingClientRect();
+		let parentBox = this.__parentBox || this.getBoundingClientRect();
+		let canvasBox = this.__canvasBox || this.canvas.getBoundingClientRect();
 		this.verbose && console.log('parentBox:',parentBox);
 		this.verbose && console.log('canvasBox:',canvasBox);
 		this.canvasBox = canvasBox;

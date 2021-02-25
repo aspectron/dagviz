@@ -832,6 +832,9 @@ export class GraphNode{
 	}
 
 	bindElEvents(){
+		if(this.el.__ElEvents)
+			return
+		this.el.__ElEvents = true;
 		this.el.on("click", this.onNodeClick.bind(this))
 		this.el.on("mouseover", this.onNodeHover.bind(this))
 		this.el.on("mouseout", this.onNodeOut.bind(this))
@@ -1183,8 +1186,12 @@ export class GraphNode{
 		if(this.holder.ctx)
 			this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
 
-		this.el
-			.style('transform', `translate(${this.x}px, ${this.y}px)`)
+		const transform = `translate(${this.x}px, ${this.y}px)`;
+		if(this.el.__lastTransform != transform){
+			this.el.__lastTransform = transform
+			this.el
+				.style('transform', transform)
+		}
 		if(this.holder.ctx._arrows == "multi")
 			this.updateLinkIndexes();
 		this.updateArrowHead();

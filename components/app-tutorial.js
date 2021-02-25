@@ -196,136 +196,127 @@ class AppTutorial extends BaseElement{
 		return html`
 		
 		<flow-pages id="pages" class_="has-dots" @change="${this.onSlideChange}" dotoffset="${isMobile?0:40}">
-		
-  
-					<flow-page class="active">
-						<div class="section">
-							<div class="text title">
-								Welcome to DAGViz - DAG Visualizer and Explorer for the Kaspa Network
-							</div>
-						</div>
-						
-						<div class="section">
-							<div class="text">
-								Kaspa is a <flow-link href="https://en.bitcoin.it/wiki/Proof_of_work" target="_blank">PoW</flow-link>-based 
-								ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a 
-								<flow-link href="https://docs.kas.pa/kaspa/reference/blockdag" target="_blank"> blockDAG.</flow-link>
-								A new block gets added to the blockDAG every second and
-								many blocks are created in parallel.</div>
-							<img src="/resources/images/tutorial/light/frame1.png" light />
-							<img src="/resources/images/tutorial/dark/frame1-dark.png" dark />
-						</div>
-
-
-
-						<div class="section">
-							<div class="text">Unlike a blockchain, blocks are not 
-								<flow-link href="https://en.bitcoin.it/wiki/Orphan_Block" target="_blank">orphaned</flow-link>.
-								 Kaspa merges all blocks into one blockDAG by allowing them to reference multiple parents.
-							</div>
-						</div>
-					
-
-
-						<div class="section">
-							<div class="text">
-								Rather than deciding on which conflicting blocks to discard, 
-								the consensus protocol governing the blockDAG, known as 
-								<flow-link href="https://eprint.iacr.org/2018/104.pdf" target="_blank">PHANTOM</flow-link>, 
-								orders blocks created in parallel. PHANTOM is a generalization 
-								of Bitcoin’s Nakamoto Consensus.</div>
-							<img src="/resources/images/tutorial/light/frame3.gif" light />
-							<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
-						</div>
-
-
-						<div class="section">
-							<div class="text">
-								PHANTOM favors blocks that are mined on top of up-to-date blocks and 
-								that are propagated sufficiently quickly (i.e. 
-								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/blue-set" target="_blank">blue blocks</flow-link>”) 
-								over those withheld or propagated over slow communication channels (i.e.
-								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/red-set" target="_blank">red blocks</flow-link>”).</div>
-							<img src="/resources/images/tutorial/light/frame4.png" light />
-							<img src="/resources/images/tutorial/dark/frame4-dark.png" dark />
-						</div>
-					
-
-
-						<div class="section">
-							<div class="text">
-								The “<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/blue-score" target="_blank">blue score</flow-link>”
-								of a block is a generalization of the block height in a chain; 
-								it represents the number of blue blocks in the block’s past.</div>
-							<img src="/resources/images/tutorial/light/frame5.png" light />
-							<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
-						</div>
-					
-
-						<div class="section">
-							<div class="text">
-								The recursive process of selecting the parent with the highest blue score, 
-								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/selected-parent" target="_blank">the selected parent</flow-link>”,
-								results in the identification of a chain within the blockDAG,
-								“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/selected-parent-chain" target="_blank">the selected parent chain</flow-link>”.</div>
-							<img src="/resources/images/tutorial/light/frame6.png" light />
-							<img src="/resources/images/tutorial/dark/frame6-dark.png" dark />
-						</div>
-
-
-
-						<div class="section">
-							<div class="text">
-							Each new block inherits the colouring and thus the order of its past from its 
-							selected parent, and merges blocks created in parallel to its selected parent, 
-							following a <flow-link href="https://docs.kas.pa/kaspa/archive/archive/phantom-ghostdag#phantom" target="_blank">colouring and ordering</flow-link>
-							procedure defined by the protocol.</div>
-							<img src="/resources/images/tutorial/light/frame7.png" light />
-							<img src="/resources/images/tutorial/dark/frame7.png" dark />
-						</div>
-
-
-
-						<div class="section">
-							<div class="text">
-							<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/confirmations" target="_blank">Confirmations</flow-link>
-							in PHANTOM are a generalization of confirmations in a chain,
-							and are defined by the blue score of the chain blocks atop the transaction. 
-							The fast block rate enables fast confirmation of transactions.</div>
-							<img src="/resources/images/tutorial/light/frame8.gif" light />
-							<img src="/resources/images/tutorial/dark/frame8.gif" dark />
-						</div>
-						
-						<div class="section">
-							<div class="text"><flow-link href="https://docs.kas.pa/kaspa/reference/blocks" target="_blank">Blocks</flow-link>
-							contain <flow-link href="https://docs.kas.pa/kaspa/reference/transactions" target="_blank">transactions</flow-link>
-							in the <flow-link href="https://docs.kas.pa/kaspa/reference/txo/utxo" target="_blank">UTXO</flow-link>-model format.</div>
-							<img src="/resources/images/tutorial/light/frame9.png" light />
-							<img src="/resources/images/tutorial/dark/frame9-dark.png" dark />
-						</div>
-
-
-
-						<div class="section">
-							<div class="text">I. R. LEGEND</div>
-							<img src="/resources/images/tutorial/light/legend1.png" light />
-							<img src="/resources/images/tutorial/dark/legend-dark.png" dark />
-						</div>
-
-
-						<div class="section">
-							<div class="text">Controls and keyboard shortcuts</div>
-							<img src="/resources/images/tutorial/light/desktop-keys.png" light/>
-							<img src="/resources/images/tutorial/dark/desktop-keys-dark.png" dark />
-						</div>
-
-
-					</flow-page>
-					
-					
+			<flow-page class="active">
+				<div class="section">
+					<div class="text title">
+						Welcome to DAGViz - DAG Visualizer and Explorer for the Kaspa Network
+					</div>
+				</div>
 				
-			}
+				<div class="section">
+					<div class="text">
+						Kaspa is a <flow-link href="https://en.bitcoin.it/wiki/Proof_of_work" target="_blank">PoW</flow-link>-based 
+						ledger organized in a DAG (Directed Acyclic Graph) of blocks -- a 
+						<flow-link href="https://docs.kas.pa/kaspa/reference/blockdag" target="_blank"> blockDAG.</flow-link>
+						A new block gets added to the blockDAG every second and
+						many blocks are created in parallel.</div>
+					<img src="/resources/images/tutorial/light/frame1.png" light />
+					<img src="/resources/images/tutorial/dark/frame1-dark.png" dark />
+				</div>
 
+
+
+				<div class="section">
+					<div class="text">Unlike a blockchain, blocks are not 
+						<flow-link href="https://en.bitcoin.it/wiki/Orphan_Block" target="_blank">orphaned</flow-link>.
+						 Kaspa merges all blocks into one blockDAG by allowing them to reference multiple parents.
+					</div>
+				</div>
+			
+
+
+				<div class="section">
+					<div class="text">
+						Rather than deciding on which conflicting blocks to discard, 
+						the consensus protocol governing the blockDAG, known as 
+						<flow-link href="https://eprint.iacr.org/2018/104.pdf" target="_blank">PHANTOM</flow-link>, 
+						orders blocks created in parallel. PHANTOM is a generalization 
+						of Bitcoin’s Nakamoto Consensus.</div>
+					<img src="/resources/images/tutorial/light/frame3.gif" light />
+					<img src="/resources/images/tutorial/dark/frame3-dark.gif" dark />
+				</div>
+
+
+				<div class="section">
+					<div class="text">
+						PHANTOM favors blocks that are mined on top of up-to-date blocks and 
+						that are propagated sufficiently quickly (i.e. 
+						“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/blue-set" target="_blank">blue blocks</flow-link>”) 
+						over those withheld or propagated over slow communication channels (i.e.
+						“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/red-set" target="_blank">red blocks</flow-link>”).</div>
+					<img src="/resources/images/tutorial/light/frame4.png" light />
+					<img src="/resources/images/tutorial/dark/frame4-dark.png" dark />
+				</div>
+			
+
+
+				<div class="section">
+					<div class="text">
+						The “<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/blue-score" target="_blank">blue score</flow-link>”
+						of a block is a generalization of the block height in a chain; 
+						it represents the number of blue blocks in the block’s past.</div>
+					<img src="/resources/images/tutorial/light/frame5.png" light />
+					<img src="/resources/images/tutorial/dark/frame5-dark.png" dark />
+				</div>
+			
+
+				<div class="section">
+					<div class="text">
+						The recursive process of selecting the parent with the highest blue score, 
+						“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/selected-parent" target="_blank">the selected parent</flow-link>”,
+						results in the identification of a chain within the blockDAG,
+						“<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/selected-parent-chain" target="_blank">the selected parent chain</flow-link>”.</div>
+					<img src="/resources/images/tutorial/light/frame6.png" light />
+					<img src="/resources/images/tutorial/dark/frame6-dark.png" dark />
+				</div>
+
+
+
+				<div class="section">
+					<div class="text">
+					Each new block inherits the colouring and thus the order of its past from its 
+					selected parent, and merges blocks created in parallel to its selected parent, 
+					following a <flow-link href="https://docs.kas.pa/kaspa/archive/archive/phantom-ghostdag#phantom" target="_blank">colouring and ordering</flow-link>
+					procedure defined by the protocol.</div>
+					<img src="/resources/images/tutorial/light/frame7.png" light />
+					<img src="/resources/images/tutorial/dark/frame7.png" dark />
+				</div>
+
+
+
+				<div class="section">
+					<div class="text">
+					<flow-link href="https://docs.kas.pa/kaspa/reference/consensus/confirmations" target="_blank">Confirmations</flow-link>
+					in PHANTOM are a generalization of confirmations in a chain,
+					and are defined by the blue score of the chain blocks atop the transaction. 
+					The fast block rate enables fast confirmation of transactions.</div>
+					<img src="/resources/images/tutorial/light/frame8.gif" light />
+					<img src="/resources/images/tutorial/dark/frame8.gif" dark />
+				</div>
+				
+				<div class="section">
+					<div class="text"><flow-link href="https://docs.kas.pa/kaspa/reference/blocks" target="_blank">Blocks</flow-link>
+					contain <flow-link href="https://docs.kas.pa/kaspa/reference/transactions" target="_blank">transactions</flow-link>
+					in the <flow-link href="https://docs.kas.pa/kaspa/reference/txo/utxo" target="_blank">UTXO</flow-link>-model format.</div>
+					<img src="/resources/images/tutorial/light/frame9.png" light />
+					<img src="/resources/images/tutorial/dark/frame9-dark.png" dark />
+				</div>
+
+
+
+				<div class="section">
+					<div class="text">I. R. LEGEND</div>
+					<img src="/resources/images/tutorial/light/legend1.png" light />
+					<img src="/resources/images/tutorial/dark/legend-dark.png" dark />
+				</div>
+
+
+				<div class="section">
+					<div class="text">Controls and keyboard shortcuts</div>
+					<img src="/resources/images/tutorial/light/desktop-keys.png" light/>
+					<img src="/resources/images/tutorial/dark/desktop-keys-dark.png" dark />
+				</div>
+			</flow-page>
 			<div slot="buttons" class="buttons">
 				<!--flow-btn data-btn="skip" @click="${this.skipTutorial}">
 					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#times"></use></svg>
@@ -342,9 +333,7 @@ class AppTutorial extends BaseElement{
 					<svg><use href="/resources/fonts/fontawesome/sprites/light.svg#times"></use></svg>
 				</flow-btn>
 			</div>
-			
 		</flow-pages>
-	
 		`
 	}
 
