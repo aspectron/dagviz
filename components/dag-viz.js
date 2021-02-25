@@ -547,6 +547,10 @@ export class GraphNodeLink{
 			this.source.linkNodes = this.source.linkNodes.filter(l=>l!=this)
 		this.target.removeParentLinks(this);
 		// TODO - should we check/remove children?
+		let index = this.holder.simulationLinks.indexOf(this);
+		if(index > -1){
+			this.holder.simulationLinks.splice(index, 1);
+		}
 	}
 	updateStyle(){
 		const { source, target } = this;
@@ -1767,6 +1771,7 @@ export class DAGViz extends BaseElement {
 				window.app.ctls.track.setValue(false);
 			})
 			.on('end', () => {
+				console.log("simulationLinks.length:", this.simulationLinks.length, this.simulationNodes.length)
 				if(this.ctx.noux)
 					return;
 
