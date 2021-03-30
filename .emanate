@@ -53,6 +53,12 @@ E.task('docker',null, async () => {
 
 
 E.task('pgsql', ['origin'], async (callback) => {
+
+    return pgsql();
+})
+
+const pgsql = async () => {
+
     E.BIN = path.join(E.appFolder,'bin',E.PLATFORM_ARCH);
     mkdirp.sync(E.BIN);
 
@@ -119,7 +125,7 @@ E.task('pgsql', ['origin'], async (callback) => {
     })
 
     E.log('done...');
-})
+}
 
 
 /*
@@ -183,7 +189,8 @@ E.task('mysql', ['origin'], async (callback) => {
 // }
 // else
 if(E.flags['local-binaries'] || E.flags.pgsql) {
-    E.run(['pgsql']);
+    //E.run(['pgsql']);
+    await pgsql();
 }
 else
 if(E.flags.docker) {
