@@ -68,6 +68,7 @@ class DAGViz {
             .option('--devnet', 'use devnet network')
             .option('--simnet', 'use simnet network')
             .option('--listen <listen>', 'the port to listen to')
+            .option('--hostdb', 'auto-init and run PostgreSQL as a child process')
             .option('--database-host <host>', 'the database host (default localhost)')
             .option('--database-port <port>', 'the database port (default 8309)')
             .option('--database-scheme  <scheme>', 'the database scheme')
@@ -115,7 +116,10 @@ class DAGViz {
         await this.initHTTP();
         await this.initRPC();
         this.initRTBS();
-        await this.initDatabase();
+        if(this.options.hostdb)
+            await this.initDatabase();
+        else
+            await this.initDatabase_v2();
         await this.initDatabaseSchema();
         // await this.initLastBlockTracking();
         // await this.initMQTT();
@@ -465,6 +469,95 @@ class DAGViz {
     }
 
     async initDatabase() {
+
+        this.uid = 'dagviz';
+
+        const port = this.databasePort || 8309;
+
+//        const mySQL = new MySQL({ port, database : this.uid });
+        const pgSQL = this.pgSQL = new PgSQL({ port, database : this.uid });
+//        await mySQL.start()
+        await pgSQL.start()
+
+        let defaults = {
+            host : 'localhost',
+            port,
+            user : 'dagviz',
+            password : 'dagviz',
+        };
+
+        return new Promise((resolve,reject) => {
+            //this.dbPool = mysql.createPool(Object.assign({ }, defaults, {
+            this.dbPool = new PgPool(Object.assign({ }, defaults, {
+                    // host : 'localhost', port,
+                // user : 'dagviz',
+                // password: 'dagviz',
+                // database: this.uid, //'mysql',
+
+
+                host: this.databaseHost,
+                port,
+                user: this.databaseUser,
+                password: this.databasePassword,
+                database: this.uid, //'mysql',
+    
+
+                //insecureAuth : true
+            }));
+
+            this.dbPool.on('error', (err) => {
+                if(!pgSQL.stopped)
+                    console.log(err);
+            })
+            
+            this.db = {
+                query : async (sql, args) => {
+                    if(pgSQL.stopped)
+                        return Promise.reject("pgSQL stopped - the platform is going down!");
+                    //console.log("sql:", sql, args)
+                    return new Promise((resolve,reject) => {
+                        this.dbPool.connect().then((client) => {
+                        //     //console.log("CONNECTION:",connection);
+                        //     if(err)
+                        //         return reject(err);
+
+                            client.query(sql, args, (err, result) => {
+                                client.release();
+                                    // console.log("SELECT GOT ROWS:",rows);
+                                resolve(result?.rows);
+                            });
+                        }, (err) => {
+                            //if(err) {
+                                console.log(`Error processing SQL query:`);
+                                console.log(sql);
+                                console.log(args);
+                                console.log(`SQL Error is: ${err.toString()}`)
+                                return reject(err);
+                            // }
+                            // reject(err);
+                        });
+                    });
+                }                
+            }
+            // this.db_.connect(async (err) => {
+            //     if(err) {
+            //         this.log(err);
+            //         this.log("FATAL - MYSQL STARTUP SEQUENCE! [2]".brightRed);
+            //         return reject(err);// resolve();
+            //     }
+
+            //     this.log("MySQL connection SUCCESSFUL!".brightGreen);
+
+
+                resolve();
+                // db.end(()=>{
+                //     this.log("MySQL client disconnecting.".brightGreen);
+                // });
+            // });
+        });
+    }
+
+    async initDatabase_v2() {
         const port = this.databasePort;
         this.dbClient = new Client({
             host: this.databaseHost,
@@ -477,10 +570,25 @@ class DAGViz {
         this.promisifiedQuery = util.promisify(this.dbClient.query.bind(this.dbClient));
     }
 
-    async sql(...args) {
-        const {rows} = await this.promisifiedQuery(...args);
-        return rows;
+    async sql(...args) { 
+        if(this.options.hostdb) {
+        // console.log('SQL:'.brightGreen,args[0]);
+            let p = this.db.query(...args);
+            p.catch(e=>{
+                console.log("sql:exception:", [...args], e)
+            })
+            return p;
+        } else {
+            const {rows} = await this.promisifiedQuery(...args);
+            return rows;
+        }
     }
+
+
+    // async sql(...args) {
+    //     const {rows} = await this.promisifiedQuery(...args);
+    //     return rows;
+    // }
 
     static DB_TABLE_BLOCKS_ORDER = [
         'blockHash',
@@ -795,7 +903,7 @@ class DAGViz {
 
     async post(blocks) {
         this.lastBlock = blocks[blocks.length - 1];
-        console.log('posting blocks...', blocks.length, this.lastBlock.blueScore);
+        console.log((new Date).toJSON(),'posting blocks...', blocks.length, this.lastBlock.blueScore);
 
         //console.log("DOING POST") // 'acceptingBlockTimestamp',
 
