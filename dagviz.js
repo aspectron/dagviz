@@ -114,7 +114,6 @@ class DAGViz {
 
     async init() {
         await this.initHTTP();
-        await this.initRPC();
         this.initRTBS();
         if(this.options.hostdb)
             await this.initDatabase();
@@ -125,6 +124,7 @@ class DAGViz {
         // await this.initMQTT();
         
 
+        await this.initRPC();
         return this.main();
     }
 
@@ -149,11 +149,10 @@ class DAGViz {
         await this.rpc.connect();
         console.log('RPC connected...');
 
-        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (intake) =>
-            this.handleVirtualSelectedParentChainChanged(intake))
-
         this.rpc.subscribe("notifyBlockAddedRequest", (intake) =>
             this.handleBlockAddedNotification(intake))
+        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (async (intake) =>
+            this.handleVirtualSelectedParentChainChanged(intake)))      
     }
 
     async initLastBlockTracking() {
@@ -231,9 +230,9 @@ class DAGViz {
     }
 
     async handleBlockAddedNotification(notification) {
-
+        const selectedChainChanges = await this.fetchSelectedChain();
+        await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
         const block = notification.blockVerboseData;
-        //console.log("notification", notification)
 
         const ts = Date.now();
         // while(this.blockTimings[0] < ts-1000*15)
@@ -331,7 +330,10 @@ class DAGViz {
     }
 
     async getBlockByHash(hash) {
-        return this.sql(format(`select * from blocks where "blockHash" = %L`, hash));
+       const rows =  await this.sql(format(`select * from blocks where "blockHash" = %L`, hash));
+       if(rows){
+           return rows.shift();
+       }
     }
 
     async initHTTP() {
@@ -417,7 +419,7 @@ class DAGViz {
         });
 
         app.get("/api/block/:blockHash", async (req, res) => {
-            res.sendJSON(await this.deserealizeBlock(this.getBlockByHash(req.params.blockHash)));
+            res.sendJSON(this.deserealizeBlock(await this.getBlockByHash(req.params.blockHash)));
         });
 
         app.get("/api/transactions/block", async (req, res) => {
@@ -699,10 +701,10 @@ class DAGViz {
         }
 
         this.sync();
-        dpc(3000, () => {
-            this.updateRelations();
-        });
         */
+       dpc(3000, () => {
+           this.updateRelations();
+       });
         this.sync()
     }
 
@@ -838,8 +840,8 @@ class DAGViz {
                     break;
                 }
 
-                if (blocks.length < 100)
-                    this.io.emit('blocks', blocks);
+                // if (blocks.length < 100)
+                //     this.io.emit('dag/blocks', blocks);
 
                 this.skip += blocks.length;
 
@@ -903,7 +905,7 @@ class DAGViz {
 
     async post(blocks) {
         this.lastBlock = blocks[blocks.length - 1];
-        console.log((new Date).toJSON(),'posting blocks...', blocks.length, this.lastBlock.blueScore);
+      //  console.log((new Date).toJSON(),'posting blocks...', blocks.length, this.lastBlock.blueScore);
 
         //console.log("DOING POST") // 'acceptingBlockTimestamp',
 
@@ -1181,36 +1183,44 @@ class DAGViz {
     }
 
     deserealizeBlock(block) {
-        block.lseq = block.id;
-        if (block.parentBlockHashes === "") {
-            block.parentBlockHashes = []
-        } else {
-            block.parentBlockHashes = block.parentBlockHashes.split(',');
-        }
-        block.childBlockHashes = block.childBlockHashes.split(',');
-
-        let accepted_diff = block.acceptedBlockHashes.split(',');
-
-        let abh = block.parentBlockHashes.slice();
-        accepted_diff.forEach((v) => {
-            let op = v.charAt(0);
-            let hash = v.substring(1);
-            if (op == '-') {
-                let idx = abh.indexOf(hash);
-                if (idx == -1) {
-
-                } else {
-                    abh.splice(idx, 1);
-                }
-            } else if (op == '+') {
-                abh.push(hash);
+        try{
+            block.lseq = block.id;
+            block.nonce = block.nonce.toString();
+            if (block.parentBlockHashes === "") {
+                block.parentBlockHashes = []
+            } else {
+                block.parentBlockHashes = block.parentBlockHashes.split(',');
             }
-        })
-        block.acceptedBlockHashes = abh;
+            block.childBlockHashes = block.childBlockHashes.split(',');
 
-        if (block.acceptingBlockHash) {
-            block.acceptingBlockHash = block.acceptingBlockHash.trim();
+            let accepted_diff = block.acceptedBlockHashes.split(',');
+
+            let abh = block.parentBlockHashes.slice();
+            accepted_diff.forEach((v) => {
+                let op = v.charAt(0);
+                let hash = v.substring(1);
+                if (op == '-') {
+                    let idx = abh.indexOf(hash);
+                    if (idx == -1) {
+
+                    } else {
+                        abh.splice(idx, 1);
+                    }
+                } else if (op == '+') {
+                    abh.push(hash);
+                }
+            })
+            block.acceptedBlockHashes = abh;
+
+            if (block.acceptingBlockHash) {
+                block.acceptingBlockHash = block.acceptingBlockHash.trim();
+            }
+        }catch(error){
+            console.log("ERROR".brightRed, error);
+            console.log("BLOCK:".brightRed, block);
         }
+
+    
 
         return this.NormalizeBlock(block);
     }
