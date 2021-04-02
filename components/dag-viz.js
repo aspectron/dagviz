@@ -1265,11 +1265,11 @@ export class GraphNode{
 				mid +=1;
 				this.parentLinksLength += 1;
 			}
-			mid -= 1;
+			//mid -= 1;
 			let a = 1;
 			links.forEach((link, index)=>{
 				if(link.source.data.isChainBlock){
-					link.linkIndex = mid;
+					link.linkIndex = mid-1;
 					//console.log("link.linkIndex", link.linkIndex, link.el.node())
 					return
 				}
