@@ -466,7 +466,6 @@ export class KExplorer extends LitElement{
 	renderBlock(){
 		let data = this.block;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
-		// console.log("DATA",data);
 		let par_only = data.parentBlockHashes.filter(val => !data.acceptedBlockHashes.includes(val));
 		let par_mer = data.parentBlockHashes.filter(val => data.acceptedBlockHashes.includes(val));
 		let mer_only = data.acceptedBlockHashes.filter(val => !data.parentBlockHashes.includes(val));
@@ -660,7 +659,7 @@ export class KExplorer extends LitElement{
 	}
 	renderTransactions(title="Transactions"){
 		const items = this.transactions || [];
-		console.log("ITEMS:",items);
+		//console.log("TRANSACTIONS:",items);
 		return html`
 		<div class="holder transactions" @click="${this.onTXsClick}">
 			<div class="heading">
