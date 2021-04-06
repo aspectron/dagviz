@@ -496,7 +496,7 @@ export class KExplorer extends LitElement{
                     </tr>
                     <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                     <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
-                    <tr><td>Timestamp</td><td><strong>${getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
+                    <tr><td>Timestamp</td><td><strong>${getTS(new Date(+data.timestamp))}</strong> (${data.timestamp})</td></tr>
                     <tr><td><flow-reference>Blue Score<div slot="tooltip">
 							The blue score of a block is the number of blue blocks in its past. 
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#blue-score" 

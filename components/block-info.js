@@ -190,7 +190,7 @@ console.log("BLOCk:",block);
                         <tr><td>Block Hash</td><td>${data.blockHash} <i @click="${this.copyHashToClipboard}" class='is-link fal fa-clipboard'></i> <i @click="${this.openLinkInNewWindow}" class='is-link fal fa-map-marker-alt'></i></td></tr>
                         <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                         <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
-                        <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
+                        <tr><td>Timestamp</td><td><strong>${this.getTS(new Date(+data.timestamp))}</strong> (${data.timestamp})</td></tr>
                         <tr><td>Blue Score</td><td><strong>${data.blueScore} (<block-cfm blue-score="${data.blueScore}"></block-cfm>)</strong></td></tr>
                         <tr><td>Is Chain Block</td><td><strong>${data.isChainBlock}</strong></td></tr>
                         <tr><td>Mass</td><td><strong>${data.mass}</strong></td></tr>

@@ -1345,7 +1345,7 @@ export class GraphNode{
 					</td>
 					<td>
 					<span class="caption">Block Hash:</span> <span class="value">${data.blockHash}</span><br/>
-					<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(data.timestamp*1000))}</span>&nbsp;
+					<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(+data.timestamp))}</span>&nbsp;
 					<span class="caption">Version:</span> <span class="value">${data.version}</span>&nbsp;
 					<span class="caption">Bits:</span> <span class="value">${data.bits}</span><br/>
 					<span class="caption">Blue Score:</span> <span class="value">${data.blueScore}</span>&nbsp;

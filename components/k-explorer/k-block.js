@@ -200,7 +200,7 @@ export class KBlock extends LitElement{
                     </tr>
                     <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                     <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
-                    <tr><td>Timestamp</td><td><strong>${getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
+                    <tr><td>Timestamp</td><td><strong>${getTS(new Date(+data.timestamp))}</strong> (${data.timestamp})</td></tr>
                     <tr><td>Blue Score</td><td><strong>${data.blueScore}</strong></td></tr>
                     <tr>
                         <td>Confirmations</td>
