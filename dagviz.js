@@ -134,10 +134,10 @@ class DAGViz {
     async init() {
         await this.initHTTP();
         this.initRTBS();
-        if(this.options.hostdb)
+//        if(this.options.hostdb)
             await this.initDatabase();
-        else
-            await this.initDatabase_v2();
+        // else
+        //     await this.initDatabase_v2();
         await this.initDatabaseSchema();
         // await this.initLastBlockTracking();
         // await this.initMQTT();
@@ -723,9 +723,10 @@ console.log('dat/selected-tip');
         const port = this.databasePort || 8309;
 
 //        const mySQL = new MySQL({ port, database : this.uid });
-        const pgSQL = this.pgSQL = new PgSQL({ port, database : this.uid });
-//        await mySQL.start()
-        await pgSQL.start()
+        if(this.options.hostdb) {
+            this.pgSQL = new PgSQL({ port, database : this.uid });
+            await this.pgSQL.start()
+        }
 
         let defaults = {
             host : 'localhost',
@@ -754,13 +755,13 @@ console.log('dat/selected-tip');
             }));
 
             this.dbPool.on('error', (err) => {
-                if(!pgSQL.stopped)
+                if(!this.pgSQL || !this.pgSQL.stopped)
                     console.log(err);
             })
             
             this.db = {
                 query : async (sql, args) => {
-                    if(pgSQL.stopped)
+                    if(this.pgSQL && this.pgSQL.stopped)
                         return Promise.reject("pgSQL stopped - the platform is going down!");
                     //console.log("sql:", sql, args)
                     return new Promise((resolve,reject) => {
@@ -806,7 +807,7 @@ console.log('dat/selected-tip');
     }
 
     async initDatabase_v2() {
-        const port = this.databasePort;
+        const port = this.databasePort;        
         this.dbClient = new Client({
             host: this.databaseHost,
             port,
@@ -819,17 +820,17 @@ console.log('dat/selected-tip');
     }
 
     async sql(...args) { 
-        if(this.options.hostdb) {
+        //if(this.options.hostdb) {
         // console.log('SQL:'.brightGreen,args[0]);
             let p = this.db.query(...args);
             p.catch(e=>{
                 console.log("sql:exception:", [...args], e)
             })
             return p;
-        } else {
-            const {rows} = await this.promisifiedQuery(...args);
-            return rows;
-        }
+        // } else {
+        //     const {rows} = await this.promisifiedQuery(...args);
+        //     return rows;
+        // }
     }
 
 
