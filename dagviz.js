@@ -1161,7 +1161,7 @@ console.log('dat/selected-tip');
                         }
 
                         if(!previous_transaction_id) {
-                            console.log("ERROR ERROR ERROR ERROR - NO TRANSACTION ID".brightRed, previous_txId);
+                            console.log("error - missing transaction id:".brightRed, previous_txId);
                             continue;
                         }
 
