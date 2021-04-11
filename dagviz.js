@@ -84,6 +84,7 @@ class DAGViz {
             .option('--devnet', 'use devnet network')
             .option('--simnet', 'use simnet network')
             .option('--listen <listen>', 'the port to listen to')
+            .option('--dropdb', 'purge PostgreSQL database')
             .option('--hostdb', 'auto-init and run PostgreSQL as a child process')
             .option('--database-host <host>', 'the database host (default localhost)')
             .option('--database-port <port>', 'the database port (default 8309)')
