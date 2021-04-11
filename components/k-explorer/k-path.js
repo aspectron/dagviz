@@ -69,5 +69,8 @@ export class KPath{
 	static transactions_url(paths, params){
 		return {paths, params}
 	}
+	static address_url(paths, params){
+		return {paths, params}
+	}
 
 }
