@@ -958,7 +958,7 @@ console.log('dat/selected-tip');
                 "transaction_id" BIGINT NOT NULL,
                 "previousTransactionId" BIGINT NOT NULL,
                 "outputIndex" INT NOT NULL,
-                "output_id" BIGINT NOT NULL,
+                "output_id" BIGINT NULL,
                 "signatureScript" BYTEA NOT NULL,
                 "sequence" BYTEA NOT NULL,
                 "value" BIGINT NULL
@@ -1168,7 +1168,7 @@ console.log('dat/selected-tip');
                         //console.log(`SELECT id FROM outputs WHERE transaction_id='${previous_transaction_id}' AND index=${outputIndex}`);
                         let oresp = await this.sql(`SELECT id, value FROM outputs WHERE transaction_id='${previous_transaction_id}' AND index=${outputIndex}`);
                         let output = oresp.shift();
-                        let output_id = output?.id;
+                        let output_id = output?.id||null;
                         let value = output?.value||null;
                         // total_input_value = total_input_value.add(value);
 
