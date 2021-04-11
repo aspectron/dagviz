@@ -1333,8 +1333,11 @@ console.log('dat/selected-tip');
             // const selectedChainChanges = await this.fetchSelectedChain();
             // await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
         } catch (err) {
+            if(!this.faults)
+                this.faults = 0;
+            this.faults++;
             const wait = 3500;
-            console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds`)
+            console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds (${this.faults})`)
             dpc(wait, () => {
                 this.sync();
             });
