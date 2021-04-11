@@ -859,7 +859,7 @@ export class KExplorer extends LitElement{
 	renderAddress(){
 		console.log("RENDERING address items:",this);
 		const items = this.addressOutputs || [];
-		console.log("TRANSACTIONS:",items);
+		console.log("ADDRESS TRANSACTIONS:",items);
 		return html`
 		<div class="holder address" @click="${this.onAddressClick}">
 			<div class="heading">
@@ -885,7 +885,8 @@ export class KExplorer extends LitElement{
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
 								target="_blank">Learn more</a></span></span></th>
 							<th class="ins-outs" style="text-align:center;white-space:nowrap;">Output Index</th>
-							<th class="total-value" style="text-align:center;white-space:nowrap;">Output Value / Total Tx (KAS)</th>
+							<th class="total-value" style="text-align:center;white-space:nowrap;">Output Value / Tx Total (KAS)</th>
+							<th class="tx-time">Transaction Time</th>
 							<th class="lock-time">Lock Time</th>
 							<th class="sub-network-id"><flow-reference>Sub-Network id<div slot="tooltip">
 								The subnetwork mechanism in Kaspa's consensus layer allows nodes with a common interest to form 
@@ -902,6 +903,7 @@ export class KExplorer extends LitElement{
 								<td class="hash k-link" data-action="t-page">${t.hash.substring(0,16)}</td>
 								<td class="index" >${t.index}</td>
 								<td class="total-value" style="text-align:center;">${KAS(t.value)} / ${KAS(t.totalOutputValue)}</td>
+								<td>${getTS(new Date(+t.transactionTime))}</td>
 								<td class="lock-time">${t.lockTime}</td>
 								<td class="sub-network-id">${t.subnetworkId}</td>
 							</tr>`
