@@ -1337,7 +1337,8 @@ console.log('dat/selected-tip');
             console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds`)
             dpc(wait, () => {
                 this.sync();
-            })
+            });
+            return;
         }
 
         const wait = 300 * 1000;
