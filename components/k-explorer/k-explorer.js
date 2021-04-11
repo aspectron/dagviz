@@ -876,17 +876,17 @@ export class KExplorer extends LitElement{
 				<table cellpadding="0" cellspacing="0" border="0">
 					<thead>
 						<tr>
-							<th class="id"><flow-reference>Transaction ID<div slot="tooltip">
+							<th class="id"><flow-reference>Tx ID<div slot="tooltip">
 								A non-malleable transaction identifier used for referring to transactions everywhere, except in the block hash merkle root.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-id" 
 								target="_blank">Learn more</a></div></flow-reference></th>
-							<th class="name"><flow-reference>Transaction Hash<div slot="tooltip">
+							<th class="name"><flow-reference>Tx Hash<div slot="tooltip">
 								A transaction identifier used only when building the block hash merkle root.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
 								target="_blank">Learn more</a></span></span></th>
-							<th class="ins-outs" style="text-align:center;white-space:nowrap;">Output Index</th>
-							<th class="total-value" style="text-align:center;white-space:nowrap;">Output Value / Tx Total (KAS)</th>
-							<th class="tx-time">Transaction Time</th>
+							<th class="ins-outs" style="text-align:center;white-space:nowrap;">Output<br/>Index</th>
+							<th class="total-value" style="text-align:center;white-space:nowrap;">Output Value<br/>Tx Total (KAS)</th>
+							<th class="tx-time">Tx Time</th>
 							<th class="lock-time">Lock Time</th>
 							<th class="sub-network-id"><flow-reference>Sub-Network id<div slot="tooltip">
 								The subnetwork mechanism in Kaspa's consensus layer allows nodes with a common interest to form 
@@ -903,7 +903,7 @@ export class KExplorer extends LitElement{
 								<td class="hash k-link" data-action="t-page">${t.hash.substring(0,16)}</td>
 								<td class="index" >${t.index}</td>
 								<td class="total-value" style="text-align:center;">${KAS(t.value)} / ${KAS(t.totalOutputValue)}</td>
-								<td>${getTS(new Date(+t.transactionTime))}</td>
+								<td class="tx-time" style="white-space:nowrap;">${getTS(new Date(+t.transactionTime))}</td>
 								<td class="lock-time">${t.lockTime}</td>
 								<td class="sub-network-id">${t.subnetworkId}</td>
 							</tr>`
