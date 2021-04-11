@@ -884,7 +884,7 @@ export class KExplorer extends LitElement{
 								A transaction identifier used only when building the block hash merkle root.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
 								target="_blank">Learn more</a></span></span></th>
-							<th class="ins-outs" style="text-align:center;">Output Index</th>
+							<th class="ins-outs" style="text-align:center;white-space:nowrap;">Output Index</th>
 							<th class="total-value" style="text-align:center;white-space:nowrap;">Output Value / Total Tx (KAS)</th>
 							<th class="lock-time">Lock Time</th>
 							<th class="sub-network-id"><flow-reference>Sub-Network id<div slot="tooltip">
@@ -897,9 +897,9 @@ export class KExplorer extends LitElement{
 					</thead>
 					<tbody>
 						${repeat(items, t=>t.hash, (t, index) => html
-							`<tr class="tx-row" hash="${t.hash}" data-id="${(t.id||'').substring(0,18)}...">
-								<td class="id k-link" data-action="t-page-id">${(t.txId||'').substring(0,18)}...</td>
-								<td class="hash k-link" data-action="t-page">${t.hash}</td>
+							`<tr class="tx-row" hash="${t.hash}" data-id="${t.id}">
+								<td class="id k-link" data-action="t-page-id">${t.txId.substring(0,16)}...</td>
+								<td class="hash k-link" data-action="t-page">${t.hash.substring(0,16)}</td>
 								<td class="index" >${t.index}</td>
 								<td class="total-value" style="text-align:center;">${KAS(t.value)} / ${KAS(t.totalOutputValue)}</td>
 								<td class="lock-time">${t.lockTime}</td>
