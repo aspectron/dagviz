@@ -871,6 +871,17 @@ console.log('dat/selected-tip');
     }
 
     async initDatabaseSchema() {
+
+        let tables = ['blocks','block_relations','last_block_hash','transactions','inputs','outputs','addresses'];
+        if(this.options.dropdb) {
+            while(tables.length) {
+                let table = tables.shift();
+                console.log('pgsql - dropping:',table);
+                await this.sql(`DROP TABLE ${table}`);
+            }
+        }
+
+
         await this.sql(`
             CREATE TABLE IF NOT EXISTS blocks (
                 "id"                      BIGSERIAL PRIMARY KEY,
@@ -912,7 +923,7 @@ console.log('dat/selected-tip');
             );
         `);
 
-        //await this.sql(`CREATE UNIQUE INDEX idx_child ON block_relations (child)`);
+        await this.sql(`CREATE INDEX idx_child ON block_relations (child)`);
         // UNIQUE INDEX idx_child (child)
 
         await this.sql(`
