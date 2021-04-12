@@ -169,10 +169,11 @@ class DAGViz {
         await this.rpc.connect();
         console.log('RPC connected...');
 
-        this.rpc.subscribe("notifyBlockAddedRequest", (intake) =>
-            this.handleBlockAddedNotification(intake))
-        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (async (intake) =>
-            this.handleVirtualSelectedParentChainChanged(intake)))      
+        this.rpc.subscribe("notifyBlockAddedRequest", (async (intake) =>
+            await this.handleBlockAddedNotification(intake)));
+        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (async (intake) =>{
+            this.handleVirtualSelectedParentChainChanged(intake);  
+        }));
     }
 
     async initLastBlockTracking() {
@@ -257,8 +258,6 @@ class DAGViz {
     }
 
     async handleBlockAddedNotificationImpl(notification) {
-        const selectedChainChanges = await this.fetchSelectedChain();
-        await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
         const block = notification.blockVerboseData;
 
         const ts = Date.now();
@@ -286,7 +285,7 @@ class DAGViz {
 
         this.lastBlockHash = block.blockHash;
 
-        await this.storeLastBlockHash(block.blockHash);
+      //  await this.storeLastBlockHash(block.blockHash);
 
         await this.postRTB(block);
     }
@@ -301,7 +300,7 @@ class DAGViz {
             return;
 
         this.draining = true;
-        while(this.notifications.block.length || this.notifications.spc.length) {
+        while(this.notifications.block.length + this.notifications.spc.length > 1) {
             let queue = this.notifications.block.length ? this.notifications.block : this.notifications.spc;
             let { args, handler } = queue.shift();
             await handler.call(this, args);
@@ -311,29 +310,14 @@ class DAGViz {
 
     async handleVirtualSelectedParentChainChangedImpl(args) {
         this.io.emit("dag/selected-parent-chain", args);
-
-        const {addedChainBlocks, removedChainBlockHashes} = args;
-
-        if (removedChainBlockHashes && removedChainBlockHashes.length) {
-            let removedChainBlockHashes_ = removedChainBlockHashes.map(hash=>Buffer.from(hash,'hex'));
-            //this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
-            await this.sql(format(`UPDATE blocks SET "isChainBlock"=FALSE WHERE ("blocks"."blockHash") IN (%L)`, removedChainBlockHashes_));
-            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash"='' WHERE ("blocks"."acceptingBlockHash") IN (%L)`, removedChainBlockHashes_));
-        }
-
-        for (const chainBlock of addedChainBlocks) {
-            const {hash, acceptedBlocks} = chainBlock;
-            const hash_ = Buffer.from(hash,'hex');
-            const acceptedBlockHashes = acceptedBlocks.map(block => Buffer.from(block.hash,'hex'));
-            await this.sql(format(`UPDATE blocks SET "isChainBlock"=TRUE WHERE "blockHash" = %L`, hash_));
-            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash" = %L WHERE ("blockHash") IN (%L)`, hash_, acceptedBlockHashes));
-        }
+        await this.postSPC(args);
     }
 
     static MAX_RTBS_BLOCKS = 2016;
 
     postRTB(block) {
         this.rtbs.push({hash: block.blockHash, timestamp: block.timestamp});    // parent chain block notifications
+        console.log("RTBS LENGTH =====================".brightRed, this.rtbs.length);
         this.rtbsMap[block.blockHash] = true;
         while (this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
             delete this.rtbsMap[this.rtbs.shift().hash];
@@ -1092,7 +1076,7 @@ console.log('dat/selected-tip');
 
         const MAX_TXID_MAP_SIZE = 4096*4;
         try{
-            const result = await this.rpc.client.call('getBlockRequest', {hash,includeTransactionVerboseData: true});
+            const result = await this.rpc.client.call('getBlockRequest', {hash, includeTransactionVerboseData: true});
             //console.log("RESULT::::::::::::::::::::::::::::".brightRed, result.blockVerboseData.transactionVerboseData);
 
             // let outputs = [];
@@ -1241,7 +1225,7 @@ console.log('dat/selected-tip');
             return ""
         }
         const [bluestBlock] = rows;
-        return bluestBlock.blockHash;
+        return bluestBlock.blockHash.toString("hex");
     }
 
     async selectedTipHash() {
@@ -1249,17 +1233,18 @@ console.log('dat/selected-tip');
         if (rows.length === 0) {
             return ""
         }
-        return rows[0].blockHash;
+        return rows[0].blockHash.toString("hex");
     }
 
     async fetchBlocks() {
         const bluestBlockHash = await this.bluestBlockHash();
         const {blockVerboseData} = await this.rpc.client.call('getBlocksRequest', {
             lowHash: bluestBlockHash,
-            includeBlockVerboseData: true
+            includeBlockVerboseData: true,
+            includeTransactionVerboseData: true
         });
         //console.log("blockVerboseData", blockVerboseData[0], bluestBlockHash)
-        if (blockVerboseData.length === 1 && blockVerboseData[0].hash === bluestBlockHash) {
+        if (blockVerboseData.length === 1 && blockVerboseData[0].hash === this.lastBlock.hash) {
             return {done: true}
         }
         return {blocks: blockVerboseData, done: false}
@@ -1312,6 +1297,9 @@ console.log('dat/selected-tip');
                 //     this.io.emit('dag/blocks', blocks);
 
                 this.skip += blocks.length;
+        
+                this.lastBlock = blocks[0];
+                await this.storeLastBlockHash(this.lastBlock.hash);
 
                 const pre_ = blocks.length;
                 blocks = blocks.filter(block => !this.rtbsMap[block.hash]);
@@ -1329,9 +1317,9 @@ console.log('dat/selected-tip');
                 }
             }
 
-            // TODO: TEMPORARILY DISABLE
-            // const selectedChainChanges = await this.fetchSelectedChain();
-            // await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
+            const selectedChainChanges = await this.fetchSelectedChain();
+            await this.postSPC(selectedChainChanges);
+
         } catch (err) {
             if(!this.faults)
                 this.faults = 0;
@@ -1390,13 +1378,27 @@ console.log('dat/selected-tip');
         return dbBlock;
     }
 
+    async postSPC(args){
+        const {addedChainBlocks, removedChainBlockHashes} = args;
+        
+        if (removedChainBlockHashes && removedChainBlockHashes.length) {
+            let removedChainBlockHashes_ = removedChainBlockHashes.map(hash=>Buffer.from(hash,'hex'));
+            //this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
+            await this.sql(format(`UPDATE blocks SET "isChainBlock"=FALSE WHERE ("blocks"."blockHash") IN (%L)`, removedChainBlockHashes_));
+            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash"='' WHERE ("blocks"."acceptingBlockHash") IN (%L)`, removedChainBlockHashes_));
+        }
+
+        for (const chainBlock of addedChainBlocks) {
+            const {hash, acceptedBlocks} = chainBlock;
+            const hash_ = Buffer.from(hash,'hex');
+            const acceptedBlockHashes = acceptedBlocks.map(block => Buffer.from(block.hash,'hex'));
+            await this.sql(format(`UPDATE blocks SET "isChainBlock"=TRUE WHERE "blockHash" = %L`, hash_));
+            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash" = %L WHERE ("blockHash") IN (%L)`, hash_, acceptedBlockHashes));
+        }
+    }
+
     async post(blocks) {
         this.lastBlock = blocks[blocks.length - 1];
-      //  console.log((new Date).toJSON(),'posting blocks...', blocks.length, this.lastBlock.blueScore);
-
-        //console.log("DOING POST") // 'acceptingBlockTimestamp',
-
-
         let relations = [];
 
         blocks.forEach(block => {
