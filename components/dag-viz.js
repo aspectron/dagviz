@@ -1272,8 +1272,8 @@ export class GraphNode{
 					link.linkIndex = mid-1;
 					//console.log("link.linkIndex", link.linkIndex, link.el.node())
 					return
-				}
-				link.linkIndex = index<mid?index:mid+a++;
+				}else
+					link.linkIndex = index<=mid-1?index:mid-1+a++;
 			})
 		}else{
 			links.forEach((link, index)=>{
