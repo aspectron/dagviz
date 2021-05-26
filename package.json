@@ -9,7 +9,7 @@
     "@aspectron/flow-router": "*",
     "@aspectron/flow-utils": "*",
     "@aspectron/flow-ux": "*",
-    "@kaspa/grpc-node": "*",
+    "@kaspa/grpc-node": ">=1.0.3",
     "@webcomponents/webcomponentsjs": "*",
     "basic-auth": "*",
     "colors": "*",
