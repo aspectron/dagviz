@@ -91,7 +91,8 @@ class DAGViz {
             .option('--database-scheme  <scheme>', 'the database scheme')
             .option('--database-user <user>', 'the database user')
             .option('--database-password <password>', 'the database password')
-            .option('--rpc <address>', 'use custom RPC address <host:port>');
+            .option('--rpc <address>', 'use custom RPC address <host:port>')
+            .option('--reset-pgsql', 'use testnet network');
         program.parse(process.argv);
         this.options = program.opts();
 
@@ -258,7 +259,9 @@ class DAGViz {
     }
 
     async handleBlockAddedNotificationImpl(notification) {
-        const block = notification.blockVerboseData;
+        //console.log("handleBlockAddedNotificationImpl:", notification)
+        const {block:blockInfo} = notification;
+        const block = blockInfo.verboseData;
 
         const ts = Date.now();
         // while(this.blockTimings[0] < ts-1000*15)
@@ -275,8 +278,9 @@ class DAGViz {
             // console.log('delta:',delta,'rate:',rate,'t:',t0,'rtbs:',this.rtbs.length);
         }
 
+        //console.log("block", notification, block)
         await this.getBlockTransactions(block.hash, block.transactionIDs);
-        const dbBlock = this.verboseBlockToDBBlock(block);
+        const dbBlock = this.verboseBlockToDBBlock(blockInfo);
         const data = {blocks: [this.deserealizeBlock(dbBlock)], rate};
         while (this.last_mqtt_block_updates.length > 10)
             this.last_mqtt_block_updates.shift();
@@ -287,7 +291,7 @@ class DAGViz {
 
       //  await this.storeLastBlockHash(block.blockHash);
 
-        await this.postRTB(block);
+        await this.postRTB(blockInfo);
     }
 
     async handleVirtualSelectedParentChainChanged(args) {
@@ -315,14 +319,17 @@ class DAGViz {
 
     static MAX_RTBS_BLOCKS = 2016;
 
-    postRTB(block) {
-        this.rtbs.push({hash: block.blockHash, timestamp: block.timestamp});    // parent chain block notifications
+    postRTB(blockInfo) {
+        this.rtbs.push({
+            hash: blockInfo.verboseData.hash,
+            timestamp: blockInfo.header.timestamp
+        });// parent chain block notifications
         console.log("RTBS LENGTH =====================".brightRed, this.rtbs.length);
-        this.rtbsMap[block.blockHash] = true;
+        this.rtbsMap[blockInfo.verboseData.hash] = true;
         while (this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
             delete this.rtbsMap[this.rtbs.shift().hash];
 
-        return this.post([block]);
+        return this.post([blockInfo]);
     }
 /*
     async "dag/selected-tip"(message) {
@@ -846,7 +853,7 @@ console.log('dat/selected-tip');
         'hash': 'blockHash',
         'version': 'version',
         'hashMerkleRoot': 'hashMerkleRoot',
-        'acceptedIDMerkleRoot': 'acceptedIDMerkleRoot',
+        'acceptedIdMerkleRoot': 'acceptedIDMerkleRoot',
         'utxoCommitment': 'utxoCommitment',
         'time': 'timestamp',
         'nonce': 'nonce',
@@ -878,7 +885,7 @@ console.log('dat/selected-tip');
                 "acceptedIDMerkleRoot" BYTEA        NOT NULL,
                 "utxoCommitment"         BYTEA        NOT NULL,
                 "timestamp"               bigint NOT NULL,
-                "bits"                    INT     NOT NULL,
+                "bits"                    bigint     NOT NULL,
                 "nonce"                   BYTEA  NOT NULL,
                 "blueScore"              BIGINT  NOT NULL,
                 "isChainBlock"          BOOLEAN         NOT NULL,
@@ -1076,18 +1083,36 @@ console.log('dat/selected-tip');
 
         const MAX_TXID_MAP_SIZE = 4096*4;
         try{
-            const result = await this.rpc.client.call('getBlockRequest', {hash, includeTransactionVerboseData: true});
-            //console.log("RESULT::::::::::::::::::::::::::::".brightRed, result.blockVerboseData.transactionVerboseData);
+            const result = await this.rpc.client.call('getBlockRequest', {hash, includeTransactions: true});
+            const {block} = result;
+            console.log("RESULT::::::::::::::::::::::::::::".brightRed, block);
 
             // let outputs = [];
             // let inputs = [];
 
             let total_output_value = new Decimal(0);
 
-            let transactions = result.blockVerboseData.transactionVerboseData;
+            let {transactions} = block;
             while(transactions.length) {
                 let transaction = transactions.shift();
-                let {txId, transactionVerboseInputs : inputs, transactionVerboseOutputs : outputs, hash, blockHash, lockTime, time, subnetworkId} = transaction;
+                let {
+                    inputs,
+                    outputs,
+                    lockTime,
+                    subnetworkId,
+                    verboseData
+                } = transaction;
+
+                let {
+                    transactionId:txId,
+                    hash,
+                    blockHash,
+                    mass,
+                    blockTime:time,
+                } = verboseData
+
+                //console.log("tx.verboseData", verboseData)
+                //console.log("tx.outputs", outputs)
 
                 try {
 
@@ -1095,10 +1120,20 @@ console.log('dat/selected-tip');
                         continue;
 
                     outputs.forEach((output) => {
-                        total_output_value = total_output_value.add(output.value);
+                        total_output_value = total_output_value.add(output.amount);
                     })
 
-                    let cols = [HEX(txId), HEX(hash), HEX(blockHash), inputs.length, outputs.length, total_output_value.toFixed(), lockTime, time, HEX(subnetworkId)];
+                    let cols = [
+                        HEX(txId),
+                        HEX(hash),
+                        HEX(blockHash),
+                        inputs.length,
+                        outputs.length,
+                        total_output_value.toFixed(),
+                        lockTime,
+                        time,
+                        HEX(subnetworkId)
+                    ];
 
                     // ON CONFLICT("txid") DO UPDATE SET txid=EXCLUDED.txid 
                     const query = format(`INSERT INTO transactions ("txId", "hash", "blockHash", "inputCount", "outputCount", "totalOutputValue", "lockTime", "transactionTime", "subnetworkId") VALUES (%L) RETURNING id`, cols);
@@ -1128,16 +1163,18 @@ console.log('dat/selected-tip');
                             this.txMap.delete(_txid);
                     }
 
+                    let index = 0;
                     while(outputs.length) {
                         let output = outputs.shift();
-                        let { value, index, scriptPublicKey } = output;
-                        let { address, type, hex, version } = scriptPublicKey;
+                        let { amount, scriptPublicKey } = output;
+                        let {scriptPublicKey:hex, version } = scriptPublicKey;
+                        let {scriptPublicKeyAddress:address, scriptPublicKeyType:type} = output.verboseData
                         address = address.split(":").pop();
                         let addr = await this.sql(format('INSERT INTO addresses (address) VALUES (%L) ON CONFLICT("address") DO UPDATE SET address=EXCLUDED.address RETURNING id', [address]));
                        // console.log('-------------------------------------- addr'.brightCyan, addr);
                         let address_id = addr.shift()?.id;
 
-                        let output_cols = [transaction_id, index, value, 0, HEX(hex), version, address_id];
+                        let output_cols = [transaction_id, index++, amount, 0, HEX(hex), version, address_id];
                         await this.sql(format(`INSERT INTO outputs (transaction_id, index, value, "scriptPubKeyType", "scriptPubKeyHex", "scriptPubKeyVersion", address_id) VALUES (%L)`, output_cols));
                     }
 
@@ -1238,16 +1275,20 @@ console.log('dat/selected-tip');
 
     async fetchBlocks() {
         const bluestBlockHash = await this.bluestBlockHash();
-        const {blockVerboseData} = await this.rpc.client.call('getBlocksRequest', {
+        const res = await this.rpc.client.call('getBlocksRequest', {
             lowHash: bluestBlockHash,
-            includeBlockVerboseData: true,
-            includeTransactionVerboseData: true
+            includeBlocks: true,
+            includeTransactions: true
         });
+
+        //console.log("fetchBlocks: response", res)
+        const {blockHashes, blocks} = res;
+
         //console.log("blockVerboseData", blockVerboseData[0], bluestBlockHash)
-        if (blockVerboseData.length === 1 && blockVerboseData[0].hash === this.lastBlock.hash) {
+        if (blockHashes.length === 1 && blockHashes[0].hash === this.lastBlock.hash) {
             return {done: true}
         }
-        return {blocks: blockVerboseData, done: false}
+        return {blocks, done: false}
     }
 
     async fetchSelectedChain() {
@@ -1288,11 +1329,12 @@ console.log('dat/selected-tip');
 
             // console.log(`fetching: ${skip}`);
             while (true) {
-                let {blocks, done} = await this.fetchBlocks();
+                let res = await this.fetchBlocks();
+                //console.log("fetchBlocks result:", r);
+                let {blocks, done} = res;
                 if (done) {
                     break;
                 }
-
                 // if (blocks.length < 100)
                 //     this.io.emit('dag/blocks', blocks);
 
@@ -1300,23 +1342,20 @@ console.log('dat/selected-tip');
         
                 this.lastBlock = blocks[0];
                 await this.storeLastBlockHash(this.lastBlock.hash);
-
                 const pre_ = blocks.length;
-                blocks = blocks.filter(block => !this.rtbsMap[block.hash]);
+                blocks = blocks.filter(block => !this.rtbsMap[block.verboseData.hash]);
                 const post_ = blocks.length;
                 if (!this.tracking && pre_ != post_)
                     this.tracking = true;
                 if (blocks.length) {
                     if (this.tracking) {
                         console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
-                        console.log(' ->' + blocks.map(block => block.hash).join('\n'));
+                        console.log(' ->' + blocks.map(block => block.verboseData.hash).join('\n'));
                         console.log(`possible MQTT failure, catching up via db sync...`);
                     }
-
                     await this.post(blocks);
                 }
             }
-
             const selectedChainChanges = await this.fetchSelectedChain();
             await this.postSPC(selectedChainChanges);
 
@@ -1346,8 +1385,16 @@ console.log('dat/selected-tip');
         console.log(`warning: rewinding ${nblocks}; new position ${this.skip}`);
     }
 
-    verboseBlockToDBBlock(verboseBlock) {
-//        console.log("VERBOSE BLOCK:", verboseBlock);
+    verboseBlockToDBBlock(blockInfo) {
+        let verboseBlock = {
+            ...blockInfo.header,
+            ...blockInfo.verboseData,
+            transactions:blockInfo.transactions
+        };
+        if(!verboseBlock.transactions)
+            console.log("blockInfo:", blockInfo)
+        //console.log("VERBOSE BLOCK:", verboseBlock);
+        //console.log("VERBOSE BLOCK.parents: ", verboseBlock.parents)
         const dbBlock = {
             mass: 0,
             acceptedBlockHashes: '',
@@ -1359,12 +1406,13 @@ console.log('dat/selected-tip');
                     buffers.includes(field) ? Buffer.from(verboseBlock[field],'hex') : verboseBlock[field];
             }
         }
-        dbBlock.parentBlockHashes = HashesToBuffer(verboseBlock.parentHashes); //.join(',');
+        dbBlock.parentBlockHashes = HashesToBuffer(verboseBlock.parents.map(p=>p.parentHashes).flat()); //.join(',');
 //        dbBlock.childBlockHashes = HashesToBuffer(verboseBlock.childrenHashes); //.join(',');
         dbBlock.bits = parseInt(verboseBlock.bits, 16);
         dbBlock.childBlockHashes = '';
         dbBlock.isChainBlock = Number(verboseBlock.blueScore) === 0; // Every block except genesis is not a chain block by default.
-
+        dbBlock.timestamp = verboseBlock.timestamp;
+        //console.log("dbBlock:", dbBlock)
         //console.log("verboseBlock",verboseBlock);
         //console.log("dbBlock",dbBlock);
 
@@ -1398,18 +1446,26 @@ console.log('dat/selected-tip');
     }
 
     async post(blocks) {
+        //console.log("post:blocks", blocks)
         this.lastBlock = blocks[blocks.length - 1];
-        let relations = [];
+        let relations = new Map();
 
         blocks.forEach(block => {
-            if (block.parentHashes) {
-                block.parentHashes.forEach(hash => relations.push([HEX(hash), HEX(block.hash), false]));
+            if (block.header) {
+                block.header.parents?.forEach(p=>{
+                    p.parentHashes.map(hash=>{
+                        relations.set(hash+":"+block.verboseData.hash, [HEX(hash), HEX(block.verboseData.hash), false])
+                    })
+                });
             }
         });
+
+        relations = [...relations.values()]
 
         this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
         const dbBlocks = blocks.map(block => this.verboseBlockToDBBlock(block));
+        //console.log("dbBlocks", dbBlocks[0])
         // if(dbBlocks.length)
         // console.log(dbBlocks[0]);
         // let blockData = dbBlocks.map(dbBlock => {
@@ -1684,10 +1740,15 @@ console.log('dat/selected-tip');
 
     deserealizeBlock(block) {
         try{
-//            console.log("deserealize block A:", block);
+            //console.log("deserealize block A:", block);
             block.lseq = block.id;
             block.nonce = block.nonce.toString();
-            ['blockHash','acceptedIDMerkleRoot','hashMerkleRoot','utxoCommitment'].forEach(p => block[p]=block[p].toString('hex'));
+            [
+                'blockHash',
+                'acceptedIDMerkleRoot',
+                'hashMerkleRoot',
+                'utxoCommitment'
+            ].forEach(p => block[p] = block[p].toString('hex'));
 
             // if (!block.parentBlockHashes) {//} === "") {
             //     block.parentBlockHashes = []
@@ -1739,7 +1800,7 @@ console.log('dat/selected-tip');
     }
 
     async doSearch(text) {
-console.log('search request',text);;
+        console.log('search request',text);;
         let blocks = null;
 
         //console.log('text length:',text.length);

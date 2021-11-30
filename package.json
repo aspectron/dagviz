@@ -17,7 +17,7 @@
     "decimal.js": "^10.2.1",
     "finalhandler": "*",
     "fs-extra": "*",
-    "is-docker": "*",
+    "is-docker": "^2.1.1",
     "lit-element": "*",
     "mime-types": "*",
     "mkdirp": "*",
