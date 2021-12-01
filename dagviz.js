@@ -262,6 +262,7 @@ class DAGViz {
         //console.log("handleBlockAddedNotificationImpl:", notification)
         const {block:blockInfo} = notification;
         const block = blockInfo.verboseData;
+        //console.log("handleBlockAddedNotificationImpl:blockInfo", blockInfo)
 
         const ts = Date.now();
         // while(this.blockTimings[0] < ts-1000*15)
@@ -279,7 +280,7 @@ class DAGViz {
         }
 
         //console.log("block", notification, block)
-        await this.getBlockTransactions(block.hash, block.transactionIDs);
+        await this.getBlockTransactions(block.hash, block.transactionIds);
         const dbBlock = this.verboseBlockToDBBlock(blockInfo);
         const data = {blocks: [this.deserealizeBlock(dbBlock)], rate};
         while (this.last_mqtt_block_updates.length > 10)
@@ -287,7 +288,7 @@ class DAGViz {
         this.last_mqtt_block_updates.push(data);
         this.io.emit("dag/blocks", data);
 
-        this.lastBlockHash = block.blockHash;
+        this.lastBlockHash = block.hash;
 
       //  await this.storeLastBlockHash(block.blockHash);
 
@@ -324,7 +325,7 @@ class DAGViz {
             hash: blockInfo.verboseData.hash,
             timestamp: blockInfo.header.timestamp
         });// parent chain block notifications
-        console.log("RTBS LENGTH =====================".brightRed, this.rtbs.length);
+        //console.log("RTBS LENGTH =====================".brightRed, this.rtbs.length);
         this.rtbsMap[blockInfo.verboseData.hash] = true;
         while (this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
             delete this.rtbsMap[this.rtbs.shift().hash];
@@ -1085,7 +1086,7 @@ console.log('dat/selected-tip');
         try{
             const result = await this.rpc.client.call('getBlockRequest', {hash, includeTransactions: true});
             const {block} = result;
-            console.log("RESULT::::::::::::::::::::::::::::".brightRed, block);
+            //console.log("RESULT::::::::::::::::::::::::::::".brightRed, block);
 
             // let outputs = [];
             // let inputs = [];
@@ -1284,9 +1285,9 @@ console.log('dat/selected-tip');
         //console.log("fetchBlocks: response", res)
         const {blockHashes, blocks} = res;
 
-        //console.log("blockVerboseData", blockVerboseData[0], bluestBlockHash)
-        if (blockHashes.length === 1 && blockHashes[0].hash === this.lastBlock.hash) {
-            return {done: true}
+        //console.log("fetchBlocks:blockHashes", blockHashes, blocks)
+        if (blockHashes.length && blockHashes[blockHashes.length-1] === this.lastBlock?.verboseData.hash) {
+            return {blocks, done: true}
         }
         return {blocks, done: false}
     }
@@ -1328,32 +1329,43 @@ console.log('dat/selected-tip');
             }
 
             // console.log(`fetching: ${skip}`);
+            let a = 0;
             while (true) {
                 let res = await this.fetchBlocks();
                 //console.log("fetchBlocks result:", r);
                 let {blocks, done} = res;
-                if (done) {
-                    break;
-                }
+
+                
                 // if (blocks.length < 100)
                 //     this.io.emit('dag/blocks', blocks);
 
                 this.skip += blocks.length;
-        
-                this.lastBlock = blocks[0];
-                await this.storeLastBlockHash(this.lastBlock.hash);
-                const pre_ = blocks.length;
-                blocks = blocks.filter(block => !this.rtbsMap[block.verboseData.hash]);
-                const post_ = blocks.length;
-                if (!this.tracking && pre_ != post_)
-                    this.tracking = true;
-                if (blocks.length) {
-                    if (this.tracking) {
-                        console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
-                        console.log(' ->' + blocks.map(block => block.verboseData.hash).join('\n'));
-                        console.log(`possible MQTT failure, catching up via db sync...`);
+                if(blocks.length){
+                    a++;
+                    if(a > 2000){
+                        a = 0;
+                        console.log("fetchBlocks:blocks", blocks.length, blocks[blocks.length-1].verboseData.hash, this.lastBlock?.verboseData.hash)
                     }
-                    await this.post(blocks);
+                    this.lastBlock = blocks[blocks.length-1];
+                    //console.log("this.lastBlock", this.lastBlock)
+                    await this.storeLastBlockHash(this.lastBlock.verboseData.hash);
+                    const pre_ = blocks.length;
+                    blocks = blocks.filter(block => !this.rtbsMap[block.verboseData.hash]);
+                    const post_ = blocks.length;
+                    if (!this.tracking && pre_ != post_)
+                        this.tracking = true;
+                    if (blocks.length) {
+                        if (this.tracking) {
+                            //console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
+                            //console.log(' ->' + blocks.map(block => block.verboseData.hash).join('\n'));
+                            //console.log(`possible MQTT failure, catching up via db sync...`);
+                        }
+                        await this.post(blocks);
+                    }
+                }
+
+                if (done) {
+                    break;
                 }
             }
             const selectedChainChanges = await this.fetchSelectedChain();
@@ -1427,7 +1439,8 @@ console.log('dat/selected-tip');
     }
 
     async postSPC(args){
-        const {addedChainBlocks, removedChainBlockHashes} = args;
+        const {addedChainBlockHashes, removedChainBlockHashes} = args;
+        //console.log("postSPC:args", args)
         
         if (removedChainBlockHashes && removedChainBlockHashes.length) {
             let removedChainBlockHashes_ = removedChainBlockHashes.map(hash=>Buffer.from(hash,'hex'));
@@ -1436,18 +1449,22 @@ console.log('dat/selected-tip');
             await this.sql(format(`UPDATE blocks SET "acceptingBlockHash"='' WHERE ("blocks"."acceptingBlockHash") IN (%L)`, removedChainBlockHashes_));
         }
 
-        for (const chainBlock of addedChainBlocks) {
+        for (const chainBlock of addedChainBlockHashes) {
+            const hash = Buffer.from(chainBlock, 'hex');
+            /*
             const {hash, acceptedBlocks} = chainBlock;
-            const hash_ = Buffer.from(hash,'hex');
+           
             const acceptedBlockHashes = acceptedBlocks.map(block => Buffer.from(block.hash,'hex'));
             await this.sql(format(`UPDATE blocks SET "isChainBlock"=TRUE WHERE "blockHash" = %L`, hash_));
             await this.sql(format(`UPDATE blocks SET "acceptingBlockHash" = %L WHERE ("blockHash") IN (%L)`, hash_, acceptedBlockHashes));
+            */
         }
     }
 
     async post(blocks) {
         //console.log("post:blocks", blocks)
         this.lastBlock = blocks[blocks.length - 1];
+        //console.log("this.lastBlock:", this.lastBlock)
         let relations = new Map();
 
         blocks.forEach(block => {
@@ -1495,8 +1512,12 @@ console.log('dat/selected-tip');
                         ON CONFLICT (parent, child) DO UPDATE
                         SET linked = FALSE;
                     `, relations);
-
-            await this.sql(query);
+            if(this.update_block_relations_signal)
+                await this.update_block_relations_signal;
+            
+            this.insert_block_relations_signal = this.sql(query);
+            await this.insert_block_relations_signal;
+            //console.log("####### INSERT INTO block_relations")
         }
 
         await this.update();
@@ -1506,8 +1527,11 @@ console.log('dat/selected-tip');
     async updateRelations() {
         let rows = await this.sql('SELECT * FROM block_relations WHERE linked = FALSE LIMIT 1000');
         //await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
-        await this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
-
+        if(this.insert_block_relations_signal)
+            await this.insert_block_relations_signal;
+        this.update_block_relations_signal = this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
+        await this.update_block_relations_signal;
+        //console.log("####### UPDATE block_relations")
         //let hashMap = {}
         let hashSet = new Set();
         rows.forEach((row) => {

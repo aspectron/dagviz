@@ -322,7 +322,7 @@ export class KExplorer extends LitElement{
 		this.applySettingsFromUrl();
 		this.setLoading(true);
 		this.block = false;
-		this.network = 'kaspatest';
+		this.network = 'kaspa';
 	}
 
 	setLoading(loading){
