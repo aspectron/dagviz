@@ -1333,7 +1333,7 @@ console.log('dat/selected-tip');
             let a = 0;
             while (true) {
                 let res = await this.fetchBlocks();
-                //console.log("fetchBlocks result:", r);
+                console.log("fetchBlocks result:", r);
                 let {blocks, done} = res;
 
                 
