@@ -499,6 +499,7 @@ console.log('dat/selected-tip');
 
         app.get("/api/block/:blockHash", async (req, res) => {
             let block = await this.getBlockByHash(req.params.blockHash);
+            //console.log("block/:blockHash:block", block)
             if(!block)
                 return res.sendJSON({error:'not found'},404);
             res.sendJSON(this.deserealizeBlock(block));
@@ -1411,7 +1412,7 @@ console.log('dat/selected-tip');
             mass: 0,
             acceptedBlockHashes: '',
         };
-        let buffers = ['hash','acceptedIDMerkleRoot','hashMerkleRoot','utxoCommitment'];
+        let buffers = ['hash','acceptedIdMerkleRoot','hashMerkleRoot','utxoCommitment'];
         for (const field in verboseBlock) {
             if (DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS.hasOwnProperty(field)) {
                 dbBlock[DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS[field]] = 
@@ -1782,7 +1783,7 @@ console.log('dat/selected-tip');
             block.childBlockHashes = BufferToHashes(block.childBlockHashes);
             //block.childBlockHashes = block.childBlockHashes.split(',');
             block.acceptedBlockHashes = BufferToHashes(block.acceptedBlockHashes);//.split(',');
-
+            //block.acceptedIDMerkleRoot = BufferToHashes(block.acceptedIDMerkleRoot)
 
 //            let accepted_diff = BufferToHashes(block.acceptedBlockHashes);//.split(',');
 
