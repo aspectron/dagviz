@@ -489,7 +489,7 @@ console.log('dat/selected-tip');
 
         app.get("/api/blocks", async (req, res) => {
             const blocks = await this.getBlocks({
-                order: req.query.order === 'DESC' ? 'DESC' : 'ASC',
+                order: (req.query.order||"").toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
                 skip: Number(req.query.skip),
                 limit: Number(req.query.limit),
             });
