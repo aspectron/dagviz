@@ -1287,9 +1287,10 @@ console.log('dat/selected-tip');
         const {blockHashes, blocks} = res;
 
         //console.log("fetchBlocks:blockHashes", blockHashes, blocks)
-        if (blockHashes.length<10 && blockHashes[blockHashes.length-1] === this.lastBlock?.verboseData.hash) {
-            console.log("fetchBlocks:blockHashes", {
+        if (blockHashes.length<5 && blockHashes[0] === this.lastBlock?.verboseData.hash) {
+            console.log("fetchBlocks:blockHashes:almost done", {
                 bluestBlockHash,
+                blockHashes_first: blockHashes[0],
                 blockHashes_last: blockHashes[blockHashes.length-1],
                 lastBlock_hash: this.lastBlock?.verboseData.hash
             })
@@ -1350,9 +1351,14 @@ console.log('dat/selected-tip');
                     a++;
                     if(a > 2000){
                         a = 0;
-                        console.log("fetchBlocks:blocks", blocks.length, blocks[blocks.length-1].verboseData.hash, this.lastBlock?.verboseData.hash)
+                        console.log("fetchBlocks:blocks", {
+                            blocks_length: blocks.length,
+                            blocks_first_hash: blocks[0].verboseData.hash,
+                            blocks_last_hash: blocks[blocks.length-1].verboseData.hash,
+                            lastBlock_hash:this.lastBlock?.verboseData.hash
+                        })
                     }
-                    this.lastBlock = blocks[blocks.length-1];
+                    this.lastBlock = blocks[0];
                     //console.log("this.lastBlock", this.lastBlock)
                     await this.storeLastBlockHash(this.lastBlock.verboseData.hash);
                     const pre_ = blocks.length;
@@ -1469,7 +1475,7 @@ console.log('dat/selected-tip');
 
     async post(blocks) {
         //console.log("post:blocks", blocks)
-        this.lastBlock = blocks[blocks.length - 1];
+        this.lastBlock = blocks[0];
         //console.log("this.lastBlock:", this.lastBlock)
         let relations = new Map();
 
