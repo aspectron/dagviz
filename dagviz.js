@@ -259,7 +259,7 @@ class DAGViz {
     }
 
     async handleBlockAddedNotificationImpl(notification) {
-        //console.log("handleBlockAddedNotificationImpl:", notification)
+        console.log("handleBlockAddedNotificationImpl:", notification)
         const {block:blockInfo} = notification;
         const block = blockInfo.verboseData;
         //console.log("handleBlockAddedNotificationImpl:blockInfo", blockInfo)
