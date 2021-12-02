@@ -1183,9 +1183,9 @@ console.log('dat/selected-tip');
                     // let total_input_value = Decimal(0);
                     while(inputs.length) {
                         let input = inputs.shift();
-                        //console.log("INPUT======================================".brightRed, input);
-                        let { txId : previous_txId, outputIndex, sequence, scriptSig } = input;
-                        let signature_script_hex = scriptSig.hex;
+                        console.log("INPUT======================================".brightRed, input);
+                        let { previousOutpoint, sequence, signatureScript } = input;
+                        let {transactionId : previous_txId, index:outputIndex} = previousOutpoint;
 
                         let entry = this.txMap.get(previous_txId);
                         let previous_transaction_id = entry?.transaction_id;
@@ -1209,7 +1209,7 @@ console.log('dat/selected-tip');
                         // total_input_value = total_input_value.add(value);
 
                        // console.log("FOUND OUTPUT ID",output_id);
-                        let input_cols = [transaction_id, previous_transaction_id, outputIndex, output_id, HEX(signature_script_hex), sequence, value];
+                        let input_cols = [transaction_id, previous_transaction_id, outputIndex, output_id, HEX(signatureScript), sequence, value];
                         //console.log(format(`INSERT INTO inputs (transaction_id, "previousTransactionId", "outputIndex", output_id, "signatureScript", sequence) VALUES (%L)`, input_cols));
                         await this.sql(format(`INSERT INTO inputs (transaction_id, "previousTransactionId", "outputIndex", output_id, "signatureScript", sequence, value) VALUES (%L)`, input_cols));
                         let test = await this.sql(format(`SELECT * FROM inputs WHERE transaction_id= %L`, transaction_id));
@@ -1287,7 +1287,12 @@ console.log('dat/selected-tip');
         const {blockHashes, blocks} = res;
 
         //console.log("fetchBlocks:blockHashes", blockHashes, blocks)
-        if (blockHashes.length && blockHashes[blockHashes.length-1] === this.lastBlock?.verboseData.hash) {
+        if (blockHashes.length<10 && blockHashes[blockHashes.length-1] === this.lastBlock?.verboseData.hash) {
+            console.log("fetchBlocks:blockHashes", {
+                bluestBlockHash,
+                blockHashes_last: blockHashes[blockHashes.length-1],
+                lastBlock_hash: this.lastBlock?.verboseData.hash
+            })
             return {blocks, done: true}
         }
         return {blocks, done: false}
@@ -1333,7 +1338,7 @@ console.log('dat/selected-tip');
             let a = 0;
             while (true) {
                 let res = await this.fetchBlocks();
-                console.log("fetchBlocks result:", res);
+                //console.log("fetchBlocks result:", res);
                 let {blocks, done} = res;
 
                 
