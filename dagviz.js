@@ -1430,7 +1430,7 @@ console.log('dat/selected-tip');
                     buffers.includes(field) ? Buffer.from(verboseBlock[field],'hex') : verboseBlock[field];
             }
         }
-        dbBlock.parentBlockHashes = HashesToBuffer(verboseBlock.parents.map(p=>p.parentHashes).flat()); //.join(',');
+        dbBlock.parentBlockHashes = HashesToBuffer(verboseBlock.parents.map(p=>p.parentHashes).flat().filter((v,index, a)=>a.indexOf(v) === index)) ); //.join(',');
 //        dbBlock.childBlockHashes = HashesToBuffer(verboseBlock.childrenHashes); //.join(',');
         dbBlock.bits = parseInt(verboseBlock.bits, 16);
         dbBlock.childBlockHashes = '';
