@@ -335,3 +335,13 @@ const pick = (obj, keys)=>{
 export {debounceFrameMap, debounce, pick, isSmallScreen}
 export {isElementVisible, paginationStyle, scollbarStyle, loadingImgStyle, selectText};
 export {copyToClipboard, getTS, buildPagination, renderPagination, btnStyle, isString, isNumber};
+
+
+export const KAS = (v, trailingZeros) => {
+    var [int,frac] = Decimal(v).mul(1e-8).toFixed(8).split('.');
+    int = int.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    if(trailingZeros)
+        return `${int}.${frac}`;
+    frac = frac.replace(/0+$/,'');
+    return frac ? `${int}.${frac}` : int;
+}

@@ -22,8 +22,27 @@ class KAPI {
 		return {req:this.get(`blocks/count`)}
 	}
 
-	getTransactionsCount(addr){
-		return {req:this.get(`transactions/address/${addr}/count` )}
+	// getTransactionsCount(addr){
+	// 	console.log("TRANSACTIONS COUNT:::::::");
+	// 	addr = addr.split(":").pop();
+	// 	return {req:this.get(`transactions/address/${addr}/count` )}
+	// }
+
+	getTransactionsForAddress(addr, params={}){
+		console.log("ADDDRRRRR", addr);
+		addr = addr.split(":").pop();
+		params = Object.assign({
+			order:"asc", //desc
+			skip:0,
+			limit:25
+		}, params)
+		return {params, req:this.get(`address/${addr}`, params)}
+	}
+
+	getTransactionsForAddressCount(addr){
+		console.log("ADDDRRRRR", addr);
+		addr = addr.split(":").pop();
+		return {req:this.get(`address/${addr}/count`)}
 	}
 
 	getBlock(hash){

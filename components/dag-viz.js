@@ -547,6 +547,10 @@ export class GraphNodeLink{
 			this.source.linkNodes = this.source.linkNodes.filter(l=>l!=this)
 		this.target.removeParentLinks(this);
 		// TODO - should we check/remove children?
+		let index = this.holder.simulationLinks.indexOf(this);
+		if(index > -1){
+			this.holder.simulationLinks.splice(index, 1);
+		}
 	}
 	updateStyle(){
 		const { source, target } = this;
@@ -828,6 +832,9 @@ export class GraphNode{
 	}
 
 	bindElEvents(){
+		if(this.el.__ElEvents)
+			return
+		this.el.__ElEvents = true;
 		this.el.on("click", this.onNodeClick.bind(this))
 		this.el.on("mouseover", this.onNodeHover.bind(this))
 		this.el.on("mouseout", this.onNodeOut.bind(this))
@@ -1179,8 +1186,12 @@ export class GraphNode{
 		if(this.holder.ctx)
 			this.holder.ctx.nodePosition(this, this.holder, this.holder.nodes);
 
-		this.el
-			.style('transform', `translate(${this.x}px, ${this.y}px)`)
+		const transform = `translate(${this.x}px, ${this.y}px)`;
+		if(this.el.__lastTransform != transform){
+			this.el.__lastTransform = transform
+			this.el
+				.style('transform', transform)
+		}
 		if(this.holder.ctx._arrows == "multi")
 			this.updateLinkIndexes();
 		this.updateArrowHead();
@@ -1254,15 +1265,15 @@ export class GraphNode{
 				mid +=1;
 				this.parentLinksLength += 1;
 			}
-			mid -= 1;
+			//mid -= 1;
 			let a = 1;
 			links.forEach((link, index)=>{
 				if(link.source.data.isChainBlock){
-					link.linkIndex = mid;
+					link.linkIndex = mid-1;
 					//console.log("link.linkIndex", link.linkIndex, link.el.node())
 					return
-				}
-				link.linkIndex = index<mid?index:mid+a++;
+				}else
+					link.linkIndex = index<=mid-1?index:mid-1+a++;
 			})
 		}else{
 			links.forEach((link, index)=>{
@@ -1334,7 +1345,7 @@ export class GraphNode{
 					</td>
 					<td>
 					<span class="caption">Block Hash:</span> <span class="value">${data.blockHash}</span><br/>
-					<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(data.timestamp*1000))}</span>&nbsp;
+					<span class="caption">Timestamp:</span> <span class="value">${this.getTS(new Date(+data.timestamp))}</span>&nbsp;
 					<span class="caption">Version:</span> <span class="value">${data.version}</span>&nbsp;
 					<span class="caption">Bits:</span> <span class="value">${data.bits}</span><br/>
 					<span class="caption">Blue Score:</span> <span class="value">${data.blueScore}</span>&nbsp;
@@ -1767,6 +1778,7 @@ export class DAGViz extends BaseElement {
 				window.app.ctls.track.setValue(false);
 			})
 			.on('end', () => {
+				console.log("simulationLinks.length:", this.simulationLinks.length, this.simulationNodes.length)
 				if(this.ctx.noux)
 					return;
 

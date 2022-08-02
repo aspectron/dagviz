@@ -1256,6 +1256,7 @@ export class App {
 
 			blocks.forEach(block=>block.isChainBlock = false);
 			let _blocks = blocks;
+			//console.log("this.ctx.track, this.region", this.ctx.track, this.region)
 			if(!this.ctx.track && this.region) {
 				// let region = this.getRegion();
 				_blocks = _blocks.filter((block) => {

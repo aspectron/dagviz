@@ -10,7 +10,7 @@ import {KBlockCfm} from "./k-block-cfm.js";
 import {KAPI} from "./k-api.js";
 import {isElementVisible, paginationStyle, scollbarStyle, loadingImgStyle, isString} from "./k-utils.js";
 import {buildPagination, getTS, copyToClipboard, renderPagination, btnStyle} from "./k-utils.js";
-import {debounce, basePath} from "./k-utils.js";
+import {debounce, basePath, KAS} from "./k-utils.js";
 import {KLastBlocks} from './k-last-blocks.js';
 
 
@@ -27,7 +27,8 @@ export class KExplorer extends LitElement{
 			block:{type:Object},
 			feeEstimates:{type:Object},
 			transactions:{type:Array},
-			transaction:{type:Object}
+			transaction:{type:Object},
+			addressOutputs:{type:Array}
 		}
 	}
 	static get styles() {
@@ -52,7 +53,7 @@ export class KExplorer extends LitElement{
 				font-size:var(--k-heading-size, 1.2rem);
 			    color:var(--k-heading-color, var(--k-color1, #FFF));
 			    font-weight:var(--k-heading-weight, 700);
-			    padding: 10px 20px;
+			    padding: 10px 20px 10px 2px;
     			border-bottom:2px solid #2489da;
     			border-color:var(--k-heading-border-color, #2489da);
     			display:flex;
@@ -321,6 +322,7 @@ export class KExplorer extends LitElement{
 		this.applySettingsFromUrl();
 		this.setLoading(true);
 		this.block = false;
+		this.network = 'kaspa';
 	}
 
 	setLoading(loading){
@@ -459,14 +461,15 @@ export class KExplorer extends LitElement{
 				<path class="animate" fill-rule="evenodd" clip-rule="evenodd"
 					fill="url(#left-to-right)"
 					fill_="#009688"
-					d="M43.382 0L0 30.5V90.5L89 149.5V179L0 120V180.5L33 157.491L94.5 198L133 172V120L110 104.252L133 89V28L100 6L43.382 45V0ZM33 67.5V22L11 38V82L66.5 119.5L77.5 127L88.5 134L99 141.5L120.5 126L99 112L88.5 104.5L55 82L120.5 36L99 22L33 67.5ZM22 150L11 142.5V157.5L22 150ZM120.5 142.5V165L100 178.76V156L120.5 142.5ZM120.5 82V51.5L77.5 82L99 96L120.5 82Z" />
+					d="M45.041,92V52.184L8.619,80.639,0,69.607,34.915,42.328,3,17.393,11.619,6.361,45.041,32.472V0h14V92Z" transform="scale(2)"
+					xxd="M43.382 0L0 30.5V90.5L89 149.5V179L0 120V180.5L33 157.491L94.5 198L133 172V120L110 104.252L133 89V28L100 6L43.382 45V0ZM33 67.5V22L11 38V82L66.5 119.5L77.5 127L88.5 134L99 141.5L120.5 126L99 112L88.5 104.5L55 82L120.5 36L99 22L33 67.5ZM22 150L11 142.5V157.5L22 150ZM120.5 142.5V165L100 178.76V156L120.5 142.5ZM120.5 82V51.5L77.5 82L99 96L120.5 82Z" 
+					/>
 			</svg>
 		</div>`;
 	}
 	renderBlock(){
 		let data = this.block;
 		const isBlue = !!data.acceptingBlockHash || !!data.isChainBlock
-		// console.log("DATA",data);
 		let par_only = data.parentBlockHashes.filter(val => !data.acceptedBlockHashes.includes(val));
 		let par_mer = data.parentBlockHashes.filter(val => data.acceptedBlockHashes.includes(val));
 		let mer_only = data.acceptedBlockHashes.filter(val => !data.parentBlockHashes.includes(val));
@@ -497,7 +500,7 @@ export class KExplorer extends LitElement{
                     </tr>
                     <tr><td>Version</td><td><strong>${data.version}</strong></td></tr>
                     <tr><td>Bits</td><td><strong>${data.bits}</strong></td></tr>
-                    <tr><td>Timestamp</td><td><strong>${getTS(new Date(data.timestamp*1000))}</strong> (${data.timestamp})</td></tr>
+                    <tr><td>Timestamp</td><td><strong>${getTS(new Date(+data.timestamp))}</strong> (${data.timestamp})</td></tr>
                     <tr><td><flow-reference>Blue Score<div slot="tooltip">
 							The blue score of a block is the number of blue blocks in its past. 
 							<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#blue-score" 
@@ -602,7 +605,7 @@ export class KExplorer extends LitElement{
 				<!--a part="btn btn-refresh" class="btn btn-refresh primary" data-action="refresh-blocks">REFRESH</a-->
 			</div>
 			<div class="items sbar" >
-				<table cellpadding="0" cellspacing="0" border="0">
+				<table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
 					<thead>
 						<tr>
 							<th class="blue-score">Blue Score</th>
@@ -660,7 +663,7 @@ export class KExplorer extends LitElement{
 	}
 	renderTransactions(title="Transactions"){
 		const items = this.transactions || [];
-		console.log("ITEMS:",items);
+		//console.log("TRANSACTIONS:",items);
 		return html`
 		<div class="holder transactions" @click="${this.onTXsClick}">
 			<div class="heading">
@@ -686,51 +689,47 @@ export class KExplorer extends LitElement{
 								A transaction identifier used only when building the block hash merkle root.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
 								target="_blank">Learn more</a></span></span></th>
-							<th class="confirmations">Confirmations</th>
-							<th class="ins-outs">Inputs / Outputs</th>
-							<th class="mass">Mass</th>
-							<th class="payload-hash"><flow-reference>Payload hash<div slot="tooltip">
+							<!-- <th class="confirmations">Confirmations</th> -->
+							<th class="ins-outs" style="text-align:center;">Inputs / Outputs</th>
+							<!-- <th class="mass">Mass</th> -->
+							<!-- <th class="payload-hash"><flow-reference>Payload hash<div slot="tooltip">
 								The hash of the arbitrary data field, payload, in a transaction.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#payload-hash"
 								target="_blank">Learn more</a></div></flow-reference></th>
 							<th class="payload" width="10%"><flow-reference>Payload<div slot="tooltip">
 								A field inside a transaction, used to store arbitrary data and code (i.e., subnetwork-specific logic).
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#payload"
-								target="_blank">Learn more</a></div></flow-reference></th>
+								target="_blank">Learn more</a></div></flow-reference></th> -->
+							<th class="total-value" style="text-align:center;">Output Value (KAS)</th>
 							<th class="lock-time">Lock Time</th>
-							<th class="gas"><flow-reference>GAS<div slot="tooltip">
+							<!-- <th class="gas"><flow-reference>GAS<div slot="tooltip">
 								A measure of computation cost for subnetwork transactions.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#gas"
 								target="_blank">Learn more</a></div></flow-reference>
-							</th>
+							</th> -->
 							<th class="sub-network-id"><flow-reference>Sub-Network id<div slot="tooltip">
 								The subnetwork mechanism in Kaspa's consensus layer allows nodes with a common interest to form 
 								nested networks with their own rules within the greater Kaspa network.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#subnetwork"
 								target="_blank">Learn more</a></div></flow-reference>
 							</th>
-							<th class="accepting-block-hash"><flow-reference>Merging Chain Block Hash<div slot="tooltip">
+							<!-- <th class="accepting-block-hash"><flow-reference>Merging Chain Block Hash<div slot="tooltip">
 								When a chain block B is added to the DAG, transactions from blue blocks that B merges, 
 								which spend outputs available in the UTXO set, are accepted, while transactions which do not are rejected.
 								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#accepted-transactions"
 								target="_blank">Learn more</a></div></flow-reference>
-							</th>
+							</th> -->
 						</tr>
 					</thead>
 					<tbody>
-						${repeat(items, t=>t.transactionHash, (t, index) => html
-							`<tr class="tx-row" hash="${t.transactionHash}" data-id="${t.transactionId}">
-								<td class="id k-link" data-action="t-page-id">${t.transactionId}</td>
-								<td class="hash k-link" data-action="t-page">${t.transactionHash}</td>
-								<td class="confirmations">${t.confirmations}</td>
-								<td class="ins-outs">${t.inputs.length} / ${t.outputs.length}</td>
-								<td class="mass">${t.mass}</td>
-								<td class="payload-hash">${t.payloadHash}</td>
-								<td class="payload" width="10%">${t.payload}</td>
-								<td class="lock-time">${getTS(t.lockTime)} (${t.lockTime})</td>
-								<td class="gas">${t.gas}</td>
+						${repeat(items, t=>t.hash, (t, index) => html
+							`<tr class="tx-row" hash="${t.hash}" data-id="${t.id}">
+								<td class="id k-link" data-action="t-page-id">${t.txId}</td>
+								<td class="hash k-link" data-action="t-page">${t.hash}</td>
+								<td class="ins-outs" style="text-align:center;">${t.inputCount} / ${t.outputCount}</td>
+								<td class="total-value" style="text-align:center;">${KAS(t.totalOutputValue)}</td>
+								<td class="lock-time">${t.lockTime}</td>
 								<td class="sub-network-id">${t.subnetworkId}</td>
-								<td class="accepting-block-hash k-link" data-b-hash="${t.acceptingBlockHash}">${t.acceptingBlockHash}</td>
 							</tr>`
 						)}
 					</tbody>
@@ -748,13 +747,26 @@ export class KExplorer extends LitElement{
 	   }
 	renderTransaction(){
 		const t = this.transaction;
-		const amount_outputs = t.outputs.reduce((acc, cur) => acc + cur.value,0);
-		const amount_inputs = t.inputs.reduce((acc, cur) => acc + cur.value,0);
-		let fees =  amount_inputs - amount_outputs;
-		if (amount_inputs == 0)
-			fees = 0;
 		if(!t)
 			return html``;
+		//let data = this.block;
+		let amount_outputs = t.outputs.reduce((acc, cur) => acc + parseInt(cur.value),0);
+		let amount_inputs = t.inputs.reduce((acc, cur) => acc + parseInt(cur.value||0),0);
+		let fees =  amount_inputs - amount_outputs;
+		
+		if (amount_inputs == 0)
+			fees = 0;
+
+		if(t.inputs != t.inputCount) {
+			amount_inputs = 'N/A';
+			fees = 'N/A';
+		}
+		else  {
+			amount_inputs = KAS(amount_inputs)+' KAS';
+			fees = this.commas(fees);
+		}
+		amount_outputs = KAS(amount_outputs)+' KAS';
+// console.log("BLOCK DATA IN TRANSACTION!",this.block)
 		return html`
 		<div class="holder block" @click="${this.onTXClick}">
 			<div class="heading">
@@ -765,31 +777,36 @@ export class KExplorer extends LitElement{
 			<div class="items sbar" >
 				${this.debug?html`<pre>${this.renderJSON(t)}</pre>`:''}
 				<table>
-                    <tr class="id"><td>ID</td><td>${t.transactionId}</td></tr>
-					<tr class="hash"><td>Hash</td><td>${t.transactionHash}</td></tr>
-					<tr class="confirmations"><td>Confirmations</td><td>${t.confirmations}</td></tr>
-					<tr class="mass"><td>Mass</td><td>${t.mass}</td></tr>
-					<tr class="payload-hash"><td>Payload Hash</td><td>${t.payloadHash}</td></tr>
-					<tr class="payload"><td>Payload</td><td>${t.payload}</td></tr>
-					<tr class="lock-time"><td>Lock Time</td><td>${getTS(t.lockTime)} (${t.lockTime})</td></tr>
-					<tr class="gas"><td>GAS</td><td>${t.gas}</td></tr>
+                    <tr class="id"><td>ID</td><td>${t.txId}</td></tr>
+					<tr class="hash"><td>Hash</td><td>${t.hash}</td></tr>
+					<tr class="hash"><td>Block Hash</td><td><div class="k-link" data-b-hash="${t.blockHash}">${t.blockHash}</div></td></tr>
+					<!-- <tr class="confirmations"><td>Confirmations</td><td>${this.block.confirmations}</td></tr> -->
+					<!-- <tr class="mass"><td>Mass</td><td>${t.mass}</td></tr> -->
+					<!-- <tr class="payload-hash"><td>Payload Hash</td><td>${t.payloadHash}</td></tr> -->
+					<!-- <tr class="payload"><td>Payload</td><td>${t.payload}</td></tr> -->
+					<tr class="lock-time"><td>Lock Time</td><td>${t.lockTime}</td></tr>
+					<!-- <tr class="gas"><td>GAS</td><td>${t.gas}</td></tr> -->
 					<tr class="sub-network-id"><td>Subnetwork Id</td><td>${t.subnetworkId}</td></tr>
-					<tr class="accepting-block-hash">
+					<!-- <tr class="accepting-block-hash">
 						<td>Merging Chain Block Hash</td>
 						<td class="k-link" data-b-hash="${t.acceptingBlockHash}">${t.acceptingBlockHash}</td>
-					</tr>
+					</tr> -->
 					<tr class="ins-outs">
 						<td>Inputs / Outputs</td>
 						<td>${t.inputs.length} / ${t.outputs.length}</td>
 					</tr>
 					<tr class="">
-						<td>Amount</td>
-						<td>${this.commas(amount_outputs)}</td>
+						<td>Input Amount</td>
+						<td>${amount_inputs}</td>
+					</tr>
+					<tr class="">
+						<td>Output Amount</td>
+						<td>${amount_outputs}</td>
 						
 					</tr>
 					<tr class="">
 						<td>Fees</td>
-						<td>${this.commas(fees)}</td>
+						<td>${fees}</td>
 					</tr>
 					<!--tr class="accepting-blue-score"><td>Accepting Blue Score</td><td>${t.acceptingBlockBlueScore}</td></tr-->
                 </table>
@@ -797,19 +814,19 @@ export class KExplorer extends LitElement{
                 <table cellpadding="0" cellspacing="0" border="0">
 					<thead>
 						<tr>
-							<th class="id" width="49%">ID</th>
+							<th class="id" style="max-width:100px;">Index</th>
 							<th class="script-sig" width="49%">Script Sig</th>
 							<th class="index" width="1%">Index</th>
 							<th class="sequence" width="1%">Sequence</th>
 						</tr>
 					</thead>
 					<tbody>
-						
+
 						${repeat(t.inputs, a=>a.previousTransactionId, (a, index) => html
 							`<tr class="input-row" data-id="${a.previousTransactionId}">
-								<td class="id k-link" data-t-page-id="${a.previousTransactionId}">${a.previousTransactionId}</td>
-								<td class="script-sig">${a.scriptSig}</td>
-								<td class="index">${a.previousTransactionOutputIndex}</td>
+								<td class="k-link" style="max-width:100px;" data-t-page-id="${a.previousTransactionId}">${index}</td>
+								<td class="script-sig">${a.signatureScript}</td>
+								<td class="index">${a.outputIndex}</td>
 								<td class="sequence">${a.sequence}</td>
 							</tr>`
 						)}
@@ -827,9 +844,9 @@ export class KExplorer extends LitElement{
 					<tbody>
 						${repeat(t.outputs, (a, index) => html
 							`<tr class="output-row">
-								<td class="address k-link" data-t-address="${a.address}">${a.address}</td>
-								<td class="script-pub-key">${a.scriptPubKey}</td>
-								<td class="value">${a.value}</td>
+								<td class="address k-link" data-t-address="${a.address}">${this.network}:${a.address}</td>
+								<td class="script-pub-key">${a.scriptPubKeyHex}</td>
+								<td class="value">${KAS(a.value)}</td>
 							</tr>`
 						)}
 					</tbody>
@@ -837,6 +854,66 @@ export class KExplorer extends LitElement{
             </div>
         </div>
 		`
+	}
+
+	renderAddress(){
+		console.log("RENDERING address items:",this);
+		const items = this.addressOutputs || [];
+		console.log("ADDRESS TRANSACTIONS:",items);
+		return html`
+		<div class="holder address" @click="${this.onAddressClick}">
+			<div class="heading">
+				<span>ADDRESS: ${this.network}:${this.address}</span>
+				${this.hideSettings?'':html`
+				<div class="settings-outer">
+					<a part="setting-icon" class="btn btn-settings" data-action="settings">&#9881;</a>
+					<div class="settings"><k-settings class="sm-text"></k-settings></div>
+				</div>`}
+				${(this.showCloseBtn && this._action=='address') ? html`<a class="btn close-btn" data-action="close"><i class="mask-icon-close"></i></a>`:''}
+			</div>
+			<div class="items sbar" >
+				${this.debug?html`<pre>${this.renderJSON(items)}</pre>`:''}
+				<table cellpadding="0" cellspacing="0" border="0">
+					<thead>
+						<tr>
+							<th class="id"><flow-reference>Tx ID<div slot="tooltip">
+								A non-malleable transaction identifier used for referring to transactions everywhere, except in the block hash merkle root.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-id" 
+								target="_blank">Learn more</a></div></flow-reference></th>
+							<th class="name"><flow-reference>Tx Hash<div slot="tooltip">
+								A transaction identifier used only when building the block hash merkle root.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#transaction-hash"
+								target="_blank">Learn more</a></span></span></th>
+							<th class="ins-outs" style="text-align:center;white-space:nowrap;">Output<br/>Index</th>
+							<th class="total-value" style="text-align:center;white-space:nowrap;">Output Value<br/>Tx Total (KAS)</th>
+							<th class="tx-time">Tx Time</th>
+							<th class="lock-time">Lock Time</th>
+							<th class="sub-network-id"><flow-reference>Sub-Network id<div slot="tooltip">
+								The subnetwork mechanism in Kaspa's consensus layer allows nodes with a common interest to form 
+								nested networks with their own rules within the greater Kaspa network.
+								<a class="link-tooltip" href="https://docs.kas.pa/kaspa/glossary#subnetwork"
+								target="_blank">Learn more</a></div></flow-reference>
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						${repeat(items, t=>t.hash, (t, index) => html
+							`<tr class="tx-row" hash="${t.hash}" data-id="${t.id}">
+								<td class="id k-link" data-action="t-page-id">${t.txId.substring(0,16)}...</td>
+								<td class="hash k-link" data-action="t-page">${t.hash.substring(0,16)}</td>
+								<td class="index" >${t.index}</td>
+								<td class="total-value" style="text-align:center;">${KAS(t.value)} / ${KAS(t.totalOutputValue)}</td>
+								<td class="tx-time" style="white-space:nowrap;">${getTS(new Date(+t.transactionTime))}</td>
+								<td class="lock-time">${t.lockTime}</td>
+								<td class="sub-network-id">${t.subnetworkId}</td>
+							</tr>`
+						)}
+					</tbody>
+				</table>
+			</div>
+			${renderPagination(this.addressPagination)}
+		</div>
+		`;
 	}
 	renderJSON(obj){
 		return JSON.stringify(obj, null, "\t")
@@ -846,7 +923,6 @@ export class KExplorer extends LitElement{
 			paths = paths.split("/");
 		let method = paths.shift()||"";
 		let action = this.camelCase(method);
-		//console.log("action, paths, params", action, paths, params)
 		if(!this[`${action}Api`])
 			return
 		if(this._action != action){
@@ -895,6 +971,10 @@ export class KExplorer extends LitElement{
 	}
 
 	onBlocksClick(e){
+		this._onElClick(e);
+	}
+
+	onAddressClick(e){
 		this._onElClick(e);
 	}
 
@@ -964,7 +1044,7 @@ export class KExplorer extends LitElement{
 				this.callApi('transaction/hash/'+hash);
 			break;
 			case 't-address':
-				this.callApi('transactions/address/'+hash);
+				this.callApi('address/'+hash);
 			break;
 			case 't-page-id':
 				this.callApi('transaction/id/'+ txid);
@@ -992,11 +1072,11 @@ export class KExplorer extends LitElement{
 		}
 	}
 
-	handlePaginationClick(method, $target, paths=[]){
+	handlePaginationClick(method, $target, paths_=[]){
 		if($target.hasClass("disabled") || $target.hasClass("active"))
 			return
 		let skip = $target.attr("data-skip");
-		let {params} = this.getState(method, {params:{}});
+		let {params, paths} = this.getState(method, {params:{}});
 		params.skip = skip;
 		//console.log("params", params)
 		this.setLoading(true);
@@ -1059,6 +1139,10 @@ export class KExplorer extends LitElement{
 			case "transaction":{
 				let {paths, params} = this.getState('transaction', {params:{}});
 				return {method:'transaction', paths, params}
+			}
+			case "address":{
+				let {paths, params} = this.getState('address', {params:{}});
+				return {method:'address', paths, params}
 			}
 			break;
 		}
@@ -1139,6 +1223,44 @@ export class KExplorer extends LitElement{
 		return result;
 	}
 
+	async addressApi(paths, params={}){
+		let result = await this.getTransactionsForAddress(paths, params);
+		console.log("RESULT API API API API ::::", result);
+		let {reqParams, pagination, items} = result;
+		this.state['address'] = {params: reqParams, pagination, paths};
+
+		console.log("addressApi:items", items);
+		this.addressOutputs = items;
+		this.address = paths[0] || ':-/';
+		this.addressPagination = pagination;
+		if(paths && paths.length)
+			this.__paths = paths;
+		this.fireKEvent({method:"address", paths, params:reqParams});
+		return result;
+	}
+		
+	getTransactionsForAddress(paths, params){
+		console.log("ALOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO", paths, params);
+		return new Promise(async(resolve, reject)=>{
+			let items = [];
+			let total = 0;
+			paths = paths && paths.length ? paths : (this.__paths || []);
+			console.log("paths paths paths paths paths paths ",paths);
+			try{
+				total = await this.api.getTransactionsForAddressCount(paths[0]).req;
+				let result = await this.api.getTransactionsForAddress(paths[0], params);
+				let {params:reqParams, req} = result;
+				let items = await req;
+				let {skip, limit} = reqParams;
+				let pagination = buildPagination(total, skip, limit);
+				pagination.type = "address";
+				resolve({items, pagination, reqParams})
+			}catch(ex){
+				console.log(ex);
+			}
+		})
+	}
+
 	async transactionApi(paths, params={}){
 		let result = this.api.getTransaction(paths, params);
 		let {req} = result;
@@ -1155,12 +1277,7 @@ export class KExplorer extends LitElement{
 			let total = 0;
 
 			paths = paths && paths.length ? paths : (this.__paths || []);
-try {
-			// if(paths[0] == "address"){
-			if(paths[0] == "address"){
-					total = await this.api.getTransactionsCount(paths[1]).req;
-				console.log("TOTAL:",total);
-			}
+		try {
 			
 				let result = this.api.getTransactions(paths, params);
 				let {params:reqParams, req} = result;
@@ -1174,7 +1291,7 @@ try {
 				let items = [];
 				let txs = res.transactions || (res.forEach ? res:[])
 				txs.forEach(tx=>{
-					tx.name = tx.transactionHash.replace(/^[0]{1,}/g, '').substr(0, 6);
+					tx.name = tx.hash.replace(/^[0]{1,}/g, '').substr(0, 6);
 					items.push(tx)
 					//this.transactionsMap[b.blockHash] = b;
 				})

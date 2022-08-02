@@ -19,6 +19,7 @@ const WebApp = require('./web-app.js');
 const FlowRouter = require('@aspectron/flow-router');
 const colors = require('colors');
 const {RPC} = require('@kaspa/grpc-node');
+const Decimal = require('decimal.js');
 //const ejs = require('ejs')
 
 let args = utils.args();
@@ -29,6 +30,21 @@ const rejectUnauthorized = false;
 
 const {Command} = require('commander');
 const program = new Command();
+const HEX = (v) => { return Buffer.from(v,'hex'); }
+
+function HashesToBuffer(list) {
+    return Buffer.concat(list.map(hex=>Buffer.from(hex,'hex')));
+}
+
+function BufferToHashes(buffer) {
+    if(!buffer || !buffer.subarray)
+        return []; 
+    const size = Math.floor(buffer.length/32);
+    const items = [];
+    for(let k = 0; k < buffer.length; k+=32)
+        items.push(buffer.subarray(k,k+32).toString('hex'));
+    return items;
+}
 
 
 const BLOCK_PROPERTIES = [
@@ -68,12 +84,15 @@ class DAGViz {
             .option('--devnet', 'use devnet network')
             .option('--simnet', 'use simnet network')
             .option('--listen <listen>', 'the port to listen to')
+            .option('--dropdb', 'purge PostgreSQL database')
+            .option('--hostdb', 'auto-init and run PostgreSQL as a child process')
             .option('--database-host <host>', 'the database host (default localhost)')
             .option('--database-port <port>', 'the database port (default 8309)')
             .option('--database-scheme  <scheme>', 'the database scheme')
             .option('--database-user <user>', 'the database user')
             .option('--database-password <password>', 'the database password')
-            .option('--rpc <address>', 'use custom RPC address <host:port>');
+            .option('--rpc <address>', 'use custom RPC address <host:port>')
+            .option('--reset-pgsql', 'use testnet network');
         program.parse(process.argv);
         this.options = program.opts();
 
@@ -99,6 +118,9 @@ class DAGViz {
 
         this.blockTimings = [];
         this.last_mqtt_block_updates = [];
+
+        this.txMap = new Map();
+        this.notifications = { block : [], spc : []};
     }
 
     initRTBS() {
@@ -112,14 +134,18 @@ class DAGViz {
     }
 
     async init() {
-        await this.initRPC();
+        await this.initHTTP();
         this.initRTBS();
-        await this.initDatabase();
+//        if(this.options.hostdb)
+            await this.initDatabase();
+        // else
+        //     await this.initDatabase_v2();
         await this.initDatabaseSchema();
         // await this.initLastBlockTracking();
         // await this.initMQTT();
-        await this.initHTTP();
+        
 
+        await this.initRPC();
         return this.main();
     }
 
@@ -144,11 +170,11 @@ class DAGViz {
         await this.rpc.connect();
         console.log('RPC connected...');
 
-        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (intake) =>
-            this.handleVirtualSelectedParentChainChanged(intake))
-
-        this.rpc.subscribe("notifyBlockAddedRequest", (intake) =>
-            this.handleBlockAddedNotification(intake))
+        this.rpc.subscribe("notifyBlockAddedRequest", (async (intake) =>
+            await this.handleBlockAddedNotification(intake)));
+        this.rpc.subscribe("notifyVirtualSelectedParentChainChangedRequest", (async (intake) =>{
+            this.handleVirtualSelectedParentChainChanged(intake);  
+        }));
     }
 
     async initLastBlockTracking() {
@@ -159,7 +185,7 @@ class DAGViz {
 
     async rewindToLastBlockHash() {
         if (this.lastBlockHash) {
-            let rows = await this.sql(`SELECT * FROM blocks WHERE "blockHash" = '${this.lastBlockHash}'`);
+            let rows = await this.sql(format(`SELECT * FROM blocks WHERE "blockHash" = %L`, this.lastBlockHash));
             if (rows.length) {
                 let id = parseInt(rows.shift().id);
                 id -= this.REWIND_BLOCK_PADDING;
@@ -178,6 +204,7 @@ class DAGViz {
         // }, 1000 * 60 * 1); // flush every 1 minte
     }
 
+    /*
     async initMQTT() {
 
         if (this.args['disable-mqtt']) {
@@ -220,14 +247,22 @@ class DAGViz {
             // console.log("MQTT topic is "+ topic);
         });
     }
+*/
 
     serializeBlock(block) {
         return BLOCK_PROPERTIES.map(p => block[p]);
     }
 
-    async handleBlockAddedNotification(notification) {
+    async handleBlockAddedNotification(args) {
+        this.notifications.block.push({type:'block', args, handler : this.handleBlockAddedNotificationImpl});
+        this.drainNotifications();
+    }
 
-        const block = notification.blockVerboseData;
+    async handleBlockAddedNotificationImpl(notification) {
+        //console.log("handleBlockAddedNotificationImpl:", notification)
+        const {block:blockInfo} = notification;
+        const block = blockInfo.verboseData;
+        //console.log("handleBlockAddedNotificationImpl:blockInfo", blockInfo)
 
         const ts = Date.now();
         // while(this.blockTimings[0] < ts-1000*15)
@@ -244,52 +279,60 @@ class DAGViz {
             // console.log('delta:',delta,'rate:',rate,'t:',t0,'rtbs:',this.rtbs.length);
         }
 
-        // console.log('received: dag/blocks',blocks);
-        const dbBlock = this.verboseBlockToDBBlock(block);
+        //console.log("block", notification, block)
+        await this.getBlockTransactions(block.hash, block.transactionIds);
+        const dbBlock = this.verboseBlockToDBBlock(blockInfo);
         const data = {blocks: [this.deserealizeBlock(dbBlock)], rate};
         while (this.last_mqtt_block_updates.length > 10)
             this.last_mqtt_block_updates.shift();
         this.last_mqtt_block_updates.push(data);
         this.io.emit("dag/blocks", data);
 
-        this.lastBlockHash = block.blockHash;
+        this.lastBlockHash = block.hash;
 
-        await this.storeLastBlockHash(block.blockHash);
+      //  await this.storeLastBlockHash(block.blockHash);
 
-        await this.postRTB(block);
+        await this.postRTB(blockInfo);
     }
 
     async handleVirtualSelectedParentChainChanged(args) {
-        // console.log("dag/selected-parent-chain");
+        this.notifications.spc.push({type:'spc', args, handler : this.handleVirtualSelectedParentChainChangedImpl});
+    }
+
+    async drainNotifications() {
+
+        if(this.draining)
+            return;
+
+        this.draining = true;
+        while(this.notifications.block.length + this.notifications.spc.length > 1) {
+            let queue = this.notifications.block.length ? this.notifications.block : this.notifications.spc;
+            let { args, handler } = queue.shift();
+            await handler.call(this, args);
+        }
+        this.draining = false;
+    }
+
+    async handleVirtualSelectedParentChainChangedImpl(args) {
         this.io.emit("dag/selected-parent-chain", args);
-
-        const {addedChainBlocks, removedChainBlockHashes} = args;
-
-        if (removedChainBlockHashes && removedChainBlockHashes.length) {
-            //this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
-            await this.sql(format(`UPDATE blocks SET "isChainBlock"=FALSE WHERE ("blocks"."blockHash") IN (%L)`, removedChainBlockHashes));
-            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash"='' WHERE ("blocks"."acceptingBlockHash") IN (%L)`, removedChainBlockHashes));
-        }
-
-        for (const chainBlock of addedChainBlocks) {
-            const {hash, acceptedBlocks} = chainBlock;
-            const acceptedBlockHashes = acceptedBlocks.map(block => block.hash);
-            await this.sql(`UPDATE blocks SET "isChainBlock" = TRUE WHERE "blockHash" = '${hash}'`);
-            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash" = '${hash}' WHERE ("blockHash") IN (%L)`, acceptedBlockHashes));
-        }
+        await this.postSPC(args);
     }
 
     static MAX_RTBS_BLOCKS = 2016;
 
-    postRTB(block) {
-        this.rtbs.push({hash: block.blockHash, timestamp: block.timestamp});    // parent chain block notifications
-        this.rtbsMap[block.blockHash] = true;
+    postRTB(blockInfo) {
+        this.rtbs.push({
+            hash: blockInfo.verboseData.hash,
+            timestamp: blockInfo.header.timestamp
+        });// parent chain block notifications
+        //console.log("RTBS LENGTH =====================".brightRed, this.rtbs.length);
+        this.rtbsMap[blockInfo.verboseData.hash] = true;
         while (this.rtbs.length > DAGViz.MAX_RTBS_BLOCKS)
             delete this.rtbsMap[this.rtbs.shift().hash];
 
-        return this.post([block]);
+        return this.post([blockInfo]);
     }
-
+/*
     async "dag/selected-tip"(message) {
 
         // console.log("dag/selected-tip");
@@ -298,9 +341,9 @@ class DAGViz {
             return console.log('invalid mqtt message:', message);
 
         const block = message;
-//        this.io.emit("dag/selected-tip", this.serializeBlock(block));
-
-        this.sql(`UPDATE blocks SET "isChainBlock" = TRUE WHERE "blockHash" = '${block.blockHash}'`);
+        //this.io.emit("dag/selected-tip", this.serializeBlock(block));
+console.log('dat/selected-tip');
+        this.sql(format(`UPDATE blocks SET "isChainBlock" = TRUE WHERE "blockHash" = %L`,block.blockHash));
 
 
         this.postRTB(block);
@@ -314,18 +357,61 @@ class DAGViz {
         //     ) VALUES ?
         // `, [blocks]);
     }
-
+*/
     async getBlockCount() {
         const [{blockCount}] = await this.sql('select count(*) as "blockCount" from blocks;');
         return Number(blockCount);
     }
 
     async getBlocks({order = 'ASC', skip = 0, limit = 25}) {
-        return this.sql(`select * from blocks order by id ${order} LIMIT ${limit} OFFSET ${skip};`);
+        return this.sql(`SELECT * FROM blocks ORDER BY id ${order} LIMIT ${limit} OFFSET ${skip};`);
     }
 
     async getBlockByHash(hash) {
-        return this.sql(format(`select * from blocks where "blockHash" = %L`, hash));
+       const rows =  await this.sql(format(`select * from blocks where "blockHash" = %L`, Buffer.from(hash,'hex')));
+       if(rows){
+           return rows.shift();
+       }
+    }
+
+    prepareOutputDataForClient(transaction) {
+        ['blockHash','subnetworkId','txId','hash', 'scriptPubKeyHex'].forEach(prop=>{
+            transaction[prop] = transaction[prop].toString('hex');
+        })
+        transaction.lockTime = parseInt(transaction.lockTime);
+        transaction.transactionTime = parseInt(transaction.transactionTime);
+    }
+
+    async buildTransaction(transaction){
+        let inputs = await this.sql(`SELECT * FROM inputs WHERE transaction_id='${transaction.id}'`);
+        let outputs = await this.sql(`SELECT * FROM outputs WHERE transaction_id='${transaction.id}'`);
+        inputs.forEach(input => {
+            input.signatureScript = input.signatureScript.toString('hex');
+            input.sequence = input.sequence.toString();
+        });
+        outputs.forEach(output => {
+            output.scriptPubKeyHex = output.scriptPubKeyHex.toString('hex');
+            //delete output.script_pub_key_hex;
+        });
+
+        transaction.inputs = inputs;
+        transaction.outputs = outputs;
+
+        ['blockHash','subnetworkId','txId','hash'].forEach(prop=>{
+            transaction[prop] = transaction[prop].toString('hex');
+        })
+        transaction.lockTime = parseInt(transaction.lockTime);
+        transaction.transactionTime = parseInt(transaction.transactionTime);
+        //console.log("TRANSACTION:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:".brightRed, JSON.stringify(transaction,null,'\t'));
+
+        for(const output of outputs) {
+            let addr = await this.sql(`SELECT * FROM addresses WHERE id='${output.address_id}'`);
+            if(addr && addr.length)
+                output.address = addr[0].address.toString('hex');
+        }
+        return transaction;
+
+
     }
 
     async initHTTP() {
@@ -403,23 +489,185 @@ class DAGViz {
 
         app.get("/api/blocks", async (req, res) => {
             const blocks = await this.getBlocks({
-                order: req.query.order === 'DESC' ? 'DESC' : 'ASC',
+                order: (req.query.order||"").toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
                 skip: Number(req.query.skip),
                 limit: Number(req.query.limit),
             });
-            res.sendJSON(blocks);
+            
+            res.sendJSON(blocks.map(block=>this.deserealizeBlock(block)));
         });
 
         app.get("/api/block/:blockHash", async (req, res) => {
-            res.sendJSON(await this.deserealizeBlock(this.getBlockByHash(req.params.blockHash)));
+            let block = await this.getBlockByHash(req.params.blockHash);
+            //console.log("block/:blockHash:block", block)
+            if(!block)
+                return res.sendJSON({error:'not found'},404);
+            res.sendJSON(this.deserealizeBlock(block));
         });
 
-        app.get("/api/transactions/block", async (req, res) => {
-            res.sendJSON([]); // TODO: IMPLEMENT THIS
+        app.get("/api/transactions/block/:hash", async (req, res) => {
+            //console.log("REQQQQQQQQQQQQ".rainbow, req.query, "PARAMS".brightRed, req.params);
+            let blockHash = req.params.hash;
+            let transactions = await this.sql(format(`SELECT * FROM transactions WHERE "blockHash" = '%s'`,HEX(blockHash)));
+//            let transactions = await this.sql(`SELECT * FROM transactions WHERE blockhash='${blockHash}'`);
+
+            if(transactions) {
+                transactions.forEach(tx=>{
+                    ['blockHash','subnetworkId','txId','hash'].forEach(prop=>{
+                        tx[prop] = tx[prop].toString('hex');
+                    });
+
+                    tx.lockTime = parseInt(tx.lockTime);
+//                    tx.blockhash = tx.blockhash.toString('hex');
+                })
+            }
+
+
+            //console.log("TRANSACTIONS+++++++++++++++++++++++++++++++++++++".brightRed, transactions);
+            res.sendJSON(transactions || []); // TODO: IMPLEMENT THIS
+        });
+
+        app.get("/api/transactions/address/:address/count", async (req, res)=>{
+            console.log("PARAMSSSSS COUNT:::::::".brightRed, req.params, req.query);
+            res.sendJSON({count: 5}); 
+
+        });
+
+        app.get("/api/address/:address/count", async (req, res)=>{
+            console.log("PARAMSSSSS:::::::".brightRed, req.params, req.query);
+            let address = req.params.address;
+            let q = format(`SELECT id FROM addresses WHERE address = %L`, address);
+            let rows = await this.sql(q);
+            let address_id = rows.shift().id;
+            console.log("ADDRESS ID ::::::::::::::::::::::::::".brightBlue, address_id);
+            let qq = format(`SELECT COUNT(*) AS count FROM outputs WHERE outputs.address_id = %L `, address_id);
+            let records =  await this.sql(qq); 
+            console.log("got address count:",records,'=>',records[0]?.count);
+            res.sendJSON(records[0]?.count);
+        });
+
+        app.get("/api/address/:address", async (req, res)=>{
+            console.log("PARAMSSSSS:::::::".brightRed, req.params, req.query);
+            let address = req.params.address;
+            let q = format(`SELECT id FROM addresses WHERE address = %L`, address);
+            let rows = await this.sql(q);
+            let address_id = rows.shift().id;
+            console.log("ADDRESS ID ::::::::::::::::::::::::::".brightBlue, address_id);
+            // let qq = format(`SELECT COUNT(*) AS count FROM outputs LEFT JOIN transactions ON transactions.id = outputs.transaction_id WHERE outputs.address_id = %L `, address_id);
+            // let records =  await this.sql(qq); 
+            // let count = records.shift().count;
+            // console.log("COUNT ::::::::::::::::::::::::::::::::::::::::::::".brightYellow, count);
+            //select * from outputs left join transactions ON (transaction.id = output.transaction_id) where output.address id  = id
+            
+            //            let {order = 'ASC', skip = 0, limit = 25} = req.query;
+
+            let query = Object.assign({order : 'ASC', skip : 0, limit : 25}, req.query);
+            let { order, skip, limit } = query;
+            console.log("QUERY:",query);
+            let qq = format(`SELECT * FROM outputs LEFT JOIN transactions ON transactions.id = outputs.transaction_id WHERE outputs.address_id = %L ORDER BY outputs.id ${order} LIMIT ${limit} OFFSET ${skip};`, address_id);
+
+            //return this.sql(`select * from blocks order by id ${order} LIMIT ${limit} OFFSET ${skip};`);
+            console.log("QQQQQQQQQQQQQQQQQQQQQQQQQQQ".brightGreen, qq);
+            try{
+                let outputs = await this.sql(qq);
+                outputs.forEach(output => this.prepareOutputDataForClient(output));
+//                console.log(" TRANSACTIONS FOR THIS ADDRESS ++++++++++++++++++++++++".brightRed, outputs);
+                res.sendJSON(outputs); 
+
+            }catch(error){
+                console.log("EROR EROR EROR EROR EROR EROR EROR EROR EROR EROR EROR EROR EROR ".brightYellow, error);
+            }
         });
 
 
-        app.get(/\/blocks?|\/utxos|\/transactions?|\/fee\-estimates/, (req, res, next) => {
+
+
+        app.get("/api/transaction/id/:id", async (req, res)=>{
+            //console.log("PARAMSSSSS:::::::".brightRed, req.params, req.query);
+            let id = req.params.id;
+            let q = format(`SELECT * FROM transactions WHERE id=%L`, id); 
+            let rows = await this.sql(q);
+            let transaction = rows.shift();
+            //console.log("TX TXT TX TXT TXT TXT TXT XT".brightRed, transaction);
+            let buildTx = await this.buildTransaction(transaction);
+            // let inputs = await this.sql(`SELECT * FROM inputs WHERE transaction_id='${transaction.id}'`);
+            // let outputs = await this.sql(`SELECT * FROM outputs WHERE transaction_id='${transaction.id}'`);
+            // inputs.forEach(input => {
+            //     input.signatureScript = input.signatureScript.toString('hex');
+            //     input.sequence = input.sequence.toString('hex');
+            // });
+            // outputs.forEach(output => {
+            //     output.scriptPubKeyHex = output.scriptPubKeyHex.toString('hex');
+            //     //delete output.script_pub_key_hex;
+            // });
+
+            // transaction.inputs = inputs;
+            // transaction.outputs = outputs;
+
+            // ['blockHash','subnetworkId','txId','hash'].forEach(prop=>{
+            //     transaction[prop] = transaction[prop].toString('hex');
+            // })
+            // transaction.lockTime = parseInt(transaction.lockTime);
+            // transaction.transactionTime = parseInt(transaction.transactionTime);
+            // //console.log("TRANSACTION:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:".brightRed, JSON.stringify(transaction,null,'\t'));
+
+            // for(const output of outputs) {
+            //     let addr = await this.sql(`SELECT * FROM addresses WHERE id='${output.address_id}'`);
+            //     if(addr && addr.length)
+            //         output.address = addr[0].address.toString('hex');
+            // }
+
+            res.sendJSON(buildTx); 
+
+        });
+
+        app.get("/api/transaction/hash/:hash", async (req, res) => {
+            //console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX".rainbow);
+            let hash = req.params.hash;
+            let q = format(`SELECT * FROM transactions WHERE hash='%s'`, HEX(hash));
+           // console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=>",q);
+            let rows = await this.sql(q);
+            // if(!rows || !rows.length)
+            //     return res.sendJSON({});
+            let transaction = rows.shift();
+           
+            let buildTx = await this.buildTransaction(transaction);
+
+           // console.log("TRANSACTION:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:".brightRed, transaction);
+
+            // let inputs = await this.sql(`SELECT * FROM inputs WHERE transaction_id='${transaction.id}'`);
+            // let outputs = await this.sql(`SELECT * FROM outputs WHERE transaction_id='${transaction.id}'`);
+
+            // inputs.forEach(input => {
+            //     input.signatureScript = input.signatureScript.toString('hex');
+            //     input.sequence = input.sequence.toString('hex');
+            // });
+            // outputs.forEach(output => {
+            //     output.scriptPubKeyHex = output.scriptPubKeyHex.toString('hex');
+            //     //delete output.script_pub_key_hex;
+            // });
+
+            // transaction.inputs = inputs;
+            // transaction.outputs = outputs;
+
+            // ['blockHash','subnetworkId','txId','hash'].forEach(prop=>{
+            //     transaction[prop] = transaction[prop].toString('hex');
+            // })
+            // transaction.lockTime = parseInt(transaction.lockTime);
+            // transaction.transactionTime = parseInt(transaction.transactionTime);
+            // //console.log("TRANSACTION:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:".brightRed, JSON.stringify(transaction,null,'\t'));
+
+            // for(const output of outputs) {
+            //     let addr = await this.sql(`SELECT * FROM addresses WHERE id='${output.address_id}'`);
+            //     if(addr && addr.length)
+            //         output.address = addr[0].address.toString('hex');
+            // }
+
+            res.sendJSON(buildTx); // TODO: IMPLEMENT THIS
+        });
+
+
+        app.get(/\/blocks?|\/utxos|\/address|\/transactions?|\/fee\-estimates/, (req, res, next) => {
             let pkg = require("./package.json");
             dataVars.set("version", pkg.version);
             res.sendFile("./index.html", {vars: dataVars});
@@ -463,7 +711,97 @@ class DAGViz {
     }
 
     async initDatabase() {
-        const port = this.databasePort;
+
+        this.uid = 'dagviz';
+
+        const port = this.databasePort || 8309;
+
+//        const mySQL = new MySQL({ port, database : this.uid });
+        if(this.options.hostdb) {
+            this.pgSQL = new PgSQL({ port, database : this.uid });
+            await this.pgSQL.start()
+        }
+
+        let defaults = {
+            host : 'localhost',
+            port,
+            user : 'dagviz',
+            password : 'dagviz',
+        };
+
+        return new Promise((resolve,reject) => {
+            //this.dbPool = mysql.createPool(Object.assign({ }, defaults, {
+            this.dbPool = new PgPool(Object.assign({ }, defaults, {
+                    // host : 'localhost', port,
+                // user : 'dagviz',
+                // password: 'dagviz',
+                // database: this.uid, //'mysql',
+
+
+                host: this.databaseHost,
+                port,
+                user: this.databaseUser,
+                password: this.databasePassword,
+                database: this.uid, //'mysql',
+    
+
+                //insecureAuth : true
+            }));
+
+            this.dbPool.on('error', (err) => {
+                if(!this.pgSQL || !this.pgSQL.stopped)
+                    console.log(err);
+            })
+            
+            this.db = {
+                query : async (sql, args) => {
+                    if(this.pgSQL && this.pgSQL.stopped)
+                        return Promise.reject("pgSQL stopped - the platform is going down!");
+                    //console.log("sql:", sql, args)
+                    return new Promise((resolve,reject) => {
+                        this.dbPool.connect().then((client) => {
+                        //     //console.log("CONNECTION:",connection);
+                        //     if(err)
+                        //         return reject(err);
+
+                            client.query(sql, args, (err, result) => {
+                                client.release();
+                                    // console.log("SELECT GOT ROWS:",rows);
+                                resolve(result?.rows);
+                            });
+                        }, (err) => {
+                            //if(err) {
+                                console.log(`Error processing SQL query:`);
+                                console.log(sql);
+                                console.log(args);
+                                console.log(`SQL Error is: ${err.toString()}`)
+                                return reject(err);
+                            // }
+                            // reject(err);
+                        });
+                    });
+                }                
+            }
+            // this.db_.connect(async (err) => {
+            //     if(err) {
+            //         this.log(err);
+            //         this.log("FATAL - MYSQL STARTUP SEQUENCE! [2]".brightRed);
+            //         return reject(err);// resolve();
+            //     }
+
+            //     this.log("MySQL connection SUCCESSFUL!".brightGreen);
+
+
+                resolve();
+                // db.end(()=>{
+                //     this.log("MySQL client disconnecting.".brightGreen);
+                // });
+            // });
+        });
+    }
+
+    async initDatabase_v2() {
+        const port = this.databasePort;        
         this.dbClient = new Client({
             host: this.databaseHost,
             port,
@@ -475,10 +813,25 @@ class DAGViz {
         this.promisifiedQuery = util.promisify(this.dbClient.query.bind(this.dbClient));
     }
 
-    async sql(...args) {
-        const {rows} = await this.promisifiedQuery(...args);
-        return rows;
+    async sql(...args) { 
+        //if(this.options.hostdb) {
+        // console.log('SQL:'.brightGreen,args[0]);
+            let p = this.db.query(...args);
+            p.catch(e=>{
+                console.log("sql:exception:", [...args], e)
+            })
+            return p;
+        // } else {
+        //     const {rows} = await this.promisifiedQuery(...args);
+        //     return rows;
+        // }
     }
+
+
+    // async sql(...args) {
+    //     const {rows} = await this.promisifiedQuery(...args);
+    //     return rows;
+    // }
 
     static DB_TABLE_BLOCKS_ORDER = [
         'blockHash',
@@ -502,37 +855,49 @@ class DAGViz {
         'hash': 'blockHash',
         'version': 'version',
         'hashMerkleRoot': 'hashMerkleRoot',
-        'acceptedIDMerkleRoot': 'acceptedIDMerkleRoot',
+        'acceptedIdMerkleRoot': 'acceptedIDMerkleRoot',
         'utxoCommitment': 'utxoCommitment',
         'time': 'timestamp',
         'nonce': 'nonce',
         'bits': 'bits',
-        'parentHashes': 'parentBlockHashes',
+        //'parentHashes': 'parentBlockHashes',
         'blueScore': 'blueScore',
     }
 
     async initDatabaseSchema() {
+
+        let tables = ['blocks','block_relations','last_block_hash','transactions','inputs','outputs','addresses'];
+        if(this.options.dropdb) {
+            while(tables.length) {
+                let table = tables.shift();
+                console.log('pgsql - dropping:',table);
+                await this.sql(`DROP TABLE ${table}`);
+            }
+        }
+
+
         await this.sql(`
             CREATE TABLE IF NOT EXISTS blocks (
                 "id"                      BIGSERIAL PRIMARY KEY,
-                "blockHash"              CHAR(64)        NULL,
-                "acceptingBlockHash"      CHAR(64) NULL,
+                "blockHash"              BYTEA        NULL,
+                "acceptingBlockHash"      BYTEA NULL,
                 "acceptingBlockTimestamp" INT NULL,
                 "version"                 INT             NOT NULL,
-                "hashMerkleRoot"        CHAR(64)        NOT NULL,
-                "acceptedIDMerkleRoot" CHAR(64)        NOT NULL,
-                "utxoCommitment"         CHAR(64)        NOT NULL,
+                "hashMerkleRoot"        BYTEA        NOT NULL,
+                "acceptedIDMerkleRoot" BYTEA        NOT NULL,
+                "utxoCommitment"         BYTEA        NOT NULL,
                 "timestamp"               bigint NOT NULL,
-                "bits"                    INT     NOT NULL,
+                "bits"                    bigint     NOT NULL,
                 "nonce"                   BYTEA  NOT NULL,
                 "blueScore"              BIGINT  NOT NULL,
                 "isChainBlock"          BOOLEAN         NOT NULL,
                 "mass"                    BIGINT          NOT NULL,
-                "acceptedBlockHashes"   TEXT NOT NULL,
-                "parentBlockHashes"   TEXT NOT NULL,
-                "childBlockHashes"   TEXT NOT NULL
+                "acceptedBlockHashes"   BYTEA NOT NULL,
+                "parentBlockHashes"   BYTEA NOT NULL,
+                "childBlockHashes"   BYTEA NOT NULL
             );        
         `);
+
 
         let blocks_idx = ['blockHash:UNIQUE', 'timestamp', 'isChainBlock', 'blueScore'];
         while (blocks_idx.length) {
@@ -541,16 +906,18 @@ class DAGViz {
         }
 
         //id                      BIGSERIAL PRIMARY KEY,
+//        await this.sql(`DROP TABLE block_relations`);
+
         await this.sql(`
             CREATE TABLE IF NOT EXISTS block_relations (
-                parent  CHAR(64) NOT NULL,
-                child CHAR(64) NOT NULL,
+                parent  BYTEA NOT NULL,
+                child BYTEA NOT NULL,
                 linked BOOLEAN NOT NULL,
                 PRIMARY KEY (parent, child)
             );
         `);
 
-        //await this.sql(`CREATE UNIQUE INDEX idx_child ON block_relations (child)`);
+        await this.sql(`CREATE INDEX idx_child ON block_relations (child)`);
         // UNIQUE INDEX idx_child (child)
 
         await this.sql(`
@@ -564,12 +931,97 @@ class DAGViz {
 
         await this.sql(`CREATE UNIQUE INDEX IF NOT EXISTS idx_xid ON last_block_hash (xid)`);
 
+
+
+// await this.sql(`DROP TABLE transactions`);
+// await this.sql(`DROP TABLE inputs`);
+// await this.sql(`DROP TABLE outputs`);
+        await this.sql(`
+            CREATE TABLE IF NOT EXISTS transactions (
+                "id"   BIGSERIAL PRIMARY KEY,
+                "txId"  BYTEA NOT NULL,
+                "hash"  BYTEA NOT NULL,
+                "blockHash"  BYTEA NOT  NULL,
+                "inputCount" INT NOT NULL,
+                "outputCount" INT NOT NULL,
+                "totalOutputValue" BIGINT NOT NULL,
+                "lockTime" BIGINT NOT NULL,
+                "transactionTime" BIGINT NOT NULL,
+                "subnetworkId" BYTEA NOT NULL
+            );        
+        `);
+
+        // "gas" BIGINT NOT NULL,
+        // "payload" BYTEA NULL,
+        // "payloadhash" BYTEA NULL
+
+        await this.sql(`CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_txid ON transactions ("txId")`);
+        await this.sql(`CREATE INDEX IF NOT EXISTS idx_transactions_blockhash ON transactions ("blockHash")`);
+                
+        await this.sql(`
+            CREATE TABLE IF NOT EXISTS inputs (
+                "id"   BIGSERIAL PRIMARY KEY,
+                "transaction_id" BIGINT NOT NULL,
+                "previousTransactionId" BIGINT NOT NULL,
+                "outputIndex" INT NOT NULL,
+                "output_id" BIGINT NULL,
+                "signatureScript" BYTEA NOT NULL,
+                "sequence" BYTEA NOT NULL,
+                "value" BIGINT NULL
+            );        
+        `);
+        // await this.sql(`DROP INDEX idx_inputs_transaction_id`);
+        // await this.sql(`DROP INDEX idx_outputs_transaction_id`);
+        // await this.sql(`DROP INDEX idx_outputs_address_id`);
+        // await this.sql(`DROP INDEX idx_addresses_address`);
+
+        await this.sql(`CREATE INDEX IF NOT EXISTS idx_inputs_transaction_id ON inputs (transaction_id)`);
+                
+        await this.sql(`
+            CREATE TABLE IF NOT EXISTS outputs (
+                "id"   BIGSERIAL PRIMARY KEY,
+                "transaction_id" BIGINT NOT NULL,
+                "index" INT NOT NULL,
+                "value" BIGINT NOT NULL,
+                "scriptPubKeyType" INT NOT NULL,
+                "scriptPubKeyHex" BYTEA NOT NULL,
+                "scriptPubKeyVersion" INT NOT NULL,
+                "address_id" BIGINT NOT NULL
+            );        
+        `);
+
+        await this.sql(`CREATE INDEX IF NOT EXISTS idx_outputs_transaction_id ON outputs (transaction_id)`);
+        await this.sql(`CREATE INDEX IF NOT EXISTS idx_outputs_address_id ON outputs (address_id)`);
+        
+
+        await this.sql(`
+            CREATE TABLE IF NOT EXISTS addresses (
+                "id"   BIGSERIAL PRIMARY KEY,
+                "address" VARCHAR(64)
+            );        
+        `);
+
+        await this.sql(`CREATE UNIQUE INDEX IF NOT EXISTS idx_addresses_address ON addresses (address)`);
+
+
+        // let rows = await this.sql(`SELECT * FROM addresses`);
+        // while (rows.length){
+        //     let record = rows.shift();
+        //     let address = (record.address || "").split(":").pop();
+        //     await this.sql(`UPDATE addresses SET address = '${address}' WHERE id='${record.id}'`);
+        // }
+
+           // "gas"
+           // "payload"
+           // "paloadHash"
+
+
     }
 
     async main() {
         /*
 
-v2
+        v2
 
         let result = await this.sql(`SELECT COUNT(*) AS total FROM blocks`);
         // console.log('result:',result);
@@ -589,10 +1041,10 @@ v2
         }
 
         this.sync();
-        dpc(3000, () => {
-            this.updateRelations();
-        });
         */
+       dpc(3000, () => {
+           this.updateRelations();
+       });
         this.sync()
     }
 
@@ -629,6 +1081,157 @@ v2
         return Number(result.headerCount);
     }
 
+    async getBlockTransactions(hash, ids){
+
+        const MAX_TXID_MAP_SIZE = 4096*4;
+        try{
+            const result = await this.rpc.client.call('getBlockRequest', {hash, includeTransactions: true});
+            const {block} = result;
+            //console.log("RESULT::::::::::::::::::::::::::::".brightRed, block);
+
+            // let outputs = [];
+            // let inputs = [];
+
+            let total_output_value = new Decimal(0);
+
+            let {transactions} = block;
+            while(transactions.length) {
+                let transaction = transactions.shift();
+                let {
+                    inputs,
+                    outputs,
+                    lockTime,
+                    subnetworkId,
+                    verboseData
+                } = transaction;
+
+                let {
+                    transactionId:txId,
+                    hash,
+                    blockHash,
+                    mass,
+                    blockTime:time,
+                } = verboseData
+
+                //console.log("tx.verboseData", verboseData)
+                //console.log("tx.outputs", outputs)
+
+                try {
+
+                    if(this.txMap.has(txId))
+                        continue;
+
+                    outputs.forEach((output) => {
+                        total_output_value = total_output_value.add(output.amount);
+                    })
+
+                    let cols = [
+                        HEX(txId),
+                        HEX(hash),
+                        HEX(blockHash),
+                        inputs.length,
+                        outputs.length,
+                        total_output_value.toFixed(),
+                        lockTime,
+                        time,
+                        HEX(subnetworkId)
+                    ];
+
+                    // ON CONFLICT("txid") DO UPDATE SET txid=EXCLUDED.txid 
+                    const query = format(`INSERT INTO transactions ("txId", "hash", "blockHash", "inputCount", "outputCount", "totalOutputValue", "lockTime", "transactionTime", "subnetworkId") VALUES (%L) RETURNING id`, cols);
+                    //console.log("QUERYYYYYY:::::::".brightYellow,query);
+                    let resp = await this.sql(query);
+                    //console.log("GOT TX INSERT RESP",resp);
+                    if(!resp || !resp.length) {
+                        console.log("TX INSERT NO RESP FO TXID", txId);
+                        continue;
+                    }
+                    let transaction_id = resp.shift()?.id;
+
+                    if(!transaction_id) {
+                        console.log('error obtaining transaction_id on sql insert');
+                        console.log('OFFENDING QUERY:', query);
+                        continue;
+                    }
+
+                    this.txMap.set(txId,{transaction_id,ts:Date.now()});
+                    if(this.txMap.size > MAX_TXID_MAP_SIZE) {
+                        let diff = this.txMap.size - MAX_TXID_MAP_SIZE;
+                        let keys = this.txMap.keys();
+                        let purge = [];
+                        while(diff--)
+                            purge.push(keys.next().value);
+                        for(let _txid of purge)
+                            this.txMap.delete(_txid);
+                    }
+
+                    let index = 0;
+                    while(outputs.length) {
+                        let output = outputs.shift();
+                        let { amount, scriptPublicKey } = output;
+                        let {scriptPublicKey:hex, version } = scriptPublicKey;
+                        let {scriptPublicKeyAddress:address, scriptPublicKeyType:type} = output.verboseData
+                        address = address.split(":").pop();
+                        let addr = await this.sql(format('INSERT INTO addresses (address) VALUES (%L) ON CONFLICT("address") DO UPDATE SET address=EXCLUDED.address RETURNING id', [address]));
+                       // console.log('-------------------------------------- addr'.brightCyan, addr);
+                        let address_id = addr.shift()?.id;
+
+                        let output_cols = [transaction_id, index++, amount, 0, HEX(hex), version, address_id];
+                        await this.sql(format(`INSERT INTO outputs (transaction_id, index, value, "scriptPubKeyType", "scriptPubKeyHex", "scriptPubKeyVersion", address_id) VALUES (%L)`, output_cols));
+                    }
+
+                    // let total_input_value = Decimal(0);
+                    while(inputs.length) {
+                        let input = inputs.shift();
+                        console.log("INPUT======================================".brightRed, input);
+                        let { previousOutpoint, sequence, signatureScript } = input;
+                        let {transactionId : previous_txId, index:outputIndex} = previousOutpoint;
+
+                        let entry = this.txMap.get(previous_txId);
+                        let previous_transaction_id = entry?.transaction_id;
+                        if(entry === undefined) {
+                            //console.log('@@@@@ =>'.brightCyan,format(`SELECT id FROM transactions WHERE "txId" = %L`,HEX(previous_txId)));
+                            let ret = await this.sql(format(`SELECT id FROM transactions WHERE "txId" = %L`,HEX(previous_txId)));
+                            //console.log("PREVIOUS TRANSACTION ID:::::::::::::::::::::::::::::::::::::::::::".brightRed, ret);
+                            previous_transaction_id = ret.shift()?.id;
+                        }
+
+                        if(!previous_transaction_id) {
+                            console.log("error - missing transaction id:".brightRed, previous_txId);
+                            continue;
+                        }
+
+                        //console.log(`SELECT id FROM outputs WHERE transaction_id='${previous_transaction_id}' AND index=${outputIndex}`);
+                        let oresp = await this.sql(`SELECT id, value FROM outputs WHERE transaction_id='${previous_transaction_id}' AND index=${outputIndex}`);
+                        let output = oresp.shift();
+                        let output_id = output?.id||null;
+                        let value = output?.value||null;
+                        // total_input_value = total_input_value.add(value);
+
+                       // console.log("FOUND OUTPUT ID",output_id);
+                        let input_cols = [transaction_id, previous_transaction_id, outputIndex, output_id, HEX(signatureScript), sequence, value];
+                        //console.log(format(`INSERT INTO inputs (transaction_id, "previousTransactionId", "outputIndex", output_id, "signatureScript", sequence) VALUES (%L)`, input_cols));
+                        await this.sql(format(`INSERT INTO inputs (transaction_id, "previousTransactionId", "outputIndex", output_id, "signatureScript", sequence, value) VALUES (%L)`, input_cols));
+                        let test = await this.sql(format(`SELECT * FROM inputs WHERE transaction_id= %L`, transaction_id));
+                        //console.log("INPUTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT".brightRed, test);
+                    }
+
+                    // total_input_value = total_input_value.toFixed();
+                    // await this.sql(format(`UPDATE transactions SET "totalInputValue"=%L WHERE id=%L`,total_input_value,transaction_id));
+
+                } catch(ex) {
+                    console.log("error ingesting transaction".brightRed, txId);
+                    console.log(ex);
+                }
+
+            }
+       
+
+        }catch(error){
+            console.log("error".brightRed, error);
+        }
+    }
+
     fetchAddressTxs(address, options = {}) {
 
         return Promise.reject('refactoring');
@@ -661,27 +1264,39 @@ v2
             return ""
         }
         const [bluestBlock] = rows;
-        return bluestBlock.blockHash;
+        return bluestBlock.blockHash.toString("hex");
     }
 
     async selectedTipHash() {
-        const rows = await this.sql('SELECT "blockHash" FROM blocks where "isChainBlock" order by "blueScore" desc limit 1');
+        const rows = await this.sql('SELECT "blockHash" FROM blocks WHERE "isChainBlock" ORDER BY "blueScore" DESC LIMIT 1');
         if (rows.length === 0) {
             return ""
         }
-        return rows[0].blockHash;
+        return rows[0].blockHash.toString("hex");
     }
 
     async fetchBlocks() {
         const bluestBlockHash = await this.bluestBlockHash();
-        const {blockVerboseData} = await this.rpc.client.call('getBlocksRequest', {
+        const res = await this.rpc.client.call('getBlocksRequest', {
             lowHash: bluestBlockHash,
-            includeBlockVerboseData: true
+            includeBlocks: true,
+            includeTransactions: true
         });
-        if (blockVerboseData.length === 1 && blockVerboseData[0].hash === bluestBlockHash) {
-            return {done: true}
+
+        //console.log("fetchBlocks: response", res)
+        const {blockHashes, blocks} = res;
+
+        //console.log("fetchBlocks:blockHashes", blockHashes, blocks)
+        if (blockHashes.length<5 && blockHashes[0] === this.lastBlock?.verboseData.hash) {
+            console.log("fetchBlocks:blockHashes:almost done", {
+                bluestBlockHash,
+                blockHashes_first: blockHashes[0],
+                blockHashes_last: blockHashes[blockHashes.length-1],
+                lastBlock_hash: this.lastBlock?.verboseData.hash
+            })
+            return {blocks, done: true}
         }
-        return {blocks: blockVerboseData, done: false}
+        return {blocks, done: false}
     }
 
     async fetchSelectedChain() {
@@ -721,42 +1336,63 @@ v2
             }
 
             // console.log(`fetching: ${skip}`);
+            let a = 0;
             while (true) {
-                let {blocks, done} = await this.fetchBlocks();
+                let res = await this.fetchBlocks();
+                //console.log("fetchBlocks result:", res);
+                let {blocks, done} = res;
+
+                
+                // if (blocks.length < 100)
+                //     this.io.emit('dag/blocks', blocks);
+
+                this.skip += blocks.length;
+                if(blocks.length){
+                    a++;
+                    if(a > 2000){
+                        a = 0;
+                        console.log("fetchBlocks:blocks", {
+                            blocks_length: blocks.length,
+                            blocks_first_hash: blocks[0].verboseData.hash,
+                            blocks_last_hash: blocks[blocks.length-1].verboseData.hash,
+                            lastBlock_hash:this.lastBlock?.verboseData.hash
+                        })
+                    }
+                    this.lastBlock = blocks[0];
+                    //console.log("this.lastBlock", this.lastBlock)
+                    await this.storeLastBlockHash(this.lastBlock.verboseData.hash);
+                    const pre_ = blocks.length;
+                    blocks = blocks.filter(block => !this.rtbsMap[block.verboseData.hash]);
+                    const post_ = blocks.length;
+                    if (!this.tracking && pre_ != post_)
+                        this.tracking = true;
+                    if (blocks.length) {
+                        if (this.tracking) {
+                            //console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
+                            //console.log(' ->' + blocks.map(block => block.verboseData.hash).join('\n'));
+                            //console.log(`possible MQTT failure, catching up via db sync...`);
+                        }
+                        await this.post(blocks);
+                    }
+                }
+
                 if (done) {
                     break;
                 }
-
-                if (blocks.length < 100)
-                    this.io.emit('blocks', blocks);
-
-                this.skip += blocks.length;
-
-                const pre_ = blocks.length;
-                blocks = blocks.filter(block => !this.rtbsMap[block.hash]);
-                const post_ = blocks.length;
-                if (!this.tracking && pre_ != post_)
-                    this.tracking = true;
-                if (blocks.length) {
-                    if (this.tracking) {
-                        console.log(`WARNING: detected at least ${blocks.length} database blocks not visible in MQTT feed!`);
-                        console.log(' ->' + blocks.map(block => block.blockHash).join('\n'));
-                        console.log(`possible MQTT failure, catching up via db sync...`);
-                    }
-
-                    await this.post(blocks);
-                }
             }
+            const selectedChainChanges = await this.fetchSelectedChain();
+            await this.postSPC(selectedChainChanges);
 
-            // TODO: TEMPORARILY DISABLE
-            // const selectedChainChanges = await this.fetchSelectedChain();
-            // await this.handleVirtualSelectedParentChainChanged(selectedChainChanges);
         } catch (err) {
+            if(!this.faults)
+                this.faults = 0;
+            this.faults++;
             const wait = 3500;
-            console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds`)
+            console.error(`Sync error: ${err}. Restarting sync in ${wait} milliseconds (${this.faults})`)
             dpc(wait, () => {
                 this.sync();
-            })
+            });
+            return;
         }
 
         const wait = 300 * 1000;
@@ -773,41 +1409,98 @@ v2
         console.log(`warning: rewinding ${nblocks}; new position ${this.skip}`);
     }
 
-    verboseBlockToDBBlock(verboseBlock) {
+    verboseBlockToDBBlock(blockInfo) {
+        let verboseBlock = {
+            ...blockInfo.header,
+            ...blockInfo.verboseData,
+            transactions:blockInfo.transactions
+        };
+        if(!verboseBlock.transactions)
+            console.log("blockInfo:", blockInfo)
+        //console.log("VERBOSE BLOCK:", verboseBlock);
+        //console.log("VERBOSE BLOCK.parents: ", verboseBlock.parents)
         const dbBlock = {
             mass: 0,
             acceptedBlockHashes: '',
         };
+        let buffers = ['hash','acceptedIdMerkleRoot','hashMerkleRoot','utxoCommitment'];
         for (const field in verboseBlock) {
             if (DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS.hasOwnProperty(field)) {
-                dbBlock[DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS[field]] = verboseBlock[field];
+                dbBlock[DAGViz.VERBOSE_BLOCK_FIELDS_TO_DB_FIELDS[field]] = 
+                    buffers.includes(field) ? Buffer.from(verboseBlock[field],'hex') : verboseBlock[field];
             }
         }
-        dbBlock.parentBlockHashes = verboseBlock.parentHashes.join(',');
+        dbBlock.parentBlockHashes = HashesToBuffer(verboseBlock.parents.map(p=>p.parentHashes).flat().filter( (v,index, a)=>a.indexOf(v) === index) ); //.join(',');
+//        dbBlock.childBlockHashes = HashesToBuffer(verboseBlock.childrenHashes); //.join(',');
         dbBlock.bits = parseInt(verboseBlock.bits, 16);
         dbBlock.childBlockHashes = '';
         dbBlock.isChainBlock = Number(verboseBlock.blueScore) === 0; // Every block except genesis is not a chain block by default.
+        dbBlock.timestamp = verboseBlock.timestamp;
+        //console.log("dbBlock:", dbBlock)
+        //console.log("verboseBlock",verboseBlock);
+        //console.log("dbBlock",dbBlock);
+
+//         dbBlock.hash = Buffer.from(verboseBlock.hash,'hex');
+//         dbBlock.acceptedIDMerkleRoot = Buffer.from(verboseBlock.acceptedIDMerkleRoot,'hex');
+//         dbBlock.hashMerkleRoot = Buffer.from(verboseBlock.hashMerkleRoot,'hex');
+//         dbBlock.utxoCommitment = Buffer.from(verboseBlock.utxoCommitment,'hex');
+// //        dbBlock.hash = Buffer.from(verboseBlock.hash,'hex');
+//         //['hash','acceptingBlockHash','hashMerkleRoot','utxoCommitment'].forEach(p => Buffer.from(verboseBlock[p], 'hex'))
+
         return dbBlock;
     }
 
+    async postSPC(args){
+        const {addedChainBlockHashes, removedChainBlockHashes} = args;
+        //console.log("postSPC:args", args)
+        
+        if (removedChainBlockHashes && removedChainBlockHashes.length) {
+            let removedChainBlockHashes_ = removedChainBlockHashes.map(hash=>Buffer.from(hash,'hex'));
+            //this.sql(format(`UPDATE blocks SET acceptingBlockHash='', isChainBlock=FALSE WHERE (blocks.blockHash) IN (%L)`, removedBlockHashes));
+            await this.sql(format(`UPDATE blocks SET "isChainBlock"=FALSE WHERE ("blocks"."blockHash") IN (%L)`, removedChainBlockHashes_));
+            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash"='' WHERE ("blocks"."acceptingBlockHash") IN (%L)`, removedChainBlockHashes_));
+        }
+
+        for (const chainBlock of addedChainBlockHashes) {
+            const hash = Buffer.from(chainBlock, 'hex');
+            /*
+            const {hash, acceptedBlocks} = chainBlock;
+           
+            const acceptedBlockHashes = acceptedBlocks.map(block => Buffer.from(block.hash,'hex'));
+            await this.sql(format(`UPDATE blocks SET "isChainBlock"=TRUE WHERE "blockHash" = %L`, hash_));
+            await this.sql(format(`UPDATE blocks SET "acceptingBlockHash" = %L WHERE ("blockHash") IN (%L)`, hash_, acceptedBlockHashes));
+            */
+        }
+    }
+
     async post(blocks) {
-        this.lastBlock = blocks[blocks.length - 1];
-        console.log('posting blocks...', blocks.length);
-
-        //console.log("DOING POST") // 'acceptingBlockTimestamp',
-
-
-        let relations = [];
+        //console.log("post:blocks", blocks)
+        this.lastBlock = blocks[0];
+        //console.log("this.lastBlock:", this.lastBlock)
+        let relations = new Map();
 
         blocks.forEach(block => {
-            if (block.parentHashes) {
-                block.parentHashes.forEach(hash => relations.push([hash, block.hash, false]));
+            if (block.header) {
+                block.header.parents?.forEach(p=>{
+                    p.parentHashes.map(hash=>{
+                        relations.set(hash+":"+block.verboseData.hash, [HEX(hash), HEX(block.verboseData.hash), false])
+                    })
+                });
             }
         });
+
+        relations = [...relations.values()]
 
         this.verbose && process.stdout.write(` ${blocks.length}[${relations.length}] `);
 
         const dbBlocks = blocks.map(block => this.verboseBlockToDBBlock(block));
+        //console.log("dbBlocks", dbBlocks[0])
+        // if(dbBlocks.length)
+        // console.log(dbBlocks[0]);
+        // let blockData = dbBlocks.map(dbBlock => {
+        //     return DAGViz.DB_TABLE_BLOCKS_ORDER.map(key => dbBlock[key]);
+        // });
+
         let blockData = dbBlocks.map(dbBlock => {
             let values = DAGViz.DB_TABLE_BLOCKS_ORDER.map(key => format(`%L`, dbBlock[key])).join(',');
             return `(${values})`;
@@ -817,7 +1510,7 @@ v2
 
         await this.sql(`
                     INSERT INTO blocks (${dbFields.join(', ')})
-                    VALUES ${blockData} 
+                    VALUES ${blockData}
                     ON CONFLICT ("blockHash") DO NOTHING
                     ;
                 `);
@@ -831,8 +1524,12 @@ v2
                         ON CONFLICT (parent, child) DO UPDATE
                         SET linked = FALSE;
                     `, relations);
-
-            await this.sql(query);
+            if(this.update_block_relations_signal)
+                await this.update_block_relations_signal;
+            
+            this.insert_block_relations_signal = this.sql(query);
+            await this.insert_block_relations_signal;
+            //console.log("####### INSERT INTO block_relations")
         }
 
         await this.update();
@@ -841,21 +1538,29 @@ v2
 
     async updateRelations() {
         let rows = await this.sql('SELECT * FROM block_relations WHERE linked = FALSE LIMIT 1000');
-//        await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
-        await this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
-
-        let hashMap = {}
+        //await this.sql('UPDATE block_relations SET linked = TRUE WHERE linked = FALSE LIMIT 1000');
+        if(this.insert_block_relations_signal)
+            await this.insert_block_relations_signal;
+        this.update_block_relations_signal = this.sql('UPDATE block_relations SET linked = TRUE WHERE child IN (SELECT child FROM block_relations WHERE linked = FALSE LIMIT 1000);');
+        await this.update_block_relations_signal;
+        //console.log("####### UPDATE block_relations")
+        //let hashMap = {}
+        let hashSet = new Set();
         rows.forEach((row) => {
+            // row.parent = row.parent.
             // hashMap[row.child] = true;
-            hashMap[row.parent] = true;
+            // hashMap[row.parent] = true;
+            hashSet.add(row.parent);
         })
-        let blockHashes = Object.keys(hashMap);
+        let blockHashes = [...hashSet]; //Object.keys(hashMap);
         // console.log(`+ processing ${blockHashes.length} blocks`)
         while (blockHashes.length) {
             let hash = blockHashes.shift()
-            let children = await this.sql(`SELECT * FROM block_relations WHERE parent = '${hash}'`);
-            children = children.map(row => row.child);
-            await this.sql(`UPDATE blocks SET "childBlockHashes" = '${children.join(',')}' WHERE "blockHash"='${hash}'`);
+            let children = await this.sql(format(`SELECT * FROM block_relations WHERE parent = %L`, hash));
+            children = HashesToBuffer(children.map(row => row.child));
+            
+            await this.sql(`UPDATE blocks SET "childBlockHashes" = %L WHERE "blockHash"=%L`,children,hash);
+            // await this.sql(`UPDATE blocks SET "childBlockHashes" = '${children.join(',')}' WHERE "blockHash"='${hash}'`,children,hash);
             // console.log(`+ updating block children [${children.length}]`);
         }
 
@@ -1070,42 +1775,68 @@ v2
     }
 
     deserealizeBlock(block) {
-        block.lseq = block.id;
-        if (block.parentBlockHashes === "") {
-            block.parentBlockHashes = []
-        } else {
-            block.parentBlockHashes = block.parentBlockHashes.split(',');
-        }
-        block.childBlockHashes = block.childBlockHashes.split(',');
+        try{
+            //console.log("deserealize block A:", block);
+            block.lseq = block.id;
+            block.nonce = block.nonce.toString();
+            [
+                'blockHash',
+                'acceptedIDMerkleRoot',
+                'hashMerkleRoot',
+                'utxoCommitment'
+            ].forEach(p => block[p] = block[p].toString('hex'));
 
-        let accepted_diff = block.acceptedBlockHashes.split(',');
+            // if (!block.parentBlockHashes) {//} === "") {
+            //     block.parentBlockHashes = []
+            // } else {
+                block.parentBlockHashes = BufferToHashes(block.parentBlockHashes); //block.parentBlockHashes.split(',');
+//            }
+            block.childBlockHashes = BufferToHashes(block.childBlockHashes);
+            //block.childBlockHashes = block.childBlockHashes.split(',');
+            block.acceptedBlockHashes = BufferToHashes(block.acceptedBlockHashes);//.split(',');
+            //block.acceptedIDMerkleRoot = BufferToHashes(block.acceptedIDMerkleRoot)
 
-        let abh = block.parentBlockHashes.slice();
-        accepted_diff.forEach((v) => {
-            let op = v.charAt(0);
-            let hash = v.substring(1);
-            if (op == '-') {
-                let idx = abh.indexOf(hash);
-                if (idx == -1) {
+//            let accepted_diff = BufferToHashes(block.acceptedBlockHashes);//.split(',');
 
-                } else {
-                    abh.splice(idx, 1);
+
+            //let accepted_diff = block.acceptedBlockHashes.split(',');
+/*
+            let abh = block.parentBlockHashes.slice();
+            accepted_diff.forEach((v) => {
+                let op = v.charAt(0);
+                let hash = v.substring(1);
+                if (op == '-') {
+                    let idx = abh.indexOf(hash);
+                    if (idx == -1) {
+
+                    } else {
+                        abh.splice(idx, 1);
+                    }
+                } else if (op == '+') {
+                    abh.push(hash);
                 }
-            } else if (op == '+') {
-                abh.push(hash);
-            }
-        })
-        block.acceptedBlockHashes = abh;
+            })
+            block.acceptedBlockHashes = abh;
+*/
 
-        if (block.acceptingBlockHash) {
-            block.acceptingBlockHash = block.acceptingBlockHash.trim();
+
+            if (block.acceptingBlockHash) {
+                block.acceptingBlockHash = block.acceptingBlockHash.toString('hex'); //BufferToHashes(block.acceptingBlockHash);
+            //     block.acceptingBlockHash = block.acceptingBlockHash.trim();
+            }
+        }catch(error){
+            console.log("ERROR".brightRed, error);
+            console.log("BLOCK:".brightRed, block);
         }
+
+//        console.log("deserealize block B:", block);
+
 
         return this.NormalizeBlock(block);
     }
 
     async doSearch(text) {
-
+        console.log('search request',text);;
         let blocks = null;
 
         //console.log('text length:',text.length);
@@ -1127,7 +1858,8 @@ v2
         }
 
         if (!blocks && text.length == 64) {
-            blocks = await this.sql(`SELECT * FROM blocks WHERE "blockHash"=$1`, [text]);
+            console.log("SEARCH", text);
+            blocks = await this.sql(format(`SELECT * FROM blocks WHERE "blockHash"=%L`, Buffer.from(text,'hex')));
         }
 
         //console.log(blocks);
